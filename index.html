@@ -2907,7 +2907,7 @@ function mbtn(label,p){ return '<button class="btn" onclick="go(\'admin\',{p:\''
    -------------------------------------------------------------------------- */
 var previewOpen = {};
 function viewWeek(){
-  var n = VIEW.p.n, def=wdef(n), w=wrow(n);
+  var n = VIEW.p.n, def=wdef(n), w=wrow(n)||{};   /* 🛡️ 주차 상태 행이 없어도(예: 새로 추가한 16주차) 안 죽게 — w.notice/w.state/w.due 안전 */
   if(!def) return '<div class="card">없는 주차입니다.</div>';
   var head = topbar() +
    '<div class="card"><h2>'+n+'주차 — '+esc(def.full)+'</h2>'+
