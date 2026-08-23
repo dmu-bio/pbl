@@ -72,6 +72,16 @@ a{color:var(--blue)}
   font-size:13px;font-weight:400;text-decoration:underline;cursor:pointer;font-family:inherit
 }
 
+/* ===== 🧪 미리보기(예시 데이터) 띠 — ?demo=1 일 때만 나타납니다 ===== */
+#previewBar{
+  background:#b45309;color:#fff;padding:8px 12px;font-size:13px;font-weight:700;
+  text-align:center;line-height:1.5;position:sticky;top:0;z-index:70;border-bottom:2px solid #7c2d12
+}
+#previewBar button{
+  margin-left:10px;background:#fff;color:#7c2d12;border:0;border-radius:6px;padding:4px 12px;
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit
+}
+
 /* ===== 상단바 ===== */
 .topbar{
   background:var(--card);border:1px solid var(--line);border-radius:10px;
@@ -248,6 +258,14 @@ input:disabled,textarea:disabled,select:disabled{background:#f0f2f5;color:#8a939
    ⚠️ 폰 375px에서 네 줄이 쌓이므로 글자를 줄이지 말고 줄을 세로로 놓습니다. */
 .lvq{font-weight:700;font-size:16px;margin:12px 0 5px}
 .lvpick{display:flex;flex-direction:column;gap:5px;margin:0 0 4px}
+/* 🔲 항목 카드 (2026-08-23) — 평가 항목마다 경계로 확실히 구분합니다.
+   옅은 회색 바탕 카드로 감싸고, 제목 왼쪽에 파란 강조 바를 두어
+   "여기부터 여기까지가 한 항목"이 한눈에 보이게 합니다. */
+.lvgroup{background:var(--soft);border:1px solid var(--line);border-radius:10px;
+  padding:13px 13px 12px;margin:0 0 14px}
+.lvgroup:last-child{margin-bottom:2px}
+.lvgroup .lvq{margin:0 0 9px;padding-left:10px;border-left:4px solid var(--blue)}
+.lvgroup .lvpick{margin:0}
 .lvpick button{
   display:flex;gap:9px;align-items:flex-start;text-align:left;width:100%;
   border:1.5px solid var(--line);background:var(--card);border-radius:8px;
@@ -409,6 +427,9 @@ tr.alt td{background:#f7f9fb}
   text-align:left;font-weight:700}
 .a4sheet .sct td{border:.8pt solid #555;padding:1.1mm 1.2mm;vertical-align:top;word-break:break-all}
 .a4sheet .sct tr{page-break-inside:avoid;break-inside:avoid}
+/* 표가 여러 장에 걸치면 머리행(thead)을 장마다 반복합니다 */
+.a4sheet .sct thead{display:table-header-group}
+.a4sheet .tlt thead{display:table-header-group}
 .a4sheet .sct thead tr.mx th{background:#f4f6f8;font-weight:700;padding:.6mm 1.2mm;font-size:.9em}
 .a4sheet .sct td.num,.a4sheet .sct th.num{text-align:right;font-variant-numeric:tabular-nums}
 .a4sheet .sct td.c,.a4sheet .sct th.c{text-align:center}
@@ -416,11 +437,11 @@ tr.alt td{background:#f7f9fb}
 .a4sheet .sct td.nm .no{color:#444;font-size:.9em}
 .a4sheet .sct td.tot{background:#f4f6f8}
 .a4sheet .sct td.tm{color:#222}
-.a4sheet .sct col.s1{width:9mm}  .a4sheet .sct col.s2{width:41mm}
-.a4sheet .sct col.s4{width:14mm} .a4sheet .sct col.s5{width:48mm}
+.a4sheet .sct col.s1{width:9mm}  .a4sheet .sct col.s2{width:40mm}
+.a4sheet .sct col.s4{width:14mm} .a4sheet .sct col.s5{width:45mm}
 .a4sheet .sct th{white-space:nowrap}
 .a4sheet .sct.one col.o1{width:34mm} .a4sheet .sct.one col.o2{width:14mm}
-.a4sheet .sct.one col.o3{width:20mm} .a4sheet .sct.one col.o4{width:118mm}
+.a4sheet .sct.one col.o3{width:20mm} .a4sheet .sct.one col.o4{width:114mm}
 .a4sheet .sct.one td{padding:1.6mm 1.6mm}
 .a4sheet .sct.one .how{line-height:1.4}
 .a4sheet .sct.one .cal{color:#333;font-size:.92em;margin-top:.6mm}
@@ -448,7 +469,7 @@ tr.alt td{background:#f7f9fb}
      (210−24=186mm · 297−26=271mm — 화면 미리보기와 같은 값). */
   @page{ size:A4 portrait; margin:13mm 12mm; }
   html,body{background:#fff !important}
-  #protoBar,#toast,#modal,.noprint{display:none !important}
+  #protoBar,#previewBar,#toast,#modal,.noprint{display:none !important}
   /* ⚠️ 아래 「인쇄본만 남기기」는 인쇄 화면(body.printsheet)에서만 겁니다.
      화면 전체에 걸면 교수님이 다른 화면에서 Ctrl+P를 누르셨을 때 백지가 나옵니다. */
   body.printsheet>*{display:none !important}
@@ -506,6 +527,19 @@ tr.alt td{background:#f7f9fb}
 var IS_DEPLOY=true;
 
 /* ==========================================================================
+   🧪 미리보기(예시) 모드 — 주소 끝에 ?demo=1 (또는 ?preview=1) 이 있을 때만 켜집니다.
+   --------------------------------------------------------------------------
+   ▸ 무엇: 배포된 사이트에서도 교수님이 「가짜 학생·팀·점수로 채워진 앱」을 눌러 보실 수 있게 합니다.
+   ▸ 🔴 안전: 미리보기인 동안 이 세션을 통째로 「브라우저 안(로컬 저장)」으로 돌립니다.
+            → 실제 서버(Supabase)에는 단 한 줄도 쓰지 않습니다. (p2b_dbremote.js 에서 DBR.on=false)
+   ▸ 명단: 실제 75명 대신 「가짜 명단」(학번 9000xxxx · 이름 예시학생NN)을 씁니다. 이 파일 맨 아래.
+   ▸ 학생 평소 주소(?demo 없음)에서는 PREVIEW=false 라 아무것도 달라지지 않습니다(버튼도 안 보입니다).
+   ▸ 1회성: 주소에 ?demo=1 이 있을 때만 켜지고, 이 선택은 localStorage 에 남기지 않습니다.
+   ========================================================================== */
+var PREVIEW = false;
+try{ PREVIEW = /[?&#](demo|preview)=1(\b|$)/.test(location.search + location.hash); }catch(e){ PREVIEW = false; }
+
+/* ==========================================================================
    📋 실제 수강생 명단 — 2026학년도 2학기 「바이오기초설계」
    🔴🔴 실제 학생 75명의 이름·학번이 들어 있습니다 — 외부 공개·업로드 금지 🔴🔴
    --------------------------------------------------------------------------
@@ -531,6 +565,25 @@ var ROSTER = { F1:[], F2:[], F3:[] };
 
 /* 이 명단을 만들 때 확인한 것 — 자체 점검기가 이 값과 실제 데이터를 맞춰 봅니다 */
 var ROSTER_FACT = { total:75, perClass:25, dupNo:0, dupName:['학생26'] };
+
+/* ==========================================================================
+   🧪 미리보기용 「가짜 명단」 — PREVIEW 모드일 때만 위 ROSTER 를 이 값으로 갈아 끼웁니다.
+   --------------------------------------------------------------------------
+   🔴 실제 학생 데이터가 아닙니다. 실제 학번(2020~2026 으로 시작)·실명과 절대 겹치지 않도록
+      학번은 9000xxxx, 이름은 '예시학생NN' 으로 만듭니다 — 공개 저장소에 올라가도 안전한 가짜값입니다.
+   ▸ 강좌마다 25명씩(합 75) 채워, 예시 데이터 채우기(DEMO.fill)가 팀을 그대로 나눌 수 있게 합니다.
+   ========================================================================== */
+if(PREVIEW){
+  (function(){
+    var cids = ['F1','F2','F3'];   /* CIDS 는 뒤(p2_db.js)에서 정의되므로 여기선 직접 씁니다 */
+    var fake = { F1:[], F2:[], F3:[] }, n=0;
+    cids.forEach(function(cid){
+      for(var i=1;i<=25;i++){ n++;
+        fake[cid].push(['9000'+('000'+n).slice(-4), '예시학생'+('0'+n).slice(-2)]); }
+    });
+    ROSTER = fake;
+  })();
+}
 
 /* ==========================================================================
    📋 루브릭 초안 — 4·7·13·14주차 평가서 (2026-08-22 · 18차 신설)
@@ -1850,6 +1903,13 @@ var DATA_V = 14;  /* 14 = 2026-08-23 (20차) ⚖️ 팀내 평가 감점(intraPe
                           배점 6개(settings.marks) 신설 · 발표평가 비중 80:20 → 40:60 */
 var SESSKEY = 'bio_basic_design_sess_v1';
 
+/* 🧪 미리보기 모드는 저장 칸을 따로 씁니다 — 실제(로컬) 데이터와 절대 섞이지 않게.
+   서버에는 어차피 쓰지 않고(DBR.on=false), 로컬 저장도 이 전용 칸에만 남습니다. */
+if(typeof PREVIEW!=='undefined' && PREVIEW){
+  STORE   = 'bio_basic_design_preview_v1';
+  SESSKEY = 'bio_basic_design_preview_sess_v1';
+}
+
 /* 시제품이 「오늘」이라고 가정하는 날.
    · 시작 상태(실제 명단만 있는 상태) → 1주차 수업일 8/26. 이것이 실제 모습입니다.
    · [예시 데이터 채우기]를 누른 뒤   → 4주차 수업일 9/16. 평가 화면까지 눌러 보시라고. */
@@ -1908,16 +1968,20 @@ var WEEKDEF = [
   {n:3, title:'팀활동1',     full:'팀 활동1 · 조사 자료 제출', win:'마감일까지', kind:'research', tutor:1},
   {n:4, title:'중간발표1',   full:'중간발표1 — 가주제 정리 발표', win:'수업시간', kind:'eval', round:1},
   {n:5, title:'팀활동2',     full:'팀 활동2 — 최종 주제 1개 선정', win:'마감일까지', kind:'finaltopic', tutor:2},
-  {n:6, title:'팀활동3',     full:'팀 활동3 — 광고 영상 제작', win:'마감일까지', kind:'video', tutor:3},
+  {n:6, title:'광고영상',    full:'광고 영상 제작', win:'수업시간', kind:'video', tutor:3},
   {n:7, title:'중간발표2',   full:'중간발표2 — 1분 광고영상 · KOSAc 제출', win:'수업시간', kind:'eval', round:2, film:true},
   {n:8, title:'중간고사',    full:'중간고사 (서면 평가)', kind:'notice'},
-  {n:9, title:'팀활동4',     full:'팀 활동4 · 영상 콘텐츠 보강', win:'마감일까지', kind:'activity', tutor:4, boost:true},
-  {n:10,title:'팀활동5',     full:'팀 활동5', win:'마감일까지', kind:'activity', tutor:5},
+  {n:9, title:'최종앱①',     full:'최종 앱 개발 ①', win:'수업시간', kind:'activity', tutor:4, boost:true},
+  {n:10,title:'최종앱②',     full:'최종 앱 개발 ②', win:'수업시간', kind:'activity', tutor:5},
   {n:11,title:'현장견학',    full:'현장견학', kind:'notice'},
-  {n:12,title:'팀활동6',     full:'팀 활동6 · 최종발표 평가기준 공개', win:'마감일까지', kind:'prep', tutor:6},
+  {n:12,title:'최종앱③',     full:'최종 앱 개발 ③ · 최종발표 평가기준 공개', win:'수업시간', kind:'prep', tutor:6},
   {n:13,title:'최종발표1',   full:'최종발표1 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true},
   {n:14,title:'최종발표2',   full:'최종발표2 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true, intra:true},
-  {n:15,title:'기말·설문',   full:'기말고사 · 최종설문조사', win:'수업+당일', kind:'final'}
+  {n:15,title:'기말·설문',   full:'기말고사 · 최종설문조사', win:'수업+당일', kind:'final'},
+  /* 🔴 2026-08-23 신설 — 「최종결과」 주차. 학생이 본인 6개 분야 점수+총합을 확인합니다.
+     제출·활동이 없는 「결과 확인 전용」 주차입니다(kind:'result'). win 이 없어 마감(due)도 없습니다.
+     ⛔ 이 주차는 활동기록·진행 격자·튜터링 대상이 아닙니다(그쪽 코드는 kind!=='result' 로 걸러 둡니다). */
+  {n:16,title:'최종결과',    full:'최종 결과 확인', kind:'result'}
 ];
 /* 🔴 여기서 15줄의 date · due 가 만들어집니다 — WEEKDEF 리터럴에는 날짜가 없습니다 */
 (function(){
@@ -2006,6 +2070,7 @@ var SEED = {
     var d = { __v:DATA_V, __seq:0, __demo:false,
       accounts:[], classes:[], students:[], weeks:[], weekExc:[], weekNotice:[],
       teams:[], members:[], topics:[], submits:[], activity:[],
+      excursion:[],          /* 🚌 11주차 현장견학 — 팀별 견학 의견 (팀원이 한 줄씩 쌓는 목록형) */
       tutoring:[],           /* ⛔ 옛 tutorAck(학생 확인 기록)은 17차에 폐기 */
       surveys:[], questions:[], answers:[], consents:[], sdraft:[], svNote:[],
       rubrics:[], profEval:[], peerTeam:[], peerMember:[],
@@ -2488,6 +2553,12 @@ function submitBar(n, has, onclick){
 function studentBadge(n){
   var def=wdef(n), w=wrow(n);
   if(def.kind==='notice') return {t:'▫️ 안내만', c:'gray'};
+  /* 🔴 16주차 「최종결과」 — 낼 것이 없는 결과 확인 주차. 공개 여부로 뱃지를 나눕니다 */
+  if(def.kind==='result'){
+    if(w.state==='닫힘') return {t:'🔒 잠김', c:'gray'};
+    return discloseGet(SESS.me?SESS.me.classId:myClass(),'result')
+      ? {t:'📄 결과 공개', c:'green'} : {t:'▫️ 결과 대기', c:'gray'};
+  }
   if(w.state==='닫힘') return {t:'🔒 잠김', c:'gray'};
   var done = hasSubmitted(SESS.me, n);
   /* 🔴 3주차는 제출함이 3개라 「냈다/안 냈다」 둘로 나뉘지 않습니다 — 1/3·2/3을 그대로 보여 줍니다.
@@ -2505,6 +2576,7 @@ function studentBadge(n){
 function profBadge(n){
   var def=wdef(n), w=wrow(n);
   if(def.kind==='notice') return {t:'▫️ 안내만',c:'gray'};
+  if(def.kind==='result') return {t:'▫️ 결과 공개',c:'gray'};
   if(w.state==='닫힘') return {t:'🔒 닫힘',c:'gray'};
   var cids = visibleClasses();
   /* 🔴 3주차는 「학생 몇 명」이 아니라 「몇 팀이 3개를 다 냈나」로 셉니다 — 제출물이 팀 것이므로 */
@@ -2531,6 +2603,7 @@ function hasSubmitted(st, n){
   if(!st) return false;
   var def=wdef(n);
   if(def.kind==='notice') return true;
+  if(def.kind==='result') return true;   /* 낼 것이 없는 결과 확인 주차 — 「미제출」로 세지 않습니다 */
   if(def.kind==='survey'){
     var sv=DB.one('surveys',function(s){return s.kind==='사전';});
     return !!DB.one('answers', function(a){return a.surveyId===sv.id && a.studentId===st.id;});
@@ -2609,7 +2682,7 @@ function backBar(){
 
 var APP = {
   resetAll:function(){
-    if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return; }   /* 🏁 배포본: 라이브 DB 보호 */
+    if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY && !(typeof PREVIEW!=='undefined'&&PREVIEW)){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return; }   /* 🏁 배포본: 라이브 DB 보호 (미리보기 모드는 로컬이라 허용) */
     APP.confirm('「학기 시작 직전(8/26 첫 수업 아침)」 상태로 되돌립니다.\n\n'+
       '· 실제 수강생 명단은 그대로 남습니다\n'+
       '· 눌러 보신 내용과 예시 데이터(가짜 팀·점수)는 사라집니다\n\n진행할까요?', function(){
@@ -2741,7 +2814,7 @@ function weekGrid(){
 function todoBand(){
   var cur=curWeek();
   if(SESS.role==='student'){
-    var open = WEEKDEF.filter(function(d){ return wState(d.n)==='열림' && d.kind!=='notice' && !hasSubmitted(SESS.me,d.n); });
+    var open = WEEKDEF.filter(function(d){ return wState(d.n)==='열림' && d.kind!=='notice' && d.kind!=='result' && !hasSubmitted(SESS.me,d.n); });
     if(!open.length){
       var nx = WEEKDEF.filter(function(d){return d.n>cur;})[0];
       return '<div class="note g"><b>📌 이번 주 할 일</b><br>이번 주는 낼 것이 없습니다'+
@@ -2803,6 +2876,7 @@ function viewHome(){
   /* 🔴 15차 — 메뉴가 9개 줄줄이 늘어서 있어 교수님이 「튜터링 일지」를 못 찾으셨습니다.
      자주 쓰는 세 가지를 위로 빼고, 나머지는 아래에 둡니다. */
   h += '<div class="card"><h3>자주 쓰는 것</h3><div class="menu">'+
+    '<button class="btn pri" onclick="go(\'outputs\')">📄 출력물 (인쇄·PDF·워드)</button>'+
     '<button class="btn" onclick="alGo(\'all\')">주차별 활동기록</button>'+
     '<button class="btn" onclick="tlOpen(1)">교수 튜터링 일지</button>'+
     '<button class="btn" onclick="svrGo(myClass())">설문 결과 (엑셀·그래프)</button>'+
@@ -2820,7 +2894,8 @@ function viewHome(){
       mbtn('출석부 올리기','roster')+ mbtn('교수 계정','profacc')+ mbtn('주차 공통 설정','weekmaster')+
       mbtn('변경 기록','audit')+
       mbtn('운영 설정','settings')+
-      (IS_DEPLOY? '' : (mbtn('예시 데이터','demo')+ mbtn('자체 점검','check')))+   /* 🏁 배포본: 개발도구 숨김 */
+      ((IS_DEPLOY && !(typeof PREVIEW!=='undefined'&&PREVIEW))? '' : mbtn('예시 데이터','demo'))+   /* 🏁 배포본: 숨김. 단 미리보기(?demo=1)에서는 보입니다 */
+      (IS_DEPLOY? '' : mbtn('자체 점검','check'))+   /* 자체 점검은 실제 명단이 필요해 배포본에선 늘 숨깁니다 */
       '</div></div>';
   }
   return h;
@@ -2864,27 +2939,36 @@ function pager(n){
   return '<div class="pager">'+
     (n>1? '<button class="btn" onclick="go(\'week\',{n:'+(n-1)+'})">← '+(n-1)+'주차</button>':'<span style="flex:1"></span>')+
     '<button class="btn" onclick="go(\'home\')">홈</button>'+
-    (n<15? '<button class="btn" onclick="go(\'week\',{n:'+(n+1)+'})">'+(n+1)+'주차 →</button>':'<span style="flex:1"></span>')+
+    (wdef(n+1)? '<button class="btn" onclick="go(\'week\',{n:'+(n+1)+'})">'+(n+1)+'주차 →</button>':'<span style="flex:1"></span>')+
     '</div>';
 }
 
 /* ===== 학생 · 주차별 ===== */
 function weekStudent(n, def){
   switch(def.kind){
-    case 'notice':    return stNotice(n);
+    /* 🚌 11주차(현장견학)만 견학 의견 기록을 안내문 아래에 붙입니다 (8주차 중간고사는 안내만)
+       📢 8주차에는 「2회차(7주차) 발표평가 결과」를 공개 시 아래에 붙입니다 (R9) */
+    case 'notice':    return stNotice(n) + (n===11? stExcursion(n) : '') +
+                             (n===8? stRoundResultCard(2,'r2') : '');
     case 'survey':    return stSurvey(n, '사전');
-    case 'final':     return stNotice(n) + stSurvey(n, '최종');
+    /* 15주차 — 최종설문 아래에 「3회차 발표평가 결과」 + 「본인 기말고사」를 공개 시 붙입니다 (R9) */
+    case 'final':     return stNotice(n) + stRoundResultCard(3,'r3') +
+                             stExamCard('fin','기말고사',15) + stSurvey(n, '최종');
     case 'team':      return stTeam(n);
     /* 🔴 17차 — 교수 튜터링 기록은 학생 화면에 「어디에도」 나오지 않습니다.
        교수님 지시: "학생들은 튜터링 내용이 현재 보이나? 굳이 보일필요는 없을 것 같아."
        ⛔ 빈 상자를 남기지 않습니다 — 구역 자체를 없앴습니다.
           학생의 3주차는 「조사 자료 제출함 3개」만 있으면 됩니다. */
     case 'research':  return stResearch(n);
-    case 'finaltopic':return stFinalTopic(n);
+    /* 5주차 — 최종주제 화면 아래에 「1회차(4주차) 발표평가 결과」를 공개 시 붙입니다 (R9) */
+    case 'finaltopic':return stFinalTopic(n) + stRoundResultCard(1,'r1');
     case 'video':     return stVideo(n);
-    case 'activity':  return stActivity(n, def);
+    /* 9주차 — 본인 중간고사 점수를 공개 시 붙입니다 (R9) */
+    case 'activity':  return stActivity(n, def) + (n===9? stExamCard('mid','중간고사',9) : '');
     case 'prep':      return stPrep(n);
     case 'eval':      return stEval(n, def);
+    /* 16주차 — 최종결과(본인 6분야+총합) (R9) */
+    case 'result':    return stFinalResult();
   }
   return '';
 }
@@ -3557,52 +3641,150 @@ function stFinalTopic(){
   var t=teamOf(SESS.me); if(!t) return '';
   var tps=DB.get('topics',function(x){return x.teamId===t.id&&x.kind==='가주제';}).sort(function(a,b){return a.no-b.no;});
   var fin=DB.one('topics',function(x){return x.teamId===t.id&&x.kind==='최종';});
-  if(fin && fin.ok) return '<div class="card"><h3>[1] 최종 주제 <span class="bg green">✅ 교수 승인 완료</span></h3>'+
-    '<p><b>'+esc(fin.title)+'</b></p><p class="muted">'+esc(fin.summary)+'</p>'+
-    '<div class="note">✅ <b>교수 승인이 끝나 수정할 수 없습니다.</b> 바꿀 것이 있으면 담당교수님께 말씀하세요.</div></div>';
-  return '<div class="card"><h3>[1] 최종 주제 선정</h3><p class="muted">우리 팀 가주제 3개 중 하나를 고르세요</p>'+
+  /* 🔴 R12 (2026-08-23) — 교수 승인 후에도 학생이 언제든 최종주제를 수정할 수 있습니다.
+     (교수님 지시) 옛 「승인 완료 = 읽기 전용」 잠금을 없애고, 승인 상태에서도 편집 폼을 그대로 띄웁니다.
+     승인 뒤 수정하면 교수 승인 화면에 「✏️ 승인 후 수정됨」 배지가 떠서 교수가 다시 확인합니다. */
+  /* fin.from 이 있으면 = 가주제에서 고른 것 · 비어 있는데 fin 이 있으면 = 새 주제 직접 작성 */
+  var isNew = !!(fin && !fin.from);
+  var okBanner = (fin && fin.ok) ?
+    '<div class="note" style="border-color:#2e7d32">✅ <b>교수 승인 완료</b>'+
+      (fin.okAt? ' <span class="muted">('+esc(fin.okAt)+')</span>':'')+
+      (fin.editedAfterOk? ' · <span class="bg amber">✏️ 승인 후 수정됨</span>'+(fin.okEditAt? ' <span class="muted">'+esc(fin.okEditAt)+'</span>':''):'')+
+      '<br>승인 뒤에도 <b>언제든 수정</b>할 수 있습니다. 다만 수정하시면 담당교수님이 <b>다시 확인</b>합니다(승인은 그대로 유지됩니다).</div>' : '';
+  return '<div class="card"><h3>[1] 최종 주제 선정'+(fin&&fin.ok?' <span class="bg green">✅ 승인 완료</span>':'')+'</h3>'+
+    okBanner+
+    '<p class="muted">가주제 3개 중 하나를 고르거나, <b>새 주제를 직접 작성</b>할 수 있습니다. 어느 쪽이든 <b>최종 주제 1개 + 사유</b>를 남기면 됩니다.</p>'+
     tps.map(function(tp){
       return '<div class="chk"><input type="radio" name="fin" value="'+tp.id+'" '+(fin&&fin.from===tp.id?'checked':'')+
-      '><span>가주제 '+tp.no+' 「'+esc(tp.title)+'」</span></div>'; }).join('')+
-    '<label class="f">최종 주제명 <span class="req">*</span> <span class="lim">40자 · 다듬어 적어도 됩니다</span></label>'+
+      ' onclick="finPick(\''+esc(tp.title).replace(/'/g,"\\'")+'\')"><span>가주제 '+tp.no+' 「'+esc(tp.title)+'」</span></div>'; }).join('')+
+    '<div class="chk"><input type="radio" name="fin" value="__new__" '+(isNew?'checked':'')+
+      ' onclick="finPick(\'\')"><span>✏️ 새 주제 직접 작성 (가주제에 없던 주제로 정하기)</span></div>'+
+    '<label class="f">최종 주제명 <span class="req">*</span> <span class="lim">40자 · 가주제를 고르면 자동으로 채워집니다. 다듬거나 새로 적어도 됩니다</span></label>'+
     '<input type="text" id="fnTitle" maxlength="40" value="'+esc(fin?fin.title:'')+'">'+
-    '<label class="f">선정 사유 <span class="req">*</span> <span class="lim">500자</span></label>'+
+    '<label class="f">선정/작성 사유 <span class="req">*</span> <span class="lim">500자 · 왜 이 주제를 최종으로 정했는지</span></label>'+
     '<textarea id="fnWhy">'+esc(fin?fin.summary:'')+'</textarea>'+
-    '<div class="note a">⚠️ 교수 승인 후에는 바꿀 수 없습니다.</div>'+
-    (canFix(5)
-      ? '<div class="btnrow">'+(fin? fixBtn("saveFinal('"+t.id+"')", '수정 저장하기')
-                                   : '<button class="btn pri" onclick="saveFinal(\''+t.id+'\')">제출하기</button>')+'</div>'+
-        '<div class="muted">'+(fin? '<b>교수 승인 전</b>이라면 마감('+esc(dueLabel(5))+') 전까지 몇 번이든 수정할 수 있습니다'
-                                  : '낸 뒤에도 교수 승인 전까지 수정할 수 있습니다')+'</div>'
-      : '<div class="note">⬛ <b>'+FIX_LOCKED+'</b></div>')+
-    (fin? '<div class="note b" style="margin-top:8px">제출됨 — 교수 승인을 기다리는 중입니다.</div>':'')+'</div>';
+    /* 🔴 R12 (2026-08-23) — 최종주제는 승인 전이든 후든 「언제든 제한 없이」 수정할 수 있습니다.
+       평가(4·7·13·14주차)의 「1회 수정」 잠금과 다릅니다 — 여기는 횟수·마감 잠금이 없습니다. */
+    '<div class="btnrow">'+(fin? fixBtn("saveFinal('"+t.id+"')", '수정 저장하기')
+                                : '<button class="btn pri" onclick="saveFinal(\''+t.id+'\')">제출하기</button>')+'</div>'+
+    '<div class="muted">'+(fin? (fin.ok? '승인 후에도 <b>언제든</b> 수정할 수 있습니다. 수정하면 교수님이 다시 확인합니다.'
+                                       : '<b>언제든 제한 없이</b> 수정할 수 있습니다 (마감·횟수 제한 없음).')
+                              : '낸 뒤에도 <b>언제든</b> 수정할 수 있습니다.')+'</div>'+
+    (fin && !fin.ok? '<div class="note b" style="margin-top:8px">제출됨'+
+          (fin.edited? ' · <b>수정됨</b> ('+esc(fin.editedAt||'')+')':'')+
+          ' — 교수 승인을 기다리는 중입니다.</div>':'')+'</div>';
+}
+/* 가주제 라디오를 고르면 최종 주제명 칸을 그 제목으로 채워 줍니다(비어 있을 때만 자동, 이미 손대셨으면 그대로 둠).
+   「새 주제 직접 작성」을 고르면 빈 칸으로 두어 직접 적게 합니다. */
+function finPick(title){
+  var el=$('fnTitle'); if(!el) return;
+  if(title){ if(!el.value.trim()) el.value=title; }   /* 가주제 선택 — 비어 있을 때만 채움 */
+  el.focus();
 }
 function saveFinal(tid){
-  if(!canFix(5)){ toast('⛔ '+FIX_LOCKED); return; }
-  var ok0=DB.one('topics',function(x){return x.teamId===tid&&x.kind==='최종';});
-  if(ok0 && ok0.ok){ toast('⛔ 교수 승인이 끝나 수정할 수 없습니다.'); return; }
+  /* 🔴 R12 (2026-08-23) — 최종주제는 마감 잠금도, 승인 잠금도 두지 않습니다.
+     교수 승인 후에도 학생이 언제든 수정할 수 있습니다(교수님 지시). 승인 상태(ok)는 그대로 두고,
+     승인 뒤 실제로 내용이 바뀌면 editedAfterOk 표시만 남겨 교수님이 다시 확인하게 합니다. */
   var pick=document.querySelector('input[name=fin]:checked');
   var ti=val('fnTitle'), wy=val('fnWhy');
-  if(!pick){ toast('가주제 중 하나를 골라 주세요.'); return; }
-  if(!ti||!wy){ toast('주제명과 선정 사유는 필수입니다.'); return; }
+  if(!pick){ toast('가주제 중 하나를 고르거나 「새 주제 직접 작성」을 선택해 주세요.'); return; }
+  if(!ti||!wy){ toast('주제명과 선정/작성 사유는 필수입니다.'); return; }
+  /* 가주제를 고르면 from=가주제id · 새 주제면 from='' (빈 값이 「직접 작성」의 표시입니다) */
+  var from = (pick.value==='__new__') ? '' : pick.value;
   var ex=DB.one('topics',function(x){return x.teamId===tid&&x.kind==='최종';});
-  if(ex) DB.set('topics', ex.id, {title:ti,summary:wy,from:pick.value});
-  else DB.add('topics',{teamId:tid,kind:'최종',no:1,title:ti,summary:wy,from:pick.value,ok:false,back:'',need:'',how:'',comment:''});
-  toast('최종 주제를 제출했습니다.'); render();
+  if(ex){
+    /* 🔴 R10/R12 — 최초 저장 뒤 실제로 내용이 바뀌면 「수정됨」으로 표시합니다(교수 화면에 보임).
+       제목·사유·선택(from) 중 하나라도 달라졌을 때만 수정으로 봅니다(똑같이 다시 눌렀을 때 제외). */
+    var changed = (ex.title!==ti) || (ex.summary!==wy) || ((ex.from||'')!==(from||''));
+    var patch={title:ti,summary:wy,from:from};
+    if(changed){
+      patch.edited=true; patch.editedAt=nowStr();
+      /* 이미 승인된 뒤의 수정이면 별도 배지(교수 승인 화면) — 승인 자체는 유지합니다 */
+      if(ex.ok){ patch.editedAfterOk=true; patch.okEditAt=nowStr(); }
+    }
+    DB.set('topics', ex.id, patch);
+    DB.log(ex.ok?'최종 주제 수정(승인 후)':'최종 주제 수정', tid+' 「'+ti+'」');
+    toast(changed? (ex.ok? '최종 주제를 수정했습니다. 담당교수님이 다시 확인합니다.' : '최종 주제를 수정했습니다.') : '변경 사항이 없습니다.');
+  }else{
+    DB.add('topics',{teamId:tid,kind:'최종',no:1,title:ti,summary:wy,from:from,ok:false,
+      edited:false, at:nowStr(), back:'',need:'',how:'',comment:''});
+    DB.log('최종 주제 제출', tid+' 「'+ti+'」');
+    toast('최종 주제를 제출했습니다.');
+  }
+  render();
 }
 
-/* ===== 6주차 — 영상 제작 ===== */
+/* ===== 11주차 — 현장견학 「팀별 견학 의견」 (2026-08-23 신설) =====
+   교수님 지시: "11주차 현장 견학에 대해서 팀별로 견학에 대한 학생들이 의견을 적어서 기록할 수 있게."
+   ▸ 목록형입니다 — 한 팀이 함께 쓰는 칸 하나가 아니라, 팀원들이 각자 한 줄씩 쌓습니다.
+     기록마다 작성자 이름·시각이 남습니다("학생들이 의견을 적어서"에 맞춘 해석).
+   ▸ 견학 안내(집합·교통·준비물)는 stNotice 가 위에 그대로 보여 주고, 그 아래에 이 영역이 붙습니다.
+   ▸ 저장은 기존 관문(DB.add/set/del) 그대로 — 원격이면 excursion 표로 갑니다.            */
+function stExcursion(){
+  var t=teamOf(SESS.me);
+  if(!t) return '<div class="card"><h3>[의견] 우리 팀 견학 의견</h3>'+
+    '<div class="note a">아직 팀에 들어가 있지 않습니다. 견학 의견은 <b>팀 단위</b>로 기록합니다.</div></div>';
+  var list=DB.get('excursion', function(x){return x.teamId===t.id;})
+             .sort(function(a,b){return (b.at||'')<(a.at||'')?-1:1;});   /* 최근이 위로 */
+  var h='<div class="card"><h3>[의견] 우리 팀 견학 의견 <span class="muted">— '+list.length+'개</span></h3>'+
+    '<p class="muted">현장견학에서 보고 느낀 점을 팀원 누구나 한 줄씩 남길 수 있습니다. 남긴 사람과 시각이 함께 기록됩니다.</p>';
+  if(list.length){
+    h += list.map(function(x){
+      var mine = (SESS.me && x.authorId===SESS.me.id);
+      return '<div class="note" style="margin-top:6px"><b>'+esc(x.author||'-')+'</b> '+
+        '<span class="muted">'+esc(x.at||'')+'</span><br>'+esc(x.text).replace(/\n/g,'<br>')+
+        (mine && canFix(11)? '<div style="margin-top:5px"><button class="btn sm" onclick="delExcursion(\''+x.id+'\')">🗑 내 의견 지우기</button></div>':'')+
+        '</div>';
+    }).join('');
+  } else {
+    h += '<div class="note">아직 남긴 의견이 없습니다. 첫 의견을 남겨 보세요.</div>';
+  }
+  if(canFix(11)){
+    h += '<label class="f">견학 의견 남기기 <span class="req">*</span> <span class="lim">500자</span></label>'+
+      '<textarea id="excText" placeholder="예) ○○기업의 배양 공정을 직접 보니 수업에서 배운 스케일업이 이해되었다."></textarea>'+
+      '<div class="btnrow" style="margin-top:8px"><button class="btn pri" onclick="addExcursion(\''+t.id+'\')">의견 남기기</button></div>';
+  } else {
+    h += '<div class="note">⬛ <b>'+FIX_LOCKED+'</b></div>';
+  }
+  return h+'</div>';
+}
+function addExcursion(tid){
+  if(!canFix(11)){ toast('⛔ '+FIX_LOCKED); return; }
+  var tx=val('excText');
+  if(!tx || tx.length<5){ toast('의견을 5자 이상 적어 주세요.'); return; }
+  DB.add('excursion', {teamId:tid, classId:(SESS.me?SESS.me.classId:myClass()), week:11,
+    author:(SESS.acc?SESS.acc.name:(SESS.me?SESS.me.name:'-')), authorId:(SESS.me?SESS.me.id:''),
+    text:tx, at:nowStr()});
+  toast('견학 의견을 남겼습니다.'); render();
+}
+function delExcursion(id){
+  var x=DB.one('excursion', id); if(!x) return;
+  if(!(SESS.me && x.authorId===SESS.me.id)){ toast('내가 남긴 의견만 지울 수 있습니다.'); return; }
+  if(!canFix(11)){ toast('⛔ '+FIX_LOCKED); return; }
+  DB.del('excursion', id); toast('내 견학 의견을 지웠습니다.'); render();
+}
+
+/* ===== 타이틀 전용 주차 (6·9·10·12) — 학생 입력 없음 (2026-08-23 교수님 지시) =====
+   교수님: "6주차 광고 영상 제작 / 9·10·12주차 최종 앱 개발 — 제목만 남기고 학생 입력은 삭제.
+           수업에서 진행하고, 앱에 따로 낼 것은 없다."
+   ▸ 학생 화면의 입력 요소만 걷어냈습니다. 교수 튜터링(tutor:N)은 그대로 유지됩니다(교수 화면).
+   ▸ 「5주차 이후 팀 주제는 최종 1개만」 원칙에 맞춰 우리 팀 최종 주제를 함께 보여 줍니다(표시만).  */
+function stTitleOnly(n, title, sub){
+  var t=teamOf(SESS.me);
+  var fin = t? DB.one('topics', function(x){return x.teamId===t.id && x.kind==='최종';}) : null;
+  var topicLine = !t ? '' :
+    (fin ? '<div class="note b" style="margin-top:8px">우리 팀 최종 주제 <b>「'+esc(fin.title)+'」</b>'+
+             (fin.ok? ' <span class="bg green">✅ 승인</span>' : ' <span class="bg amber">승인 대기</span>')+'</div>'
+         : '<div class="note a" style="margin-top:8px">아직 <b>최종 주제 미선정</b>입니다 — 5주차에서 최종 주제를 먼저 정해 주세요.</div>');
+  return '<div class="card"><h3>'+esc(title)+'</h3>'+
+    (sub? '<p class="muted">'+esc(sub)+'</p>' : '')+
+    topicLine+
+    '<div class="note">ℹ️ 이 주차는 앱에 <b>따로 낼 것이 없습니다.</b> 수업에서 진행합니다.</div></div>';
+}
+/* ===== 6주차 — 광고 영상 제작 (타이틀만) ===== */
 function stVideo(){
-  var t=teamOf(SESS.me); if(!t) return '';
-  var a=DB.one('activity', function(x){return x.teamId===t.id&&x.week===6;});
-  return '<div class="card"><h3>[1] 영상 제작 진행 상황</h3>'+
-    '<label class="f">기획 의도 <span class="req">*</span> <span class="lim">500자</span></label><textarea id="v6plan">'+esc(a?a.plan:'')+'</textarea>'+
-    '<label class="f">현재 진행 단계</label>'+
-    ['기획','촬영','편집','완료'].map(function(s){
-      return '<div class="chk"><input type="radio" name="v6s" value="'+s+'" '+(a&&a.stage===s?'checked':'')+'><span>'+s+'</span></div>';}).join('')+
-    '<label class="f">가편집본 링크 <span class="lim">선택</span></label><input type="text" id="v6link" placeholder="https://youtu.be/..." value="'+esc(a?a.link:'')+'">'+
-    '<div class="note a">⚠️ 영상 파일은 앱에 직접 올리지 않는 것을 권합니다. <b>유튜브(일부공개) 또는 학교 드라이브 링크</b>가 안전하고 KOSAc 제출에도 어차피 링크가 필요합니다.</div>'+
-    submitBar(6, !!a, "saveWeek6('"+t.id+"')")+'</div>';
+  return stTitleOnly(6, '광고 영상 제작',
+    '최종 주제로 1분 광고영상을 제작합니다. 영상은 KOSAc 또는 학교 드라이브 링크로 따로 제출합니다(앱 업로드 없음).');
 }
 function saveWeek6(tid){
   if(!canFix(6)){ toast('⛔ '+FIX_LOCKED); return; }
@@ -3616,22 +3798,10 @@ function saveWeek6(tid){
   toast('6주차 진행 상황을 제출했습니다.'); render();
 }
 
-/* ===== 9·10주차 — 활동 기록 ===== */
+/* ===== 9·10주차 — 최종 앱 개발 (타이틀만) ===== */
 function stActivity(n, def){
-  var t=teamOf(SESS.me); if(!t) return '';
-  var a=DB.one('activity', function(x){return x.teamId===t.id&&x.week===n;});
-  var h='<div class="card"><h3>[1] 팀 활동 기록</h3>'+
-    '<label class="f">이번 주 한 일 <span class="req">*</span> <span class="lim">500자</span></label><textarea id="acDid">'+esc(a?a.did:'')+'</textarea>'+
-    '<label class="f">다음 주 할 일 <span class="req">*</span> <span class="lim">300자</span></label><textarea id="acNext">'+esc(a?a.next:'')+'</textarea>'+
-    '<label class="f">막힌 점 / 도움 필요 <span class="lim">300자 · 선택</span></label><textarea id="acHelp">'+esc(a?a.help:'')+'</textarea>'+
-    '<p class="muted">💡 여기에 적으면 교수 화면 맨 위에 ⚠️로 올라갑니다.</p>';
-  if(def.boost){
-    h += '<div class="hr"></div><h3>[2] 영상 보강 <span class="muted">(필요한 팀만 · 선택)</span></h3>'+
-      '<label class="f">보강 영상 링크</label><input type="text" id="acLink" value="'+esc(a?a.link||'':'')+'">'+
-      '<label class="f">무엇을 고쳤나 <span class="lim">300자</span></label><textarea id="acFix">'+esc(a?a.fix||'':'')+'</textarea>';
-  }
-  h += submitBar(n, !!a, "saveActivity('"+t.id+"',"+n+")")+'</div>';
-  return h;
+  return stTitleOnly(n, '최종 앱 개발 '+(n===9?'①':'②'),
+    '최종 주제를 앱으로 구현하는 단계입니다. 수업 시간에 진행하며 앱에 따로 낼 것은 없습니다.');
 }
 function saveActivity(tid,n){
   if(!canFix(n)){ toast('⛔ '+FIX_LOCKED); return; }
@@ -3643,24 +3813,18 @@ function saveActivity(tid,n){
   toast(n+'주차 활동 기록을 제출했습니다.'); render();
 }
 
-/* ===== 12주차 — 최종 준비 + 평가 기준 공개 ===== */
+/* ===== 12주차 — 최종 앱 개발 ③ (타이틀만, 학생 입력 없음) =====
+   ▸ 학생 입력(준비도·발표자·남은 과제)은 삭제했습니다.
+   ▸ 다만 「최종발표 평가 기준(3회차 루브릭)」 공개는 입력이 아니라 학생이 봐야 할 정보라 그대로 둡니다. */
 function stPrep(){
-  var t=teamOf(SESS.me); if(!t) return '';
+  var h = stTitleOnly(12, '최종 앱 개발 ③',
+    '최종발표를 앞둔 마무리 개발 단계입니다. 수업에서 진행하며 앱에 따로 낼 것은 없습니다.');
   var open = DB.get('rubrics', function(r){return r.round===3 && r.openAt;});
-  var h='';
   if(open.length){
-    h += '<div class="card"><h3>📢 최종발표 평가 기준</h3><p class="muted">공개일 '+esc(open[0].openAt)+'</p>'+ rubricTable(3) +'</div>';
+    h += '<div class="card"><h3>📢 최종발표 평가 기준</h3><p class="muted">공개일 '+esc(open[0].openAt)+' · 최종발표는 이 기준으로 평가합니다</p>'+ rubricTable(3) +'</div>';
   }else{
-    h += '<div class="card"><div class="note">최종발표 평가 기준은 12주차 수업에서 공개됩니다.</div></div>';
+    h += '<div class="card"><div class="note">최종발표 평가 기준은 수업에서 공개됩니다.</div></div>';
   }
-  var a=DB.one('activity', function(x){return x.teamId===t.id&&x.week===12;});
-  h += '<div class="card"><h3>[1] 최종 준비 상황</h3>'+
-    '<label class="f">발표 자료 준비도</label>'+
-    ['시작 전','준비 중','완료'].map(function(s){
-      return '<div class="chk"><input type="radio" name="p12" value="'+s+'" '+(a&&a.stage===s?'checked':'')+'><span>'+s+'</span></div>';}).join('')+
-    '<label class="f">발표자</label><input type="text" id="p12who" value="'+esc(a?a.did||'':'')+'" placeholder="홍길동, 김철수">'+
-    '<label class="f">남은 과제 <span class="lim">300자</span></label><textarea id="p12next">'+esc(a?a.next||'':'')+'</textarea>'+
-    submitBar(12, !!a, "savePrep('"+t.id+"')")+'</div>';
   return h;
 }
 function savePrep(tid){
@@ -3969,13 +4133,15 @@ function rbLevels(r){
 }
 function rbPick(r, cur, onclickTpl){
   var lv = rbLevels(r), max = r.max || 4;
-  return '<div class="lvq">'+esc(r.name)+' <span class="req">*</span></div>'+
+  return '<div class="lvgroup">'+                        /* 🔲 항목 하나를 카드로 감쌉니다 */
+    '<div class="lvq">'+esc(r.name)+' <span class="req">*</span></div>'+
     '<div class="lvpick">'+ lv.map(function(txt, i){
       var v = max - i;                                   /* lv[0] = 만점 */
       return '<button type="button" class="'+(Number(cur)===v?'on':'')+'" '+
         'onclick="'+onclickTpl.replace('__V__', v)+'">'+
         '<span class="n">'+v+'</span><span class="t">'+esc(txt)+'</span></button>';
-    }).join('')+'</div>';
+    }).join('')+'</div>'+
+    '</div>';
 }
 
 /* ==========================================================================
@@ -4011,6 +4177,21 @@ function evalDraftSave(){
 var evalCursor = {};        /* {주차: 지금 보고 있는 순번} — 한 화면에 한 팀만 */
 var evalLoaded = false;
 
+/* 🔁 2026-08-23 — 평가 주차(4·7·13·14) 학생 동료평가는 「제출 후 1회 수정」까지 허용합니다.
+   editCount: 없음(-1)=아직 제출 안 함 · 0=제출됨(1회 수정 가능) · 1=수정까지 마침(잠금).
+   ⛔ 교수평가(profEval)에는 이 제한을 두지 않습니다 — 발표 현장에서 점수를 자유로이 고쳐야 하기 때문입니다(기존 설계 유지). */
+function peerRows(col, round, field, key){
+  return DB.get(col, function(p){ return p.round===round && p.evaluator===SESS.me.id && p[field]===key; });
+}
+function peerState(rows){ return rows.length ? ((rows[0].editCount||0)>=1 ? 1 : 0) : -1; }
+function interState(round, teamId){ return peerState(peerRows('peerTeam', round, 'teamId', teamId)); }
+function intraState(round, sid){ return peerState(peerRows('peerMember', round, 'studentId', sid)); }
+/* 이미 제출한 평가를 다시 열 때, 화면·검증이 쓸 수 있도록 임시입력(evalDraft)을 저장값으로 채웁니다(비어 있을 때만). */
+function seedDraftFrom(target, rows){
+  if(evalDraft[target]) return;
+  if(!rows.length) return;
+  var d={}; rows.forEach(function(z){ d[z.rubricId]=z.score; d._t=z.text; }); evalDraft[target]=d;
+}
 function stEval(n, def){
   var me = SESS.me, t = teamOf(me);
   if(!t) return '<div class="card"><div class="note r">팀이 없어 평가에 참여할 수 없습니다. 담당교수님께 문의하세요.</div></div>';
@@ -4049,15 +4230,18 @@ function stEval(n, def){
     var rbI = DB.get('rubrics', function(r){ return r.round === def.round && r.kind === 'inter'; })
       .sort(function(a, b){ return a.order - b.order; });
     var doneRows = DB.get('peerTeam', function(p){ return p.round === def.round && p.evaluator === me.id; });
-    var doneT = {}; doneRows.forEach(function(p){ doneT[p.teamId] = 1; });
-    var cnt = list.filter(function(x){ return doneT[x.id]; }).length;
+    var stT = {}; list.forEach(function(x){ stT[x.id] = interState(def.round, x.id); });   /* -1/0/1 */
+    var doneT = {}; list.forEach(function(x){ if(stT[x.id] >= 0) doneT[x.id] = 1; });
+    var cnt = list.filter(function(x){ return stT[x.id] >= 0; }).length;      /* 제출한 팀 수 */
+    var lockCnt = list.filter(function(x){ return stT[x.id] === 1; }).length; /* 수정까지 끝난 팀 수 */
 
     h += '<div class="card"><h3>[2] 동료평가 — 팀간 <span class="muted">(자기 팀 제외 · ' + list.length + '팀)</span></h3>';
 
     if(!list.length){
       h += '<p class="muted">평가할 팀이 없습니다.</p>';
-    }else if(cnt >= list.length){
-      h += '<div class="note g">✅ ' + cnt + '/' + list.length + '팀 제출 완료 — <b>한 번 제출하면 고칠 수 없습니다.</b> 내가 낸 평가는 아래와 같습니다.</div>' +
+    }else if(lockCnt >= list.length){
+      /* 전부 「제출 + 1회 수정」까지 끝나 더는 못 고치는 상태 — 읽기 전용 표 */
+      h += '<div class="note g">✅ ' + list.length + '/' + list.length + '팀 제출·수정 완료 — <b>더는 고칠 수 없습니다.</b> 내가 낸 평가는 아래와 같습니다.</div>' +
         '<div class="scroll"><table><tr><th class="c">순서</th><th>대상 팀</th>' +
         rbI.map(function(r){ return '<th class="c">' + esc(r.name) + '</th>'; }).join('') + '<th class="c">계</th></tr>' +
         list.map(function(x, i){
@@ -4071,32 +4255,38 @@ function stEval(n, def){
             }).join('') + '<td class="c"><b>' + sum + '</b></td></tr>';
         }).join('') + '</table></div>';
     }else{
-      /* 🔴 12팀을 한 화면에 늘어놓지 않습니다 — 한 팀씩, 아직 안 낸 팀부터 */
+      /* 🔴 12팀을 한 화면에 늘어놓지 않습니다 — 한 팀씩. 아직 안 낸 팀 우선, 없으면 수정 가능한 팀부터 */
       var idx = evalCursor[n];
       if(idx === undefined || idx < 0 || idx >= list.length){
-        idx = 0;
-        for(var q = 0; q < list.length; q++) if(!doneT[list[q].id]){ idx = q; break; }
+        idx = -1;
+        for(var q = 0; q < list.length; q++) if(stT[list[q].id] < 0){ idx = q; break; }
+        if(idx < 0) for(var q2 = 0; q2 < list.length; q2++) if(stT[list[q2].id] === 0){ idx = q2; break; }
+        if(idx < 0) idx = 0;
         evalCursor[n] = idx;
       }
       var cx = list[idx];
+      var cxState = stT[cx.id];
 
       h += '<div class="btnrow" style="margin-bottom:6px">' +
         '<span class="bg ' + (cnt ? 'green' : 'gray') + '">제출 ' + cnt + '/' + list.length + '팀</span>' +
         '<span class="bg gray">남은 ' + (list.length - cnt) + '팀</span></div>' +
-        '<p class="muted">한 팀씩 평가합니다. 쓰던 것은 <b>자동으로 남아 있으니</b> 중간에 나갔다 오셔도 됩니다.</p>' +
-        /* 순서 목록 — 아무 팀이나 눌러 바로 이동 */
+        '<p class="muted">한 팀씩 평가합니다. <b>제출한 뒤에도 딱 1회까지는 다시 고칠 수 있습니다.</b> 쓰던 것은 자동으로 남습니다.</p>' +
+        /* 순서 목록 — 아무 팀이나 눌러 바로 이동 (✅ 제출 · 🔒 수정까지 끝) */
         '<div class="btnrow" style="margin-bottom:8px">' + list.map(function(x, i){
+          var mk = stT[x.id]===1 ? ' 🔒' : (stT[x.id]===0 ? ' ✅' : '');
           return '<button class="btn sm' + (i === idx ? ' pri' : '') + '" onclick="evalGo(' + n + ',' + i + ')">' +
-            (i + 1) + (doneT[x.id] ? ' ✅' : '') + '</button>';
+            (i + 1) + mk + '</button>';
         }).join('') + '</div>';
 
-      if(doneT[cx.id]){
-        h += '<div class="note g">✅ <b>' + esc(cx.classId + '-' + cx.no + ' 「' + cx.name + '」') + '</b>은 이미 제출하셨습니다. 고칠 수 없습니다.</div>';
+      if(cxState === 1){
+        h += '<div class="note g">🔒 <b>' + esc(cx.classId + '-' + cx.no + ' 「' + cx.name + '」') + '</b>은 제출 후 1회 수정까지 마쳐 <b>더는 고칠 수 없습니다.</b></div>';
       }else{
+        if(cxState === 0) seedDraftFrom(cx.id, doneRows.filter(function(z){ return z.teamId === cx.id; }));
         h += '<div class="acc" style="padding:12px">' +
           '<div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap">' +
           '<b style="font-size:17px">' + (idx + 1) + '번 ' + esc(cx.classId + '-' + cx.no + ' 「' + cx.name + '」') + '</b>' +
-          (presJoint(n) ? '<span class="muted">' + esc(classProf(cx.classId)) + ' 교수</span>' : '') + '</div>' +
+          (presJoint(n) ? '<span class="muted">' + esc(classProf(cx.classId)) + ' 교수</span>' : '') +
+          (cxState === 0 ? '<span class="bg amber">제출됨 · 1회 수정 가능</span>' : '') + '</div>' +
           rbI.map(function(r){
             var cur = (evalDraft[cx.id] || {})[r.id];
             return rbPick(r, cur, "setEval(&#39;" + cx.id + "&#39;,&#39;" + r.id + "&#39;,__V__)");
@@ -4105,8 +4295,11 @@ function stEval(n, def){
           '<textarea id="et_' + cx.id + '" placeholder="' + esc(D.askHint || '') + '" oninput="evalTouch(&#39;' + cx.id + '&#39;)">' +
           esc((evalDraft[cx.id] || {})._t || '') + '</textarea>' +
           '<div class="btnrow" style="margin-top:8px">' +
-          '<button class="btn pri full" onclick="submitInter(&#39;' + cx.id + '&#39;,' + def.round + ',' + n + ')">이 팀 평가 제출</button></div>' +
-          '<div class="muted">제출하면 <b>고칠 수 없습니다.</b> 제출 전까지는 쓰던 것이 그대로 남습니다.</div></div>';
+          '<button class="btn pri full" onclick="submitInter(&#39;' + cx.id + '&#39;,' + def.round + ',' + n + ')">' +
+          (cxState === 0 ? '수정 제출 (마지막 1회)' : '이 팀 평가 제출') + '</button></div>' +
+          '<div class="muted">' + (cxState === 0
+            ? '이번 수정 제출 <b>이후에는 더 고칠 수 없습니다.</b>'
+            : '제출한 뒤에도 <b>1회까지</b> 다시 고칠 수 있습니다.') + '</div></div>';
       }
 
       h += '<div class="pager" style="margin-top:10px">' +
@@ -4125,23 +4318,30 @@ function stEval(n, def){
       .sort(function(a, b){ return a.order - b.order; });
     var mates = teamMembers(t.id).filter(function(m){ return m.st.id !== me.id; });   /* ★ 나 제외 */
     var doneM = DB.get('peerMember', function(p){ return p.round === def.round && p.evaluator === me.id; });
-    var doneMT = {}; doneM.forEach(function(p){ doneMT[p.studentId] = 1; });
+    var stM = {}; mates.forEach(function(m){ stM[m.st.id] = intraState(def.round, m.st.id); });   /* -1/0/1 */
+    var subM = mates.filter(function(m){ return stM[m.st.id] >= 0; }).length;
     h += '<div class="card"><h3>[3] 동료평가 — 팀내 <span class="muted">(나 제외 · 우리 팀원 ' + mates.length + '명)</span></h3>' +
-      '<div class="btnrow" style="margin-bottom:6px"><span class="bg ' + (Object.keys(doneMT).length === mates.length && mates.length ? 'green' : 'gray') + '">' +
-      '제출 ' + Object.keys(doneMT).length + '/' + mates.length + '</span></div>';
+      '<div class="btnrow" style="margin-bottom:6px"><span class="bg ' + (subM === mates.length && mates.length ? 'green' : 'gray') + '">' +
+      '제출 ' + subM + '/' + mates.length + '</span></div>' +
+      '<p class="muted">제출한 뒤에도 <b>딱 1회까지는</b> 다시 고칠 수 있습니다.</p>';
     mates.forEach(function(m, i){
-      if(doneMT[m.st.id]){
-        h += '<div class="acc"><div class="hd"><span>▸ ' + esc(sn(m.st)) + '</span><span class="sp"></span><span class="bg green">✅ 제출</span></div></div>';
+      if(stM[m.st.id] === 1){
+        h += '<div class="acc"><div class="hd"><span>▸ ' + esc(sn(m.st)) + '</span><span class="sp"></span><span class="bg green">🔒 제출·수정 완료</span></div></div>';
         return;
       }
-      var body = rbM.map(function(r){
-        var cur = (evalDraft[m.st.id] || {})[r.id];
-        return rbPick(r, cur, "setEval(&#39;" + m.st.id + "&#39;,&#39;" + r.id + "&#39;,__V__)");
-      }).join('') +
+      var editable = stM[m.st.id] === 0;
+      if(editable) seedDraftFrom(m.st.id, doneM.filter(function(z){ return z.studentId === m.st.id; }));
+      var body = (editable ? '<div class="note b">이미 제출했습니다 — 이번 <b>1회까지</b> 수정할 수 있습니다.</div>' : '') +
+        rbM.map(function(r){
+          var cur = (evalDraft[m.st.id] || {})[r.id];
+          return rbPick(r, cur, "setEval(&#39;" + m.st.id + "&#39;,&#39;" + r.id + "&#39;,__V__)");
+        }).join('') +
         '<label class="f">한 줄 의견 <span class="req">*</span> <span class="lim">20자 이상</span></label>' +
         '<textarea id="et_' + m.st.id + '" oninput="evalTouch(&#39;' + m.st.id + '&#39;)">' + esc((evalDraft[m.st.id] || {})._t || '') + '</textarea>' +
-        '<div class="btnrow" style="margin-top:8px"><button class="btn pri" onclick="submitIntra(&#39;' + m.st.id + '&#39;,' + def.round + ')">이 팀원 평가 제출</button></div>';
-      h += acc('▸ ' + esc(sn(m.st)), i === 0, body, {open:'평가하기', close:'접기'});
+        '<div class="btnrow" style="margin-top:8px"><button class="btn pri" onclick="submitIntra(&#39;' + m.st.id + '&#39;,' + def.round + ')">' +
+        (editable ? '수정 제출 (마지막 1회)' : '이 팀원 평가 제출') + '</button></div>' +
+        '<div class="muted">' + (editable ? '이번 수정 제출 <b>이후에는 더 고칠 수 없습니다.</b>' : '제출한 뒤에도 1회까지 고칠 수 있습니다.') + '</div>';
+      h += acc('▸ ' + esc(sn(m.st)) + (editable ? ' <span class="bg amber">제출됨 · 1회 수정 가능</span>' : ''), i === 0, body, {open:'평가하기', close:'접기'});
     });
     h += '</div>';
   }
@@ -4175,32 +4375,42 @@ function collect(target, kind, round){
 }
 function submitInter(teamId, round, n){
   var c = collect(teamId,'inter',round); if(!c) return;
+  /* 이미 낸 것이 있으면 = 수정 제출. editCount 0 → 1(잠금). 이미 1이면 거부. */
+  var old = DB.get('peerTeam', function(p){ return p.round===round && p.evaluator===SESS.me.id && p.teamId===teamId; });
+  if(old.length && (old[0].editCount||0) >= 1){ toast('⛔ 제출 후 1회 수정까지 마쳐 더는 고칠 수 없습니다.'); return; }
+  var ec = old.length ? (old[0].editCount||0)+1 : 0;
   var doIt=function(){
+    old.forEach(function(o){ DB.del('peerTeam', o.id); });      /* 옛 점수 덮어쓰기 */
     c.rb.forEach(function(r){
       DB.add('peerTeam',{round:round,evaluator:SESS.me.id,teamId:teamId,rubricId:r.id,
-        score:c.d[r.id],text:c.txt,at:nowStr(),secs:c.secs});
+        score:c.d[r.id],text:c.txt,at:nowStr(),secs:c.secs,editCount:ec});
     });
     delete evalDraft[teamId]; evalStart=null; evalDraftSave();
-    /* 🔴 제출하면 「아직 안 낸 다음 팀」으로 저절로 넘어갑니다 — 12팀을 도는 부담을 줄입니다 */
-    if(n){
+    /* 🔴 첫 제출이면 「아직 안 낸 다음 팀」으로 저절로 넘어갑니다 — 12팀을 도는 부담을 줄입니다 */
+    if(n && ec===0){
       var def2=wdef(n), lst=evalTargets(def2), got={};
       DB.get('peerTeam', function(p){return p.round===round && p.evaluator===SESS.me.id;})
         .forEach(function(p){ got[p.teamId]=1; });
       for(var k=0;k<lst.length;k++) if(!got[lst[k].id]){ evalCursor[n]=k; break; }
       window.scrollTo(0,0);
     }
-    toast('제출했습니다. 고칠 수 없습니다.'); render();
+    toast(ec>=1 ? '수정했습니다. 이제 더는 고칠 수 없습니다.' : '제출했습니다. 1회까지 수정할 수 있습니다.'); render();
   };
   if(c.same) APP.confirm('전 항목에 같은 점수를 주셨습니다.\n정말 이대로 제출할까요?', doIt); else doIt();
 }
 function submitIntra(studentId, round){
   var c = collect(studentId,'intra',round); if(!c) return;
+  var old = DB.get('peerMember', function(p){ return p.round===round && p.evaluator===SESS.me.id && p.studentId===studentId; });
+  if(old.length && (old[0].editCount||0) >= 1){ toast('⛔ 제출 후 1회 수정까지 마쳐 더는 고칠 수 없습니다.'); return; }
+  var ec = old.length ? (old[0].editCount||0)+1 : 0;
   var doIt=function(){
+    old.forEach(function(o){ DB.del('peerMember', o.id); });
     c.rb.forEach(function(r){
       DB.add('peerMember',{round:round,evaluator:SESS.me.id,studentId:studentId,rubricId:r.id,
-        score:c.d[r.id],text:c.txt,at:nowStr(),secs:c.secs});
+        score:c.d[r.id],text:c.txt,at:nowStr(),secs:c.secs,editCount:ec});
     });
-    delete evalDraft[studentId]; evalStart=null; evalDraftSave(); toast('제출했습니다.'); render();
+    delete evalDraft[studentId]; evalStart=null; evalDraftSave();
+    toast(ec>=1 ? '수정했습니다. 이제 더는 고칠 수 없습니다.' : '제출했습니다. 1회까지 수정할 수 있습니다.'); render();
   };
   if(c.same) APP.confirm('전 항목에 같은 점수를 주셨습니다.\n정말 이대로 제출할까요?', doIt); else doIt();
 }
@@ -4276,8 +4486,25 @@ function weekProf(n, def){
   if(def.tutor){ h += profTutorPanel(n, def, cids); }
 
   if(def.kind==='eval'){ h += profEvalPanel(n, def, cids); }
-  if(def.kind==='finaltopic'){ h += profTopicApprove(cids); }
-  if(def.kind==='activity' || def.kind==='video' || def.kind==='prep'){ h += profActivityPanel(n, cids); }
+  if(def.kind==='finaltopic'){ h += profTopicApprove(cids);
+    /* 📢 5주차 — 1회차(4주차) 발표평가 결과를 학생에게 공개 (R9) */
+    h += discloseControlCard('r1','1회차 발표평가 결과 (4주차)',
+      '학생은 5주차에서 우리 팀 총점과 팀간 순위(같은 반 안)를 봅니다. 교수·동료 세부 점수는 공개되지 않습니다.'); }
+  /* ⛔ 6·9·10·12주차는 2026-08-23 「타이틀만」으로 바뀌어 학생 제출이 없습니다 →
+     제출 현황판(profActivityPanel)을 걷어냈습니다. 교수 튜터링(def.tutor)은 위에서 그대로 나옵니다. */
+  /* 📢📝 8주차 — 중간고사 점수 입력(R11) + 2회차(7주차) 발표평가 결과 공개(R9) */
+  if(n===8){
+    h += examInputCard('mid','중간고사',
+      '중간고사 점수는 여기서 입력합니다. 아래 버튼을 누르면 [최종 점수 계산] 화면의 중간고사 칸이 바로 열립니다. 저장하면 학생은 9주차에서 본인 점수만 봅니다.');
+    h += discloseControlCard('r2','2회차 발표평가 결과 (7주차)',
+      '학생은 8주차에서 우리 팀 총점과 팀간 순위(같은 반 안)를 봅니다. 교수·동료 세부 점수는 공개되지 않습니다.');
+  }
+  /* 📢 9주차 — 본인 중간고사 점수 공개 (R9) */
+  if(n===9){
+    h += discloseControlCard('mid','중간고사 점수',
+      '학생은 9주차에서 본인 중간고사 점수만 봅니다. 점수 입력은 8주차(또는 [최종 점수 계산])에서 합니다.');
+  }
+  if(n===11){ h += profExcursionPanel(cids); }   /* 🚌 11주차 — 팀별 견학 의견 모아 보기 */
   if(n===12){ h += '<div class="card"><h3>튜터링 6회 완주 확인</h3><div class="scroll"><table><tr><th>팀</th>'+
       [1,2,3,4,5,6].map(function(r){return '<th class="c">'+r+'회</th>';}).join('')+'<th class="c">계</th></tr>'+
       DB.get('teams', function(t){return cids.indexOf(t.classId)>=0;}).map(function(t){
@@ -4287,10 +4514,27 @@ function weekProf(n, def){
         return '<tr><td>'+esc(t.classId+'-'+t.no+' '+t.name)+'</td>'+tds+'<td class="c"><b>'+c+'/6</b></td></tr>'; }).join('')+
       '</table></div><p class="muted">PBL 교과목 운영 규칙 제9조의 「교수 튜터링 수행 일지」가 여기서 완성됩니다.</p>'+
       '<button class="btn" onclick="go(\'admin\',{p:\'rubric\'})">13·14주 루브릭 만들기 / 공개</button></div>'; }
-  if(n===15){ h += '<div class="card"><h3>학기 마무리</h3><div class="btnrow">'+
+  if(n===15){
+    /* 📝 기말고사 점수 입력(R11) + 📢 기말고사·3회차 발표평가 결과 공개(R9) */
+    h += examInputCard('fin','기말고사',
+      '기말고사 점수는 여기서 입력합니다. 아래 버튼을 누르면 [최종 점수 계산] 화면의 기말고사 칸이 바로 열립니다. 저장하면 학생은 15주차에서 본인 점수만 봅니다.');
+    h += discloseControlCard('fin','기말고사 점수',
+      '학생은 15주차에서 본인 기말고사 점수만 봅니다.');
+    h += discloseControlCard('r3','3회차 발표평가 결과 (13·14주차)',
+      '학생은 15주차에서 우리 팀 총점과 팀간 순위(3개 강좌 합동 12팀)를 봅니다. 교수·동료 세부 점수는 공개되지 않습니다.');
+    /* 🔴 R13 — 「학기 마무리」 카드는 16주차(결과 확인 주차) 교수 화면으로 옮겼습니다.
+       15주차는 기말고사·성적 공개까지만, 마무리(사전-최종 비교·순위·출력물)는 16주차에서. */ }
+  /* 📢 16주차 — 최종결과(본인 6분야+총합) 공개 (R9) + 🔴 R13 학기 마무리 카드 */
+  if(def.kind==='result'){
+    h += weekProfResult(cids);
+    h += '<div class="card"><h3>학기 마무리</h3>'+
+      '<p class="muted">한 학기가 끝났습니다. 아래에서 결과를 정리하고 출력물을 뽑으십시오.</p>'+
+      '<div class="btnrow">'+
+      '<button class="btn pri" onclick="go(\'outputs\')">📄 출력물 (인쇄·PDF·워드)</button>'+
       '<button class="btn" onclick="go(\'admin\',{p:\'dash\'})">사전-최종 비교</button>'+
       '<button class="btn" onclick="go(\'admin\',{p:\'grade\'})">팀 점수 순위</button>'+
-      '<button class="btn" onclick="go(\'admin\',{p:\'down\'})">결과보고서 첨부자료</button></div></div>'; }
+      '<button class="btn" onclick="go(\'admin\',{p:\'down\'})">결과보고서 첨부자료(CSV)</button></div></div>';
+  }
   return h;
 }
 function saveNotice(cid,n){
@@ -4309,7 +4553,7 @@ function saveTutor(teamId, round){
   var d=tuRead(teamId);
   if(!d.date || !d.talk || !d.next){ toast('일자 · 튜터링 내용 · 다음까지 할 일은 필수입니다. (쓰던 것은 임시 저장되어 있습니다)'); tuAuto(teamId, round); return; }
   var ex=tuRow(teamId, round);
-  var patch={date:d.date, att:d.att, talk:d.talk, fix:d.fix, next:d.next, done:true, at:nowStr()};
+  var patch={date:d.date, talk:d.talk, fix:d.fix, next:d.next, done:true, at:nowStr()};
   if(ex){
     var was = ex.done!==false;
     DB.set('tutoring', ex.id, patch);
@@ -4693,19 +4937,47 @@ function profTopicApprove(cids){
   var rows = teams.map(function(t){
     var fin=DB.one('topics', function(x){return x.teamId===t.id&&x.kind==='최종';});
     if(!fin) none++; else if(fin.ok) ok++; else wait++;
-    return '<tr><td class="nw">'+esc(t.classId+'-'+t.no+' '+t.name)+'</td><td>'+(fin?esc(fin.title):'<span class="muted">미제출</span>')+'</td>'+
+    /* 🔴 R12 — 승인 뒤 학생이 수정하면 「✏️ 승인 후 수정됨」 배지로 눈에 띄게 알립니다(교수 재확인용) */
+    var afterOk = !!(fin && fin.ok && fin.editedAfterOk);
+    return '<tr><td class="nw">'+esc(t.classId+'-'+t.no+' '+t.name)+'</td><td>'+(fin?esc(fin.title)+
+        (fin.edited && !fin.ok? ' <span class="bg amber">✏️ 수정됨</span>'+(fin.editedAt? ' <span class="muted">'+esc(fin.editedAt)+'</span>':''):'')+
+        (afterOk? ' <span class="bg red">✏️ 승인 후 수정됨</span>'+(fin.okEditAt? ' <span class="muted">'+esc(fin.okEditAt)+'</span>':''):'')
+        :'<span class="muted">미제출</span>')+'</td>'+
       '<td class="c">'+(fin? (fin.ok?'<span class="bg green">승인</span>':'<span class="bg amber">대기</span>') : '-')+'</td>'+
-      '<td class="c">'+(fin && !fin.ok && canEdit(t.classId)?
-        '<button class="btn sm ok" onclick="approveTopic(\''+fin.id+'\',1)">승인</button> '+
-        '<button class="btn sm" onclick="approveTopic(\''+fin.id+'\',0)">보완</button>' : '')+'</td></tr>';
+      '<td class="c">'+(fin && canEdit(t.classId)?
+        ((!fin.ok || afterOk)? '<button class="btn sm ok" onclick="approveTopic(\''+fin.id+'\',1)">'+(afterOk?'재확인':'승인')+'</button> ':'')+
+        (!fin.ok? '<button class="btn sm" onclick="approveTopic(\''+fin.id+'\',0)">보완</button>':'') : '')+'</td></tr>';
   }).join('');
   h += '<p class="muted">승인 '+ok+' · 대기 '+wait+' · 미제출 '+none+'</p>'+
     '<div class="scroll"><table><tr><th>팀</th><th>최종 주제</th><th class="c">상태</th><th class="c"></th></tr>'+rows+'</table></div></div>';
   return h;
 }
 function approveTopic(id, ok){
-  DB.set('topics', id, {ok:!!ok, okAt:nowStr()});
+  /* 🔴 R12 — 재확인(승인)하면 「승인 후 수정됨」 배지를 지웁니다. 보완 요청이면 ok=false 로 되돌립니다. */
+  var patch = ok? {ok:true, okAt:nowStr(), editedAfterOk:false} : {ok:false, okAt:nowStr()};
+  DB.set('topics', id, patch);
   DB.log(ok?'최종 주제 승인':'최종 주제 보완 요청', id); toast(ok?'승인했습니다.':'보완을 요청했습니다.'); render();
+}
+
+/* 🚌 11주차 — 팀별 견학 의견 모아 보기 (2026-08-23 신설)
+   학생들이 stExcursion 에서 남긴 의견을 교수님이 팀별로 접어서 봅니다. 읽기 전용입니다. */
+function profExcursionPanel(cids){
+  var teams=DB.get('teams', function(t){return cids.indexOf(t.classId)>=0;})
+    .sort(function(a,b){ return a.classId===b.classId? a.no-b.no : (a.classId<b.classId?-1:1); });
+  var all=DB.get('excursion', function(x){return true;});
+  var wrote=0; teams.forEach(function(t){ if(DB.one('excursion', function(x){return x.teamId===t.id;})) wrote++; });
+  var h='<div class="card"><h3>팀별 견학 의견 <span class="muted">— 총 '+all.length+'개 · '+wrote+'/'+teams.length+' 팀 참여</span></h3>';
+  if(!teams.length) h += '<p class="muted">아직 만들어진 팀이 없습니다.</p>';
+  teams.forEach(function(t){
+    var list=DB.get('excursion', function(x){return x.teamId===t.id;})
+              .sort(function(a,b){return (b.at||'')<(a.at||'')?-1:1;});
+    h += acc('▸ '+esc(t.classId+'-'+t.no+' 「'+t.name+'」  ('+classProf(t.classId)+' 교수) · '+list.length+'개'), false,
+      (list.length? list.map(function(x){
+        return '<div class="note" style="margin-top:6px"><b>'+esc(x.author||'-')+'</b> <span class="muted">'+esc(x.at||'')+'</span><br>'+
+          esc(x.text).replace(/\n/g,'<br>')+'</div>';
+      }).join('') : '<p class="muted">아직 남긴 의견이 없습니다.</p>'));
+  });
+  return h+'</div>';
 }
 
 /* 6·9·10·12주차 — 활동 현황 */
@@ -4826,16 +5098,11 @@ function tuCard(t, n, def){
   /* ④ 튜터링 입력칸 — 팀마다 하나, 저장도 팀마다 */
   h += '<div class="hr"></div>';
   if(mine){
-    var on=function(id){ return tu && tu.att && tu.att.indexOf(id)>=0; };
     h += '<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">'+
         '<b>튜터링 '+round+'회차</b><span style="flex:1"></span>'+
         '<span class="muted" id="tuAt_'+t.id+'">'+(tu&&tu.auto? '💾 저장됨 '+esc(String(tu.auto).slice(11)) : '')+'</span></div>'+
       '<label class="f">일자 <span class="req">*</span></label>'+
       '<input type="date" id="tu_d_'+t.id+'" value="'+esc(tu&&tu.date? tu.date : wrow(n).date)+'" oninput="tuTouch(\''+t.id+'\','+round+')">'+
-      '<label class="f">참석 팀원 <span class="lim">결석자는 빈칸 — 출결 근거가 됩니다</span></label>'+
-      ms.map(function(m){
-        return '<div class="chk"><input type="checkbox" class="tuat_'+t.id+'" value="'+m.st.id+'" '+(on(m.st.id)?'checked':'')+
-          ' onchange="tuTouch(\''+t.id+'\','+round+')"><span>'+esc(sn(m.st))+'</span></div>'; }).join('')+
       '<label class="f">튜터링 내용 <span class="req">*</span> <span class="lim">1,000자</span></label>'+
       '<textarea id="tu_t_'+t.id+'" maxlength="1000" oninput="tuTouch(\''+t.id+'\','+round+')">'+esc(tu?tu.talk||'':'')+'</textarea>'+
       '<label class="f">지적·보완 사항 <span class="lim">500자 · 선택</span></label>'+
@@ -4941,9 +5208,7 @@ function tuHistToggle(tid, round){ tuFlush(round); tuHist[tid] = !tuHist[tid]; r
    ⚠️ 여기서 render()를 부르면 안 됩니다 — 글자를 치는 중에 화면을 다시 그리면
       커서가 튀고 입력이 끊깁니다. 그래서 「저장됨 시각」 글자만 직접 바꿉니다. */
 function tuRead(tid){
-  var att=[], els=document.querySelectorAll('.tuat_'+tid);
-  for(var i=0;i<els.length;i++) if(els[i].checked) att.push(els[i].value);
-  return {date:val('tu_d_'+tid), att:att, talk:val('tu_t_'+tid), fix:val('tu_f_'+tid), next:val('tu_n_'+tid)};
+  return {date:val('tu_d_'+tid), talk:val('tu_t_'+tid), fix:val('tu_f_'+tid), next:val('tu_n_'+tid)};
 }
 function tuTouch(tid, round){
   var el=$('tuAt_'+tid); if(el) el.textContent='✏️ 입력 중…';
@@ -4953,9 +5218,9 @@ function tuTouch(tid, round){
 function tuAuto(tid, round){
   if(!$('tu_t_'+tid)) return false;
   var d=tuRead(tid);
-  if(!d.talk && !d.fix && !d.next && !d.att.length) return false;   /* 빈 칸은 줄을 만들지 않습니다 */
+  if(!d.talk && !d.fix && !d.next) return false;   /* 빈 칸은 줄을 만들지 않습니다 */
   var ex=tuRow(tid, round);
-  var patch={date:d.date, att:d.att, talk:d.talk, fix:d.fix, next:d.next, auto:nowStr()};
+  var patch={date:d.date, talk:d.talk, fix:d.fix, next:d.next, auto:nowStr()};
   if(ex) DB.set('tutoring', ex.id, patch);
   else { patch.teamId=tid; patch.round=round; patch.done=false; patch.nextdate=''; DB.add('tutoring', patch); }
   var el=$('tuAt_'+tid); if(el) el.textContent='💾 저장됨 '+nowStr().slice(11);
@@ -4973,8 +5238,10 @@ function viewAdmin(){
   if(superOnly.indexOf(p)>=0 && !isSuper())
     return topbar()+'<div class="card"><div class="note r">⛔ 이 화면은 슈퍼 관리자(곽호석 교수님)만 볼 수 있습니다.</div>'+
       '<button class="btn" onclick="go(\'home\')">홈으로</button></div>';
-  /* 🏁 배포본: 개발도구 화면(예시데이터 demo·자체점검 check)은 주소로도 못 들어옵니다 */
-  if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY && (p==='demo' || p==='check'))
+  /* 🏁 배포본: 개발도구 화면(예시데이터 demo·자체점검 check)은 주소로도 못 들어옵니다.
+     단, 미리보기 모드(?demo=1)에서는 예시데이터(demo) 화면만 열어 줍니다(자체점검은 실제 명단이 필요해 계속 막습니다). */
+  if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY
+     && (p==='check' || (p==='demo' && !(typeof PREVIEW!=='undefined'&&PREVIEW))))
     return topbar()+'<div class="card"><div class="note">준비되지 않은 화면입니다.</div>'+
       '<button class="btn" onclick="go(\'home\')">홈으로</button></div>'+backBar();
   var body = ({
@@ -5040,9 +5307,9 @@ function tlDupName(name){
   return DB.get('students', function(x){
     return x.active!==false && normName(x.name)===normName(name); }).length > 1;
 }
-function tlMemberName(st, absent){
+function tlMemberName(st){
   var s = st.name + (tlDupName(st.name)? '('+st.no+')' : '');
-  return esc(s) + (absent? '<span class="ab">(결)</span>' : '');
+  return esc(s);
 }
 
 /* ---- 그 시점에 그 팀이 가진 주제 (10차 원칙 그대로) ---- */
@@ -5064,11 +5331,9 @@ function tlTeamRow(t, round, no){
   var tu=DB.one('tutoring', function(x){return x.teamId===t.id && x.round===round;});
   var wrote = !!(tu && tu.done!==false);        /* 임시 저장만 된 글은 일지에 넣지 않습니다 */
   var ms=teamMembers(t.id);
-  var att = (wrote && tu.att) ? tu.att : null;
-  var nAtt = att ? ms.filter(function(m){ return att.indexOf(m.st.id)>=0; }).length : 0;
 
   var names = ms.length
-    ? ms.map(function(m){ return tlMemberName(m.st, att? att.indexOf(m.st.id)<0 : false); }).join('·')
+    ? ms.map(function(m){ return tlMemberName(m.st); }).join('·')
     : '<span class="dim">팀원 없음</span>';
 
   var talk;
@@ -5080,8 +5345,7 @@ function tlTeamRow(t, round, no){
       (tu.next? '<div class="sub"><b>다음까지</b> '+esc(tu.next)+'</div>' : '');
   }
 
-  return '<tr data-team="'+esc(t.no+'팀 「'+t.name+'」')+'"><td class="tno"><b>'+t.no+'팀</b><br>「'+esc(t.name)+'」'+
-      (wrote && att ? '<br><span class="dim">참석 '+nAtt+'/'+ms.length+'</span>' : '')+'</td>'+
+  return '<tr data-team="'+esc(t.no+'팀 「'+t.name+'」')+'"><td class="tno"><b>'+t.no+'팀</b><br>「'+esc(t.name)+'」</td>'+
     '<td><div class="mem">'+names+'</div><div class="tpc">'+tlTopicText(t)+'</div></td>'+
     '<td class="talk">'+talk+'</td></tr>';
 }
@@ -5162,7 +5426,8 @@ function viewTuLog(){
     '<div class="btnrow">'+chips+'</div>'+ clschips +
     (cid!==myClass() && !isSuper() ? '<div class="note" style="margin-top:8px">'+roLabel(cid)+' 일지는 <b>인쇄만</b> 됩니다.</div>' : '')+
     '<div class="btnrow" style="margin-top:10px">'+
-      '<button class="btn pri" onclick="tlPrint()">인쇄 · PDF로 저장'+(cur==='all'? ' ('+tlTotal()+'장)':'')+'</button>'+
+      '<button class="btn pri" onclick="tlPrint()">🖨 인쇄 · PDF로 저장'+(cur==='all'? ' ('+tlTotal()+'장)':'')+'</button>'+
+      '<button class="btn" onclick="tlDownloadDocx(['+list.join(',')+'],\''+cid+'\')">📄 워드(.docx)로 받기'+(cur==='all'? ' (전체 '+tlTotal()+'회)':'')+'</button>'+
       '<button class="btn" onclick="go(\'home\')">홈으로</button>'+
     '</div>'+
     '<div id="tlWarn"></div>'+
@@ -5282,7 +5547,7 @@ var stuQ='', stuSort='no', stuFilter='all', stuClass='', stuEdit=null, stuDel=nu
 
 /* 그 학생이 낼 것을 얼마나 냈나 (열려 있는 주차 기준) */
 function submitSummary(st){
-  var open = WEEKDEF.filter(function(d){ return d.kind!=='notice' && wState(d.n)!=='닫힘'; });
+  var open = WEEKDEF.filter(function(d){ return d.kind!=='notice' && d.kind!=='result' && wState(d.n)!=='닫힘'; });
   var done = open.filter(function(d){ return hasSubmitted(st, d.n); }).length;
   return {done:done, all:open.length};
 }
@@ -6128,7 +6393,7 @@ var DEMO = {
 
   /* ---- 채우기 ---- */
   fill:function(){
-    if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return 0; }   /* 🏁 배포본: 라이브 DB 보호 */
+    if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY && !(typeof PREVIEW!=='undefined'&&PREVIEW)){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return 0; }   /* 🏁 배포본: 라이브 DB 보호 */
     if(DB.d.__demo) return 0;
     var self=this, made=0;
     DB.hold();          /* 🔴 수천 건을 넣는 동안 저장을 미룹니다 (아래 finally 에서 한 번에) */
@@ -6190,11 +6455,9 @@ var DEMO = {
            전부 채우면 교수님이 「아직 안 쓴 팀」 화면을 눌러 보실 수가 없습니다.
              0~3팀 : 작성 완료(✅)   4팀 : 자동 임시 저장만(💾, 학생에게 아직 안 보임)
              5~7팀 : 아직 안 씀(⬜) */
-        var ms = DB.get('members', function(m){return m.teamId===t.id;});
         if(ti<=4){
           var half = (ti===4);
           DB.add('tutoring',{teamId:t.id,round:1,date:'2026-09-09',
-            att: ms.map(function(m){return m.studentId;}).slice(0, ti===3?2:ms.length),
             talk: half? '조사는 충실하나 2번 주제의 조사 방법이 아직 막연합니다. 예비 실험을'
                       : '가주제 3개의 방향을 함께 확인했습니다. 2번 주제의 필요성 서술이 약합니다.',
             fix: half? '' : '수요자를 특정해 다시 정리할 것.',
@@ -6204,6 +6467,8 @@ var DEMO = {
             auto: '2026-09-09 11:'+(20+ti),
             nextdate:''});
         }
+        /* ⚠️ 최종 주제(5주차)·견학 의견(11주차)은 「학기 끝」 상태이므로 fill()이 아니라
+           fillScores()에서 채웁니다 — fill()은 「4주차 시점」 스냅샷입니다(그래서 가주제만 있고 최종은 없음). */
         made++;
       });
     });
@@ -6334,7 +6599,7 @@ var DEMO = {
         여기서 채우는 것은 「학기 끝 무렵」이라 다른 상태입니다.
      ========================================================================== */
   fillScores:function(){
-    if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return; }   /* 🏁 배포본: 라이브 DB 보호 */
+    if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY && !(typeof PREVIEW!=='undefined'&&PREVIEW)){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return; }   /* 🏁 배포본: 라이브 DB 보호 */
     if(!DB.d.__demo) DEMO.fill();
     DB.hold();
     try{
@@ -6417,7 +6682,54 @@ var DEMO = {
         markSet(s.id, 'mid', leave? null : Math.max(0, mk.mid - (i%5)));
         markSet(s.id, 'fin', leave? null : Math.max(0, mk.fin - (i%6)));
       });
-      DB.log('예시 데이터 — 학기 끝까지', '7주차·13·14주차 평가 + 출석·중간·기말 점수');
+      /* 🎯 5주차 최종 주제 — 강좌마다 앞쪽 팀만 채웁니다(교수님이 「승인 대기/미선정」도 눌러 보시게).
+         「6주차부터 최종 1개만 노출」과 「새 주제 직접 작성 vs 가주제 택1」 두 경로를 함께 보여 줍니다. */
+      CIDS.forEach(function(cid){
+        DB.get('teams', function(t){return t.classId===cid;})
+          .sort(function(a,b){return a.no-b.no;}).forEach(function(t, ti){
+          if(ti>4) return;                                   /* 앞 5팀만 · 나머지는 「최종 주제 미선정」으로 남김 */
+          if(DB.one('topics', function(x){return x.teamId===t.id && x.kind==='최종';})) return;
+          var tps=DB.get('topics', function(x){return x.teamId===t.id && x.kind==='가주제';}).sort(function(a,b){return a.no-b.no;});
+          if(!tps.length) return;
+          var fp=tps[0], pickNew=(ti<=1);                    /* 앞 2팀은 「새 주제 직접 작성」(from 빈값) */
+          DB.add('topics',{teamId:t.id,kind:'최종',no:1,
+            title: pickNew ? (fp.title+' 실용화 앱') : fp.title,
+            summary: pickNew
+              ? '가주제 3개를 검토했지만 더 나은 방향이 떠올라, 가주제에 없던 새 주제 「'+fp.title+' 실용화 앱」으로 직접 정했습니다. 실사용자에게 바로 쓸모가 있다고 판단했습니다.'
+              : '세 가주제를 비교한 결과, 재료를 학교 주변에서 바로 구할 수 있고 예비 실험으로 성과를 보여 주기 쉬워 「'+fp.title+'」을(를) 최종 주제로 골랐습니다.',
+            from: pickNew ? '' : fp.id, ok:(ti<=2), okAt:(ti<=2?'2026-09-23 11:0'+ti:''),
+            back:'', need:'', how:'', comment:''});
+        });
+      });
+      /* 🚌 11주차 견학 의견 — 강좌마다 앞 4팀만 (교수님이 「참여/미참여 팀」을 눌러 보시게) */
+      var evc=['현장에서 배양 공정을 직접 보니 수업의 스케일업 개념이 확 이해되었습니다.',
+               '안전 장비를 갖추는 절차가 생각보다 까다로워 인상 깊었습니다.',
+               '우리 팀 주제와 연결해 볼 부분이 많아 보고서에 반영하겠습니다.'];
+      CIDS.forEach(function(cid){
+        DB.get('teams', function(t){return t.classId===cid;})
+          .sort(function(a,b){return a.no-b.no;}).forEach(function(t, ti){
+          if(ti>3) return;
+          if(DB.one('excursion', function(x){return x.teamId===t.id;})) return;
+          var ms=DB.get('members', function(m){return m.teamId===t.id;});
+          ms.slice(0, ti===0?3:(ti===3?1:2)).forEach(function(m,k){
+            var st=DB.one('students', m.studentId); if(!st) return;
+            DB.add('excursion',{teamId:t.id,classId:cid,week:11,author:st.name,authorId:st.id,
+              text:evc[k%evc.length],at:'2026-11-04 1'+(4+k)+':'+(20+ti)});
+          });
+        });
+      });
+      /* 📢 R9 — 학기 끝 상태이므로 모든 주차를 열고, 성적 공개도 「공개된」 상태로 둡니다
+         (교수님이 미리보기에서 학생 공개 화면까지 바로 눌러 보실 수 있게). */
+      WEEKDEF.forEach(function(w){ DB.set('weeks','w'+w.n,{state:'열림'}); });
+      (function(){ var all=discloseAll();      /* 직접 채웁니다 — 예시라 변경 기록은 남기지 않습니다 */
+        CIDS.forEach(function(cid){ all[cid]=all[cid]||{}; DISC_KEYS.forEach(function(k){ all[cid][k]=true; }); });
+      })();
+      /* ✏️ R10 — 최종주제 「수정됨」 표기도 예시로 보이게: 승인 대기(ok=false) 팀 하나를 수정된 것으로 */
+      (function(){
+        var f = DB.one('topics', function(x){ return x.kind==='최종' && !x.ok; });
+        if(f) DB.set('topics', f.id, {edited:true, editedAt:'2026-09-24 09:30'});
+      })();
+      DB.log('예시 데이터 — 학기 끝까지', '7주차·13·14주차 평가 + 출석·중간·기말 점수 + 최종 주제·견학 의견 + 성적 공개 ON');
     }finally{ DB.release(); }
   },
 
@@ -6475,7 +6787,7 @@ function admDemo(){
   return h;
 }
 function demoFill(){
-  if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return; }
+  if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY && !(typeof PREVIEW!=='undefined'&&PREVIEW)){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return; }
   APP.confirm('예시 데이터를 채웁니다.\n\n· 실제 학생 '+DB.get('students').length+'명을 팀으로 나눕니다\n'+
     '· 가주제·튜터링·4주차 평가가 가짜로 채워집니다\n· 「오늘」이 4주차(9/16)로 옮겨집니다\n· F2에는 팀 없는 학생 2명이 일부러 남습니다 (교수 정리 화면 확인용)\n\n'+
     '언제든 [처음으로 되돌리기]로 되돌릴 수 있습니다.\n\n진행할까요?', function(){
@@ -6485,7 +6797,7 @@ function demoFill(){
   });
 }
 function demoScores(){
-  if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return; }
+  if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY && !(typeof PREVIEW!=='undefined'&&PREVIEW)){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return; }
   APP.confirm('7주차·13·14주차 평가와 출석·중간고사·기말고사 점수를 가짜로 채웁니다.'+
     '\n(예시 데이터가 없으면 먼저 채웁니다.)\n\n진행할까요?', function(){
       DEMO.fillScores();
@@ -6499,6 +6811,47 @@ function demoClear(){
       DEMO.clear();
       toast('학기 시작 직전 상태로 되돌렸습니다.');
       go(SESS.acc? 'home':'login');
+  });
+}
+
+/* ==========================================================================
+   🧪 미리보기 모드 — 배포 사이트에서 「가짜 데이터로 앱을 눌러 보는」 전용 띠와 단추
+   --------------------------------------------------------------------------
+   ▸ 주소 끝에 ?demo=1 이 있을 때(PREVIEW=true)만 화면 맨 위에 띠가 나타납니다.
+   ▸ 이 모드는 서버(Supabase)에 접속하지 않습니다(로컬 저장). 모든 쓰기는 이 브라우저 안에만.
+   ▸ [예시 데이터 채우기] 한 번 → 관리자(슈퍼)로 들어가 학기 끝까지 가짜로 채웁니다.
+     [예시 지우기] 한 번 → 처음(빈) 상태로 되돌립니다.
+   ========================================================================== */
+function previewBar(){
+  if(!(typeof PREVIEW!=='undefined' && PREVIEW)) return '';
+  var on = !!(DB.d && DB.d.__demo);
+  return '<div id="previewBar">🧪 예시(가짜) 데이터 미리보기'+(on?' 중':' 모드')+
+    ' — 실제 서버에는 <b>저장되지 않습니다</b>'+
+    (on
+      ? '<button onclick="previewClear()">예시 지우기</button>'
+      : '<button onclick="previewFill()">예시 데이터 채우기</button>')+
+    '</div>';
+}
+function previewFill(){
+  if(!(typeof PREVIEW!=='undefined' && PREVIEW)) return;
+  APP.confirm('가짜 학생·팀·제출물·점수로 앱을 채워 미리 보여 드립니다.\n\n'+
+    '· 실제 서버에는 저장되지 않습니다(이 브라우저 안에서만).\n'+
+    '· 관리자(곽호석) 화면으로 들어가 학기 끝까지 채웁니다.\n\n진행할까요?', function(){
+      /* 관리자(슈퍼)로 들어가 모든 화면을 볼 수 있게 합니다 — 가짜 데이터뿐이라 안전합니다 */
+      var sup = DB.one('accounts', function(a){return a.role==='super';});
+      if(sup){ SESS.acc=sup; SESS.role='super'; SESS.me=null; SESS.scope='mine'; saveSess(); }
+      var n = DEMO.fill();
+      DEMO.fillScores();            /* 성적·점수표 화면까지 눌러 보실 수 있게 학기 끝까지 */
+      toast('예시 데이터를 채웠습니다 — 팀 '+n+'개. (서버에는 저장되지 않았습니다)');
+      go('home');
+  });
+}
+function previewClear(){
+  if(!(typeof PREVIEW!=='undefined' && PREVIEW)) return;
+  APP.confirm('예시(가짜) 데이터를 모두 지우고 처음(빈) 상태로 되돌립니다.\n\n진행할까요?', function(){
+      DEMO.clear();
+      toast('예시 데이터를 지웠습니다 — 처음 상태로 되돌렸습니다.');
+      render();
   });
 }
 
@@ -7056,7 +7409,7 @@ function admDash(){
       return '<tr>'+(SESS.scope==='all'?'<td class="nw">'+esc(classProf(t.classId))+'</td>':'')+
         '<td class="nw">'+esc(t.no+'팀 '+t.name)+'</td>'+
         WEEKDEF.map(function(d){
-          if(d.kind==='notice') return '<td class="c">—</td>';
+          if(d.kind==='notice' || d.kind==='result') return '<td class="c">—</td>';
           if(wState(d.n)==='닫힘') return '<td class="c">🔒</td>';
           /* 🔴 3주차는 제출함이 3개라 「1/3」이 있습니다 — 다 낸 것과 섞이면 안 됩니다 (8차) */
           if(d.kind==='research'){ var c=subCount(t.id);
@@ -7269,10 +7622,10 @@ var CSVDEF = {
   tutor:{ name:'tutoring_all.csv', title:'튜터링 일지 전체 (규칙 제9조)', build:function(cids){
     /* 🔒 교번 칸 없음 — 담당교수는 이름만.
        🔴 17차 — 「학생확인수·학생확인시각」 두 칸을 없앴습니다(학생은 튜터링을 보지 않습니다). */
-    var r=[['담당교수','강좌','팀번호','팀명','회차','일자','참석인원','튜터링내용','지적사항','다음까지 할 일']];
+    var r=[['담당교수','강좌','팀번호','팀명','회차','일자','튜터링내용','지적사항','다음까지 할 일']];
     DB.get('tutoring', function(x){return x.done!==false;}).forEach(function(tu){
       var t=team(tu.teamId); if(!t||cids.indexOf(t.classId)<0) return;
-      r.push([classProf(t.classId), t.classId, t.no, t.name, tu.round+'회차', tu.date, tu.att.length,
+      r.push([classProf(t.classId), t.classId, t.no, t.name, tu.round+'회차', tu.date,
         tu.talk, tu.fix||'', tu.next]);
     }); return r; }},
   peerTeam:{ name:'peer_interteam_raw.csv', title:'동료평가(팀간) 원자료 🔒평가자 익명', build:function(cids){
@@ -7331,6 +7684,21 @@ function admDown(){
       return '<button class="btn" onclick="doCSV(\''+k+'\')">'+esc(CSVDEF[k].title)+'</button>'; }).join('')+
     '</div>'+
     '<div class="btnrow" style="margin-top:8px"><button class="btn pri" onclick="doZip()">PBL 결과보고서 첨부자료 (다면평가 + 튜터링 일지)</button></div></div>';
+  /* 📄 R12 — A4 출력물(PDF·워드): 위 CSV(원자료)와 달리 「보고서 형태」로 정리된 것 */
+  h += '<div class="card"><h3>📄 A4 출력물 <span class="muted">— PDF·워드(.docx)</span></h3>'+
+    '<p class="muted">아래는 <b>보고서 형태(A4 세로)</b>로 정리된 출력물입니다. 성적·평가·설문·활동·견학을 한곳에 모은 <b>출력물 허브</b>로 가시면 전부 보입니다.</p>'+
+    '<div class="btnrow" style="margin-bottom:8px"><button class="btn pri" onclick="go(\'outputs\')">📄 출력물 허브 열기 (전체)</button></div>'+
+    '<div class="menu">'+
+      '<button class="btn" onclick="go(\'score\',{cid:\''+myClass()+'\'})">최종 점수표 (강좌·개인)</button>'+
+      '<button class="btn" onclick="go(\'reports\',{t:\'team\',cid:\''+myClass()+'\'})">팀 점수표</button>'+
+      '<button class="btn" onclick="go(\'reports\',{t:\'r1\',cid:\''+myClass()+'\'})">발표평가 정리표 (교수·동료+루브릭)</button>'+
+      '<button class="btn" onclick="tlOpen(1)">교수 튜터링 일지</button>'+
+      '<button class="btn" onclick="alGo(\'all\')">주차별 활동기록</button>'+
+      '<button class="btn" onclick="svOneGo(\'사전\',\''+myClass()+'\')">사전설문 결과 A4</button>'+
+      '<button class="btn" onclick="svOneGo(\'최종\',\''+myClass()+'\')">최종설문 결과 A4</button>'+
+      '<button class="btn" onclick="exGo(\''+myClass()+'\')">현장견학 일지 A4</button>'+
+    '</div>'+
+    '<div class="note">🔒 발표평가 정리표는 팀내 <b>학생별 받은 점수</b>는 실리되 <b>평가자 신원은 익명</b>입니다. 점수는 <b>실제 배점으로 환산</b>해 표시합니다.</div></div>';
   if(csvPreview){
     h += '<div class="card"><h3>미리보기 — '+esc(csvPreview.title)+' <span class="muted">('+(csvPreview.rows.length-1)+'줄)</span></h3>'+
       '<div class="scroll"><table>'+csvPreview.rows.slice(0,8).map(function(r,i){
@@ -7994,11 +8362,15 @@ function viewScoreSheet(){
     '<div class="hint">「강좌 전체」는 '+ss.length+'명이 한 장에 들어갑니다. 학생을 고르면 <b>그 학생 한 명의 점수표</b>가 나옵니다 — 이의제기·상담 때 쓰십시오. '+
       '🔒 <b>개인 점수표에는 다른 학생의 점수가 들어가지 않습니다.</b></div>'+
     '<div class="btnrow" style="margin-top:10px">'+
-      '<button class="btn pri" onclick="tlPrint()">인쇄 · PDF로 저장</button>'+
+      '<button class="btn pri" onclick="tlPrint()">🖨 인쇄 · PDF로 저장</button>'+
+      (sid? '<button class="btn" onclick="scDownloadOneDocx(\''+cid+'\',\''+esc(sid)+'\')">📄 이 학생 점수표 워드(.docx)</button>'
+          : '<button class="btn" onclick="scDownloadClassDocx(\''+cid+'\')">📄 강좌 점수표 워드(.docx)</button>')+
+      '<button class="btn" onclick="go(\'reports\',{t:\'team\',cid:\''+cid+'\'})">팀 점수표·발표평가 정리표</button>'+
       '<button class="btn" onclick="go(\'admin\',{p:\'final\'})">최종 점수 계산으로</button>'+
     '</div>'+
     '<div id="tlWarn"></div>'+
-    '<div class="note" style="margin-top:8px">아래가 <b>실제 인쇄되는 모습 그대로</b>입니다. 용지는 <b>A4 세로</b>, 배율은 <b>기본(100%)</b>으로 두십시오.</div>'+
+    '<div class="note" style="margin-top:8px">아래가 <b>실제 인쇄되는 모습 그대로</b>입니다. 용지는 <b>A4 세로</b>, 배율은 <b>기본(100%)</b>으로 두십시오.<br>'+
+      '<b>PDF</b>는 [인쇄] → 인쇄 창에서 「대상」을 <b>PDF로 저장</b>으로. <b>워드</b>는 위 [워드(.docx)] 버튼으로 바로 받습니다.</div>'+
     '</div>';
 
   h += '<div class="a4wrap"><div class="a4scale">'+
@@ -8006,6 +8378,216 @@ function viewScoreSheet(){
        '</div></div>';
   setTimeout(tlFit, 0);
   return h + backBar();
+}
+
+/* ==========================================================================
+   📢 R9 — 학생 성적 공개 (2026-08-23)
+   설계서: _db/SPEC_results_disclosure_R9.md
+   --------------------------------------------------------------------------
+   ▸ 공개 방식은 「교수 공개 버튼」입니다. 기본은 미공개. 교수가 강좌별·결과별로
+     [학생에게 공개하기]를 눌러야 학생 화면에 나타납니다.
+   ▸ 공개 여부는 settings.disclose 에 저장합니다 — settings 는 서버로 통째로 동기화되므로
+     (p2b_dbremote.js loadAll·flush) 학생 기기에도 그대로 반영됩니다. 새 표를 만들지 않았습니다.
+       settings.disclose = { F1:{r1,r2,r3,mid,fin,result}, F2:{...}, F3:{...} }
+   ▸ 프라이버시: 팀간 발표평가는 「총합(roundScore100)만 + 순위」, 시험·최종결과는 「본인 것만」.
+     교수·동료 세부 점수, 평가자 신원은 어느 학생 화면에도 나오지 않습니다.
+   ========================================================================== */
+var DISC_KEYS = ['r1','r2','r3','mid','fin','result'];
+function discLabel(key){
+  return { r1:'1회차 발표평가 결과', r2:'2회차 발표평가 결과', r3:'3회차 발표평가 결과',
+           mid:'중간고사 점수', fin:'기말고사 점수', result:'최종 결과' }[key] || key;
+}
+function discloseAll(){
+  var s = DB.d.settings;
+  if(!s.disclose || typeof s.disclose!=='object') s.disclose = {};
+  return s.disclose;
+}
+function discloseGet(cid, key){
+  var d = discloseAll()[cid];
+  return !!(d && d[key]);
+}
+function discloseSet(cid, key, on){
+  var all = discloseAll();
+  if(!all[cid] || typeof all[cid]!=='object') all[cid] = {};
+  all[cid][key] = !!on;
+  DB.flush();                                  /* 🔴 settings 저장 → 서버로도 올라갑니다 */
+  DB.log('성적 공개 '+(on?'열기':'닫기'), cid+' · '+discLabel(key));
+}
+function discToggle(cid, key, on){
+  if(!canEdit(cid)){ toast('다른 강좌라 바꿀 수 없습니다.'); return; }
+  var want = (on===true || on==='true');
+  discloseSet(cid, key, want);
+  toast(clsFull(cid)+' '+discLabel(key)+'을(를) '+(want?'학생에게 공개했습니다.':'미공개로 되돌렸습니다.'));
+  render();
+}
+
+/* ---- 교수 공개 컨트롤 카드 — 강좌마다 한 줄 ---- */
+function discloseControlCard(key, label, desc){
+  var cids = visibleClasses();
+  var h = '<div class="card"><h3>📢 '+esc(label)+' <span class="muted">— 학생 공개</span></h3>'+
+    '<p class="muted">'+esc(desc)+'</p>';
+  cids.forEach(function(cid){
+    var on = discloseGet(cid, key);
+    h += '<div class="hr"></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+      '<b>'+esc(clsFull(cid))+'</b>'+
+      '<span class="bg '+(on?'green':'gray')+'">'+(on?'✅ 공개됨':'⬜ 미공개')+'</span>'+
+      '<span style="flex:1"></span>'+
+      (canEdit(cid)
+        ? '<button class="btn sm '+(on?'':'pri')+'" onclick="discToggle(\''+cid+'\',\''+key+'\','+(on?'false':'true')+')">'+
+            (on?'공개 닫기':'학생에게 공개하기')+'</button>'
+        : '<span class="muted">'+esc(roLabel(cid))+'</span>')+
+      '</div>';
+  });
+  h += '<div class="note">기본은 <b>미공개</b>입니다. 점수를 확인하신 뒤 [학생에게 공개하기]를 누르면 학생 화면에 나타납니다. '+
+       '언제든 다시 닫을 수 있습니다. 미완성·오류 결과가 학생에게 먼저 새는 것을 막기 위한 장치입니다.</div></div>';
+  return h;
+}
+
+/* ---- R11 — 시험 점수 입력으로 바로 가기 (8·15주차 교수 화면) ---- */
+function examGo(k){ mkTab = k; mkCid = null; mkMsg=''; go('admin',{p:'final'}); }
+function examInputCard(k, label, desc){
+  var cids = visibleClasses();
+  /* 강좌별 입력 현황 — 몇 명 넣었는지 한눈에 */
+  var stat = cids.map(function(cid){
+    var ss = liveStudents([cid]);
+    var typed = ss.filter(function(s){ return markGet(s.id,k)!=null; }).length;
+    return esc(clsFull(cid))+' '+typed+'/'+ss.length+'명';
+  }).join(' · ');
+  return '<div class="card"><h3>📝 '+esc(label)+' 점수 입력 <span class="muted">— 여기서 넣습니다</span></h3>'+
+    '<p class="muted">'+esc(desc)+'</p>'+
+    '<div class="note b">입력 현황 — '+stat+'</div>'+
+    '<div class="btnrow" style="margin-top:8px">'+
+      '<button class="btn pri" onclick="examGo(\''+k+'\')">'+esc(label)+' 점수 입력하기 →</button>'+
+      '<button class="btn" onclick="go(\'admin\',{p:\'final\'})">최종 점수 계산 전체 보기</button>'+
+    '</div>'+
+    '<div class="note">저장은 [최종 점수 계산] 화면의 <b>3. 출석·시험 점수 일괄 입력</b>에서 이루어지며, 그대로 성적 산정에 반영됩니다. '+
+      '입력만으로는 학생에게 보이지 않습니다 — 아래 [학생 공개]에서 공개해야 학생이 봅니다.</div></div>';
+}
+
+/* ==========================================================================
+   팀간 발표평가 순위 — 총합(roundScore100)만
+   ▸ r1·r2 : 같은 반 안 순위 · r3 : 3개 강좌 합동(joint) 12팀 순위
+   ▸ 채점이 다 찬(done) 팀만 순위에 넣습니다. 동점은 같은 등수.
+   ========================================================================== */
+function roundRanking(round, cids){
+  var teams = DB.get('teams', function(t){ return cids.indexOf(t.classId)>=0; });
+  var arr = teams.map(function(t){
+    var r = roundScore100(t.id, round);
+    return { team:t, score:r.score, done:r.done };
+  }).filter(function(x){ return x.done; });
+  arr.sort(function(a,b){ return b.score - a.score; });
+  arr.forEach(function(x,i){
+    x.rank = (i>0 && Math.abs(arr[i-1].score - x.score) < 1e-9) ? arr[i-1].rank : (i+1);
+  });
+  return arr;
+}
+function discPendingCard(what){
+  return '<div class="card"><h3>'+esc(what)+'</h3>'+
+    '<div class="note">🔒 아직 <b>공개되지 않았습니다.</b> 담당교수님이 결과를 확인하신 뒤 공개하면 이 자리에 나타납니다.</div></div>';
+}
+
+/* ---- 학생 화면 — 팀간 발표평가 결과(총합+순위) ---- */
+function stRoundResultCard(round, key){
+  var me = SESS.me; if(!me) return '';
+  var cid = me.classId;
+  var label = discLabel(key);
+  if(!discloseGet(cid, key)) return discPendingCard(label);
+  var t = teamOf(me);
+  if(!t) return '<div class="card"><h3>'+esc(label)+'</h3><div class="note a">아직 팀에 속해 있지 않아 팀 결과가 없습니다. 담당교수님께 문의하세요.</div></div>';
+
+  var joint = (round===3);
+  var cids = joint ? CIDS.slice() : [cid];
+  var rk = roundRanking(round, cids);
+  var mine = null;
+  rk.forEach(function(x){ if(x.team.id===t.id) mine=x; });
+
+  var h = '<div class="card"><h3>📢 '+esc(label)+' <span class="muted">— 팀 총점·순위</span></h3>'+
+    '<p class="muted">'+(joint? '3개 강좌 합동 '+rk.length+'팀' : '같은 반('+esc(cid)+') 안')+' 순위입니다. '+
+      '점수는 <b>교수평가 40% + 동료평가 60%</b>를 합친 <b>팀 총점(100점 기준)</b>이며, 세부 점수는 공개되지 않습니다.</p>';
+
+  if(!mine){
+    h += '<div class="note a">우리 팀은 아직 이 회차 채점이 <b>완료되지 않아</b> 순위에 들어가 있지 않습니다.</div>';
+  }else{
+    h += '<div class="note g" style="font-size:15px">우리 팀 <b>'+esc(t.no+'팀 「'+t.name+'」')+'</b><br>'+
+      '총점 <b style="font-size:20px">'+r1d(mine.score)+'</b> / 100점 · '+
+      '순위 <b style="font-size:20px">'+mine.rank+'위</b> / '+rk.length+'팀</div>';
+  }
+  /* 순위표 — 팀 총점만(개별 학생 점수·평가자 신원 없음) */
+  h += '<div class="scroll"><table><tr><th class="c">순위</th>'+(joint?'<th class="c">반</th>':'')+
+    '<th>팀</th><th class="num">총점<br><span class="muted">/100</span></th></tr>'+
+    rk.map(function(x){
+      var us = (x.team.id===t.id);
+      return '<tr'+(us?' class="alt"':'')+'><td class="c"><b>'+x.rank+'</b></td>'+
+        (joint?'<td class="c nw">'+esc(x.team.classId)+'</td>':'')+
+        '<td class="nw">'+esc(x.team.no+'팀 「'+x.team.name+'」')+(us?' <b>★ 우리 팀</b>':'')+'</td>'+
+        '<td class="num">'+r1d(x.score)+'</td></tr>';
+    }).join('')+'</table></div>'+
+    '<div class="note">🔒 팀 <b>총점과 순위만</b> 공개됩니다. 교수·동료가 매긴 세부 점수, 누가 몇 점을 줬는지는 <b>공개되지 않습니다.</b></div>'+
+    '</div>';
+  return h;
+}
+
+/* ---- 학생 화면 — 본인 시험 점수(중간/기말) ---- */
+function stExamCard(key, label){
+  var me = SESS.me; if(!me) return '';
+  var cid = me.classId;
+  if(!discloseGet(cid, key)) return discPendingCard('본인 '+label+' 점수');
+  var v = markGet(me.id, key), full = mkFullOf(key);
+  return '<div class="card"><h3>📢 본인 '+esc(label)+' 점수</h3>'+
+    (v==null
+      ? '<div class="note a">아직 점수가 <b>입력되지 않았습니다.</b> 담당교수님이 입력하면 여기에 나타납니다.</div>'
+      : '<div class="note g" style="font-size:15px">'+esc(me.name)+' 학생 · '+esc(label)+' '+
+          '<b style="font-size:22px">'+r1d(v)+'</b> / '+full+'점</div>')+
+    '<div class="note">🔒 이 자리에는 <b>본인 점수만</b> 나옵니다. 다른 학생의 점수·석차는 공개되지 않습니다.</div></div>';
+}
+
+/* ---- 학생 화면 — 16주차 최종결과(본인 6분야 + 총합) ---- */
+function stFinalResult(){
+  var me = SESS.me;
+  if(!me) return '<div class="card"><div class="note a">학생 정보가 없습니다. 다시 로그인해 주세요.</div></div>';
+  var cid = me.classId;
+  if(!discloseGet(cid, 'result')) return discPendingCard('최종 결과');
+  var r = studentScore(me), sum = mkSum();
+  var body = r.items.map(function(it){
+    return '<tr><td class="nw"><b>'+esc(it.label)+'</b> <span class="muted">'+esc(it.where)+'</span></td>'+
+      '<td class="num">'+it.full+'</td>'+
+      '<td class="num tot">'+(it.typed? '<b>'+r1d(it.got)+'</b>' : '<span class="bg red">아직 없음</span>')+'</td></tr>';
+  }).join('');
+  return '<div class="card"><h3>🎓 최종 결과 <span class="muted">— '+esc(me.name)+' 학생 본인</span></h3>'+
+    '<div class="note g" style="font-size:15px">총점 <b style="font-size:22px">'+r1d(r.total)+'</b> / '+sum+'점'+
+      (r.team? ' · 팀 '+esc(r.team.no+'팀 「'+r.team.name+'」') : '')+'</div>'+
+    (r.missing.length? '<div class="note a">아직 입력되지 않은 항목이 '+r.missing.length+'개 있습니다 ('+
+        esc(r.missing.map(function(m){return m.label;}).join(' · '))+') — 담당교수님이 마저 입력하면 총점이 올라갑니다.</div>':'')+
+    (r.pen? '<div class="note a">⚖️ 팀내 평가에 따른 감점 '+r.pen+'%가 반영되었습니다 (동료평가 몫에서 '+r1d(r.cut)+'점).</div>':'')+
+    '<div class="scroll"><table><tr><th>분야</th><th class="num">배점</th><th class="num">받은 점수</th></tr>'+
+    body+
+    '<tr class="alt"><td class="nw"><b>합계</b></td><td class="num"><b>'+sum+'</b></td>'+
+      '<td class="num tot"><b>'+r1d(r.total)+'</b></td></tr>'+
+    '</table></div>'+
+    '<div class="note">🔒 이 화면에는 <b>본인 점수만</b> 나옵니다. 발표평가(발표1·2·최종발표)는 팀 점수라 같은 팀원과 같습니다. '+
+      '다른 학생의 점수·석차는 공개되지 않습니다.<br>'+
+      '⛔ 이 점수는 <b>학점(A+·A·B…)이 아닙니다.</b> 학점은 담당교수님이 따로 판정하십니다.</div></div>';
+}
+
+/* ---- 교수 화면 — 16주차 최종결과 공개 컨트롤 + 현황 ---- */
+function weekProfResult(cids){
+  var h = '<div class="card"><h2>최종 결과 확인 <span class="muted">— 16주차</span></h2>'+
+    '<p class="muted">학생은 이 주차에서 <b>본인의 6개 분야 점수 + 총합(100점)</b>을 봅니다. 본인 것만 보입니다.</p>'+
+    '<div class="note r">🔴 공개하기 전에 <b>[최종 점수 계산]에서 모든 점수가 채워졌는지</b> 꼭 확인하십시오. 덜 찬 상태로 공개하면 학생이 실제보다 낮은 총점을 보게 됩니다.</div>';
+  /* 강좌별 완성도 */
+  h += '<div class="scroll"><table><tr><th>강좌</th><th class="c">점수 다 찬 학생</th><th class="c">공개</th></tr>'+
+    cids.map(function(cid){
+      var ss = liveStudents([cid]);
+      var done = ss.filter(function(s){ return !studentScore(s).missing.length; }).length;
+      var on = discloseGet(cid,'result');
+      return '<tr><td><b>'+esc(cid)+'</b></td>'+
+        '<td class="c">'+done+'/'+ss.length+'명</td>'+
+        '<td class="c">'+(on?'<span class="bg green">공개됨</span>':'<span class="bg gray">미공개</span>')+'</td></tr>';
+    }).join('')+'</table></div>'+
+    '<div class="btnrow" style="margin-top:8px"><button class="btn" onclick="go(\'admin\',{p:\'final\'})">최종 점수 계산으로</button></div></div>';
+  h += discloseControlCard('result','최종 결과(6분야+총합)',
+    '공개하면 학생은 16주차에서 본인의 6개 분야 점수와 총합을 봅니다. 남의 점수·석차는 보이지 않습니다.');
+  return h;
 }
 
 /* ==========================================================================
@@ -8930,6 +9512,15 @@ function alBlocks(n, cid){
   var nt=DB.one('weekNotice', function(x){ return x.classId===cid && x.n===n; });
   if(nt) out.push({t:'안내문 — '+nt.title, type:'p', text:nt.body});
 
+  /* 1b. 현장견학 의견 (11주차) — 학생이 앱에 남긴 견학 소감 (앱 저장 데이터) */
+  if(n===11){
+    var exs=DB.get('excursion', function(x){ return x.classId===cid && x.week===11; })
+              .sort(function(a,b){ return (a.at||'')<(b.at||'')? -1:1; });
+    out.push({t:'현장견학 의견', type:'table', head:['작성자','의견','작성시각'], w:[2400,5638,1600],
+      rows: exs.length? exs.map(function(x){ return [alDash(x.author), alDash(x.text), alDash(x.at)]; })
+                      : [['—','아직 앱에 남긴 견학 의견이 없습니다','']]});
+  }
+
   /* 2. 설문 (1·15주차) */
   if(def.kind==='survey' || def.kind==='final'){
     var kind = (def.kind==='survey')? '사전':'최종';
@@ -8986,7 +9577,7 @@ function alBlocks(n, cid){
       rows: rows.length? rows : [['—','','아직 제출된 내용이 없습니다']]});
   }
 
-  /* 5. 5·6·9·10·12주차 팀 활동 기록 */
+  /* 5. 5주차 최종 주제 선정 (앱 저장 데이터) */
   if(def.kind==='finaltopic'){
     out.push({t:'최종 주제 선정', type:'table', head:['팀','최종 주제','선정 사유','교수 승인'], w:[1800,2400,4238,1200],
       rows: teams.map(function(t){
@@ -8994,37 +9585,18 @@ function alBlocks(n, cid){
         return [alTeamLabel(t), f? f.title:'—', f? alDash(f.summary):'아직 내지 않았습니다', (f&&f.ok)?'승인':'—'];
       })});
   }
-  if(def.kind==='video'){
-    out.push({t:'영상 제작 진행', type:'table', head:['팀','기획 의도','진행 단계','가편집본 링크'], w:[1800,4238,1400,2200],
-      rows: teams.map(function(t){
-        var a=DB.one('activity', function(x){ return x.teamId===t.id && x.week===6; });
-        return [alTeamLabel(t), a? alDash(a.plan):'아직 내지 않았습니다', a? alDash(a.stage):'—', a? alDash(a.link):'—'];
-      })});
-  }
-  if(def.kind==='activity'){
-    out.push({t:'팀 활동 기록', type:'table', head:['팀','이번 주 한 일','다음 주 할 일','막힌 점 / 도움 필요'], w:[1600,3400,2600,2038],
-      rows: teams.map(function(t){
-        var a=DB.one('activity', function(x){ return x.teamId===t.id && x.week===n; });
-        return [alTeamLabel(t), a? alDash(a.did):'아직 내지 않았습니다', a? alDash(a.next):'—', a? alDash(a.help):'—'];
-      })});
-    if(def.boost){
-      out.push({t:'영상 보강 (필요한 팀만)', type:'table', head:['팀','보강 영상 링크','무엇을 고쳤나'], w:[1800,3200,4638],
-        rows: teams.map(function(t){
-          var a=DB.one('activity', function(x){ return x.teamId===t.id && x.week===n; });
-          return [alTeamLabel(t), (a&&a.link)? a.link:'—', (a&&a.fix)? a.fix:'—'];
-        })});
-    }
-  }
+  /* 🔴 2026-08-23 20차 — 6·9·10·12주차는 「타이틀만」 주차입니다(학생 앱 입력 삭제, p5_weekstu.js).
+     영상은 KOSAc·드라이브로, 앱 개발은 수업에서 진행하므로 앱에 저장되는 학생 제출물이 없습니다.
+     그래서 옛 영상 블록(kind:'video')·팀 활동 블록(kind:'activity')·12주차 준비상황 표는 뽑지 않습니다.
+     ⛔ 이 블록들을 되살리면 「아직 내지 않았습니다」만 가득한 빈 표가 출력됩니다.
+     ▸ 교수 튜터링(tutor:N)은 교수가 앱에 쓰는 기록이라 그대로 남습니다(아래 7번). */
   if(def.kind==='prep'){
+    /* 12주차 학생 입력(준비도·발표자·남은 과제)은 제외. 「최종발표 평가기준 공개」는
+       학생 입력이 아니라 교수가 앱에 공개한 정보(rubrics)라 안내로 남깁니다. */
     var op=DB.get('rubrics', function(r){ return r.round===3 && r.openAt; });
     out.push({t:'최종발표 평가기준 공개', type:'p',
       text: op.length? ('공개일 '+op[0].openAt+' · 3회차 루브릭 전문을 학생 화면에 공개했습니다.\n학기말 이의제기 때 「기준을 몰랐다」를 반박하는 근거가 됩니다.')
                      : '아직 공개하지 않았습니다.'});
-    out.push({t:'최종 준비 상황', type:'table', head:['팀','준비도','발표자','남은 과제'], w:[1800,1400,2200,4238],
-      rows: teams.map(function(t){
-        var a=DB.one('activity', function(x){ return x.teamId===t.id && x.week===12; });
-        return [alTeamLabel(t), a? alDash(a.stage):'—', a? alDash(a.did):'—', a? alDash(a.next):'아직 내지 않았습니다'];
-      })});
   }
 
   /* 6. 평가 주차 (4·7·13·14) */
@@ -9078,9 +9650,8 @@ function alBlocks(n, cid){
         var tu=DB.one('tutoring', function(x){ return x.teamId===t.id && x.round===def.tutor; });
         var wrote = !!(tu && tu.done!==false);
         var ms=teamMembers(t.id);
-        var att = wrote && tu.att ? tu.att : null;
         var names = ms.map(function(m){
-          return m.st.name+(att && att.indexOf(m.st.id)<0 ? '(결)' : ''); }).join(' · ');
+          return m.st.name; }).join(' · ');
         var fin=DB.one('topics', function(x){ return x.teamId===t.id && x.kind==='최종'; });
         var tps=teamTopics(t.id);
         var topic = fin? ('[최종] '+fin.title)
@@ -9116,7 +9687,7 @@ function alSheet(n, cid){
         return '<tr>'+r.map(function(c){ return '<td>'+esc(c).replace(/\n/g,'<br>')+'</td>'; }).join('')+'</tr>'; }).join('')+
       '</tbody></table>';
   }).join('');
-  return '<div class="a4sheet flow" data-what="'+esc(n+'주차 활동기록')+'"><div class="a4in">'+
+  return '<div class="a4sheet" data-what="'+esc(n+'주차 활동기록')+'"><div class="a4in">'+
     '<div class="tlhead">'+
       '<div class="tltitle">주차별 활동기록 — '+n+'주차</div>'+
       '<div class="tlrule"></div>'+
@@ -9181,7 +9752,8 @@ function alCid(){
 }
 function alList(){
   var n=VIEW.p.n;
-  if(n==='all' || n==null || n==='') return WEEKDEF.map(function(d){ return d.n; });
+  /* 🔴 16주차(kind:'result')는 활동기록에서 뺍니다 — 제출·활동이 없는 결과 확인 주차입니다 */
+  if(n==='all' || n==null || n==='') return WEEKDEF.filter(function(d){ return d.kind!=='result'; }).map(function(d){ return d.n; });
   return [Number(n)];
 }
 function alGo(n, cid){ go('actlog', {n:n, cid:cid||alCid()}); }
@@ -9192,7 +9764,7 @@ function viewActLog(){
   var cid=alCid(), list=alList(), one=(list.length===1);
   var vis=visibleClasses();
 
-  var chips = WEEKDEF.map(function(d){
+  var chips = WEEKDEF.filter(function(d){ return d.kind!=='result'; }).map(function(d){
     return '<button class="btn sm '+(one && list[0]===d.n ?'pri':'')+'" onclick="alGo('+d.n+',\''+cid+'\')">'+
       d.n+'주 <span class="muted" style="'+(one&&list[0]===d.n?'color:#fff;opacity:.9':'')+'">'+esc(d.title)+'</span></button>'; }).join('')+
     '<button class="btn sm '+(one?'':'pri')+'" onclick="alGo(\'all\',\''+cid+'\')">전체 15주</button>';
@@ -9221,6 +9793,939 @@ function viewActLog(){
        list.map(function(n){ return alSheet(n, cid); }).join('')+
        '</div></div>';
   setTimeout(tlFit, 0);
+  return h + backBar();
+}
+
+/* ==========================================================================
+   📄 R12 — 성적·평가·튜터링 「A4 출력물」 정비 : PDF(인쇄) + Word(.docx) (2026-08-23)
+   --------------------------------------------------------------------------
+   🔴 교수님 지시(원문):
+      "최종 점수표, 팀 점수표, 중간발표평가1·2·최종발표평가의 교수평가와 동료평가
+       (팀간·팀내), 교수 튜터링 일지 등을 A4 출력물 형태로 정리해서 PDF와 Word로
+       다운받게."
+
+   ▸ PDF 는 별도 생성기를 만들지 않습니다 — 기존 방식(브라우저 인쇄 → 「PDF로 저장」)
+     그대로입니다. 자체완결 앱이라 PDF 라이브러리를 넣지 않습니다(CSP·용량).
+   ▸ Word 는 pI_docx.js 의 downloadDocx / dxP / dxTable / dxGap 를 그대로 씁니다 —
+     ⛔ 새 압축기·새 계산을 만들지 않습니다.
+   ▸ 값은 전부 기존 계산함수에서 옵니다 — roundScore100 · profRound100 · peerScore100
+     · intraRound · studentScore · calcGrades · teamPresent100. 여기서 새로 세지 않습니다.
+   ▸ 🔒 개인 학생 개별점수·평가자 신원은 발표평가 정리표에 넣지 않습니다(팀 단위 집계만).
+     개인 점수표는 그 학생 본인 것만, 강좌 점수표는 교수 전용 명부(기존 A4와 동일)입니다.
+   ▸ 모든 화면·버튼은 교수(isProf)만 봅니다. 학생 화면에는 노출하지 않습니다.
+   ========================================================================== */
+
+/* ---- 공통 작은 도구 ---- */
+function rpNum(x){ return (x==null)? '-' : r1d(x); }            /* 값 없으면 '-' */
+function rpDate(){ return nowStr().slice(0,10); }
+function rpFileDate(){ return rpDate().replace(/-/g,''); }
+function rpDemoWarnDocx(){
+  return (DB.d && DB.d.__demo)
+    ? dxP('※ 예시(가짜) 데이터입니다 — 실제 기록이 아닙니다.', {sz:16, color:'8A1010', after:100}) : '';
+}
+function rpFootDocx(tail){
+  return dxP('이 앱은 점수 합산까지 돕습니다. 학점 판정은 교수님들이 하십니다.',
+             {sz:14, color:'666666', before:120, after:0})+
+         dxP('출력일 '+rpDate()+' · '+tail, {sz:14, color:'666666', before:0});
+}
+
+/* 발표평가 회차 ↔ 이름·주차 (MK_ITEMS 의 auto 항목에서 뽑습니다) */
+function rpRoundItem(round){
+  var arr = MK_ITEMS.filter(function(it){ return it.kind==='auto' && it.round===round; });
+  return arr[0] || null;
+}
+function rpRoundLabel(round){ var it=rpRoundItem(round); return it? it.label : (round+'회차 발표평가'); }
+function rpRoundWhere(round){ var it=rpRoundItem(round); return it? it.where : ''; }
+
+/* ==========================================================================
+   ① 최종 점수표 — Word  (A4/PDF 는 pF_final.js 에 이미 있습니다 · 여기는 Word 만 추가)
+   ========================================================================== */
+/* ---- 강좌 한 장 (교수 전용 명부) ---- */
+function scDocxClassBody(cid){
+  var ss = liveStudents([cid]).map(studentScore).sort(function(a,b){ return a.st.no<b.st.no? -1:1; });
+  var sum = mkSum();
+  var out = dxP('바이오기초설계 최종 점수표', {b:true, sz:30, align:'center', after:60, keep:true})+
+    dxP('2026학년도 2학기 · 강좌 '+cid+(tlRoom(cid)?' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid),
+        {sz:18, align:'center', color:'444444', after:40})+
+    dxP('학생 '+ss.length+'명 · 총점 만점 '+sum+'점'+(sum!==100? ' ⚠️ 배점 합계가 '+sum+'점입니다':''),
+        {sz:18, align:'center', color:'444444', rule:true, after:120})+
+    rpDemoWarnDocx();
+
+  var head = ['번호','이름 (학번)']
+    .concat(MK_ITEMS.map(function(it){ return it.short+'\n('+mkFullOf(it.k)+')'; }))
+    .concat(['총점\n('+sum+')','팀']);
+  var w = [560, 1700, 720,720,720, 780,780,980, 900, 1778];   /* dxTable 이 마지막 칸으로 폭 보정 */
+  var rows = ss.map(function(r, i){
+    return [String(i+1), r.st.name+' ('+r.st.no+')']
+      .concat(r.items.map(function(it){ return it.typed? String(r1d(it.got)) : '—'; }))
+      .concat([String(r1d(r.total)), r.team? (r.team.no+'팀 '+r.team.name) : '팀 없음']);
+  });
+  out += dxTable(head, rows, w, {sz:15, align:{0:'center',2:'right',3:'right',4:'right',5:'right',6:'right',7:'right',8:'right'}});
+  out += dxP('· 발표평가 세 회차(중간발표평가1·2·최종발표평가)는 팀 점수입니다 — 같은 팀원은 같은 점수를 받습니다.', {sz:15, color:'444444', before:60, after:20});
+  out += dxP('· 「—」는 아직 입력되지 않은 항목입니다. 이 표는 등급이 아니며, 학점 판정은 담당교수님이 하십니다.', {sz:15, color:'444444', after:40});
+  out += rpFootDocx(clsFull(cid)+' 최종 점수표');
+  return out;
+}
+/* ---- 학생 개인 한 장 — 🔒 그 학생 본인 점수만 ---- */
+function scCalcTextPlain(it){
+  if(it.kind==='input') return it.typed? '담당교수가 직접 입력한 점수입니다.' : '아직 입력되지 않았습니다.';
+  var d = it.detail;
+  if(!d || !d.done) return '아직 점수가 없습니다'+(d&&d.lack? ' — '+d.lack : '')+'.';
+  var s = '팀 점수 '+r1d(d.score)+'점(100점 기준) × '+it.full+' ÷ 100\n'+
+    '= 교수평가 '+r1d(d.prof? d.prof.mean:0)+' × '+d.rule.profW+'%'+(d.prof? ' (교수 '+d.prof.n+'명 평균)':'')+
+    ' + 동료평가 '+r1d(d.peer.n? d.peer.mean:0)+' × '+d.rule.peerW+'%\n'+
+    '동료평가 '+d.peer.why;
+  if(it.pen) s += '\n⚖️ 팀내 평가 감점 '+it.pen+'% — 동료평가 몫에서 '+r1d(it.cut)+'점 감점(교수평가 몫은 그대로) → '+r1d(it.got)+'점';
+  return s;
+}
+function scDocxOneBody(cid, sid){
+  var st = DB.one('students', sid);
+  if(!st) return dxP('학생을 찾을 수 없습니다.', {b:true});
+  var r = studentScore(st), sum = mkSum();
+  var out = dxP('바이오기초설계 개인 점수표', {b:true, sz:30, align:'center', after:60, keep:true})+
+    dxP('2026학년도 2학기 · 강좌 '+cid+' · 담당교수 '+classProf(cid),
+        {sz:18, align:'center', color:'444444', after:40})+
+    dxP(st.name+' ('+st.no+') · '+(r.team? (r.team.no+'팀 「'+r.team.name+'」') : '팀 없음')+' · 총점 '+r1d(r.total)+' / '+sum,
+        {sz:18, align:'center', color:'444444', rule:true, after:120})+
+    rpDemoWarnDocx();
+  if(r.pen) out += dxP('⚖️ 팀내 평가에 따른 감점 '+r.pen+'%가 적용되었습니다 — 동료평가 몫에서 '+r1d(r.cut)+'점. 사유: '+
+        (r.penRow? r.penRow.reason : '')+' ('+(r.penRow? r.penRow.by:'')+' · '+(r.penRow? r.penRow.at:'')+')',
+        {sz:16, color:'8A1010', after:100});
+  if(r.missing.length) out += dxP('⚠️ 아직 입력되지 않은 항목 '+r.missing.length+'개: '+
+        r.missing.map(function(m){return m.label;}).join(' · ')+' — 확정 전 중간 출력본입니다.',
+        {sz:16, color:'8A1010', after:100});
+
+  var head = ['항목','배점','받은 점수','어떻게 계산했나'];
+  var w = [2000, 900, 1200, 5538];
+  var rows = r.items.map(function(it){
+    return [it.label+'\n('+it.where+')', String(it.full),
+            it.typed? String(r1d(it.got)) : '—', scCalcTextPlain(it)];
+  });
+  rows.push(['합계', String(sum), String(r1d(r.total)), '항목 점수를 그대로 더한 값입니다.']);
+  out += dxTable(head, rows, w, {sz:16, align:{1:'right',2:'right'}});
+  out += dxP('· 발표평가(발표1·2·최종발표)는 팀 점수라 같은 팀원과 같습니다. 이 점수는 학점(A+·A·B…)이 아닙니다.', {sz:15, color:'444444', before:60, after:40});
+  out += rpFootDocx('이 종이에는 '+st.name+' 학생의 점수만 들어 있습니다');
+  return out;
+}
+function scDownloadClassDocx(cid){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  downloadDocx('score_sheet_class_'+cid+'_'+rpFileDate()+'.docx', scDocxClassBody(cid));
+}
+function scDownloadOneDocx(cid, sid){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  if(!sid){ toast('먼저 학생을 고르십시오.'); return; }
+  var st = DB.one('students', sid);
+  downloadDocx('score_sheet_'+cid+'_s'+(st? st.no : sid)+'_'+rpFileDate()+'.docx', scDocxOneBody(cid, sid));
+}
+/* ---- 개인 점수표 「강좌 전체(25명)」 묶음 한 파일 (신설) ----
+   scDocxOneBody 는 첫 제목에 page 옵션이 없으므로, 학생마다 페이지 나눔 문단을 앞에 붙여
+   한 학생이 한 쪽에서 시작하게 합니다(첫 학생 제외). */
+function scDocxAllOnesBody(cid){
+  var ss = liveStudents([cid]).slice().sort(function(a,b){ return a.no<b.no? -1:1; });
+  var out='';
+  ss.forEach(function(st, idx){
+    if(idx>0) out += dxP('', {page:true, sz:2, after:0});   /* 새 쪽에서 시작 */
+    out += scDocxOneBody(cid, st.id);
+  });
+  return out;
+}
+function scDownloadAllOnesDocx(cid){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  downloadDocx('score_sheet_each_'+cid+'_'+rpFileDate()+'.docx', scDocxAllOnesBody(cid));
+}
+
+/* ==========================================================================
+   ② 팀 점수표 — A4/PDF + Word (신설)
+   ▸ 값은 calcGrades(cid) 하나에서만 옵니다(팀 순위 화면과 같은 계산).
+   ========================================================================== */
+/* 🔴 R13 — 점수는 「실제 배점으로 환산한 값」을 주로 보입니다.
+   · 각 발표평가 환산 = roundScore100/100 × 그 회차 배점(MK 에서 옵니다 · 하드코딩 금지)
+     발표1 → 10점 만점 · 발표2 → 20점 만점 · 최종발표 → 25점 만점
+   · 「발표 합계(환산)」 = 채점이 끝난 회차의 환산 점수를 더한 값 (만점 = 그 회차들 배점 합)
+   · 100점 기준값은 괄호로 병기합니다. */
+function rpFull(k){ return Number(MK()[k])||0; }
+function rpConv(v100, k){ return (v100==null)? null : v100/100*rpFull(k); }
+function teamScoreRows(cid){
+  var g = calcGrades(cid);
+  return g.rows.map(function(r, i){
+    var by = { r1:null, r2:null, r3:null };
+    (r.rounds||[]).forEach(function(rd){ if(rd.key && (rd.key in by)) by[rd.key] = (rd.done? rd.score : null); });
+    var c1=rpConv(by.r1,'r1'), c2=rpConv(by.r2,'r2'), c3=rpConv(by.r3,'r3');
+    var presSum = (c1||0)+(c2||0)+(c3||0);                     /* 환산 합계 (채점된 회차만) */
+    var presFull = (by.r1!=null? rpFull('r1'):0)+(by.r2!=null? rpFull('r2'):0)+(by.r3!=null? rpFull('r3'):0);
+    return { rank:i+1, t:r.t, r1:by.r1, r2:by.r2, r3:by.r3,
+             c1:c1, c2:c2, c3:c3, presSum:presSum, presFull:presFull,
+             prof:r.prof, peer:r.peer, total100:r.total };
+  });
+}
+/* 발표 3회 배점 합 (기본 55) — 표 머리글에 씁니다 */
+function rpPresMax(){ return rpFull('r1')+rpFull('r2')+rpFull('r3'); }
+/* 환산값 표시 — 값(만점) 병기. 100기준을 괄호로 */
+function rpConvCell(cv, v100){
+  if(cv==null) return '-';
+  return r1d(cv)+'<br><span class="dim">'+rpNum(v100)+'/100</span>';
+}
+/* ---- A4 한 장 ---- */
+function teamScoreSheet(cid){
+  var rows = teamScoreRows(cid);
+  var f1=rpFull('r1'), f2=rpFull('r2'), f3=rpFull('r3'), pmax=rpPresMax();
+  var body = rows.map(function(x){
+    return '<tr><td class="c"><b>'+x.rank+'</b></td>'+
+      '<td class="nm">'+esc(x.t.no+'팀 「'+x.t.name+'」')+'</td>'+
+      '<td class="num">'+rpConvCell(x.c1,x.r1)+'</td>'+
+      '<td class="num">'+rpConvCell(x.c2,x.r2)+'</td>'+
+      '<td class="num">'+rpConvCell(x.c3,x.r3)+'</td>'+
+      '<td class="num">'+r1d(x.prof)+'</td><td class="num">'+r1d(x.peer)+'</td>'+
+      '<td class="num tot"><b>'+r1d(x.presSum)+'</b><br><span class="dim">/'+x.presFull+'</span></td></tr>';
+  }).join('');
+  return '<div class="a4sheet" data-what="'+esc(cid+' 팀 점수표')+'"><div class="a4in">'+
+    scHead(cid, '바이오기초설계 팀 점수표')+
+    '<table class="sct">'+
+    '<colgroup><col style="width:12mm"><col style="width:44mm">'+
+      '<col style="width:20mm"><col style="width:20mm"><col style="width:22mm">'+
+      '<col style="width:17mm"><col style="width:17mm"><col style="width:22mm"></colgroup>'+
+    '<thead><tr><th class="c">순위</th><th>팀</th>'+
+      '<th class="num">발표1<br><span class="dim">/'+f1+'점</span></th>'+
+      '<th class="num">발표2<br><span class="dim">/'+f2+'점</span></th>'+
+      '<th class="num">최종발표<br><span class="dim">/'+f3+'점</span></th>'+
+      '<th class="num">교수<br><span class="dim">평균/100</span></th>'+
+      '<th class="num">동료<br><span class="dim">평균/100</span></th>'+
+      '<th class="num">발표 합계<br><span class="dim">/'+pmax+'점</span></th></tr></thead>'+
+    '<tbody>'+(body||'<tr><td class="c" colspan="8">채점된 팀이 아직 없습니다.</td></tr>')+'</tbody></table>'+
+    '<div class="scnote"><b>이 표를 읽는 법</b><br>'+
+      '· 발표1·발표2·최종발표는 <b>실제 배점으로 환산한 점수</b>입니다(발표1 '+f1+'점·발표2 '+f2+'점·최종발표 '+f3+'점 만점). 아래 작은 글씨가 100점 기준값입니다.<br>'+
+      '· 회차 환산 = 회차 팀 점수(100점 기준) ÷ 100 × 그 회차 배점. 회차 팀 점수는 <b>교수평가 40% + 동료평가(팀간) 60%</b>입니다.<br>'+
+      '· 「교수 평균」·「동료 평균」은 세 회차를 <b>배점으로 가중</b>한 100점 기준 참고값입니다.<br>'+
+      '· 「발표 합계」 = 채점이 끝난 회차의 환산 점수를 더한 값(만점 '+pmax+'점 = '+f1+'+'+f2+'+'+f3+'). 채점이 덜 찬 회차는 「-」로 두고 합계·만점에서 뺐습니다.<br>'+
+      '· 🔒 이 표에는 개별 학생 점수·평가자 신원이 들어 있지 않습니다.</div>'+
+    scFoot(cid, '팀 '+rows.length+'개 · 이 표는 「팀」 점수입니다(학생 개인 총점은 개인 점수표)')+
+    '</div></div>';
+}
+/* ---- Word ---- */
+function teamScoreDocxBody(cid){
+  var rows = teamScoreRows(cid);
+  var f1=rpFull('r1'), f2=rpFull('r2'), f3=rpFull('r3'), pmax=rpPresMax();
+  var out = dxP('바이오기초설계 팀 점수표', {b:true, sz:30, align:'center', after:60, keep:true})+
+    dxP('2026학년도 2학기 · 강좌 '+cid+(tlRoom(cid)?' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid),
+        {sz:18, align:'center', color:'444444', after:40})+
+    dxP('팀 '+rows.length+'개 · 발표평가는 실제 배점으로 환산(발표1 '+f1+'·발표2 '+f2+'·최종발표 '+f3+') · 괄호는 100점 기준',
+        {sz:18, align:'center', color:'444444', rule:true, after:120})+
+    rpDemoWarnDocx();
+  var head = ['순위','팀','발표1\n/'+f1,'발표2\n/'+f2,'최종발표\n/'+f3,'교수\n평균/100','동료\n평균/100','발표 합계\n/'+pmax];
+  var w = [700, 2500, 950,950,1050, 900,900, 1050];
+  function cv(cv0, v100){ return (cv0==null)? '-' : (r1d(cv0)+' ('+rpNum(v100)+')'); }
+  var body = rows.map(function(x){
+    return [String(x.rank), x.t.no+'팀 「'+x.t.name+'」', cv(x.c1,x.r1), cv(x.c2,x.r2), cv(x.c3,x.r3),
+            String(r1d(x.prof)), String(r1d(x.peer)), r1d(x.presSum)+' /'+x.presFull];
+  });
+  out += dxTable(head, body.length? body : [['-','채점된 팀이 아직 없습니다','-','-','-','-','-','-']], w,
+    {sz:15, align:{0:'center',2:'right',3:'right',4:'right',5:'right',6:'right',7:'right'}});
+  out += dxP('· 발표1·발표2·최종발표는 실제 배점으로 환산한 점수입니다(괄호 안이 100점 기준). 회차 환산 = 회차 팀 점수 ÷ 100 × 배점.', {sz:15, color:'444444', before:60, after:20});
+  out += dxP('· 회차 팀 점수는 교수평가 40% + 동료평가(팀간) 60%. 교수·동료 평균은 배점 가중 100점 기준 참고값입니다.', {sz:15, color:'444444', after:20});
+  out += dxP('· 「발표 합계」는 채점이 끝난 회차의 환산 점수 합(만점 '+pmax+'). 🔒 개별 학생 점수·평가자 신원은 들어 있지 않습니다. 등급이 아닙니다.', {sz:15, color:'444444', after:40});
+  out += rpFootDocx(clsFull(cid)+' 팀 점수표');
+  return out;
+}
+function teamScoreDownloadDocx(cid){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  downloadDocx('team_score_'+cid+'_'+rpFileDate()+'.docx', teamScoreDocxBody(cid));
+}
+
+/* ==========================================================================
+   ③ 발표평가 정리표 — A4/PDF + Word (신설)
+   회차(중간발표평가1·2·최종발표평가)마다 · 팀 단위로
+     교수평가 / 동료평가(팀간) / 동료평가(팀내, 참고) 를 정리합니다.
+   🔒 개별 학생 점수·평가자 신원은 넣지 않습니다 — 팀 집계값만.
+   ========================================================================== */
+/* 회차 → 배점 열쇠(r1/r2/r3) · 배점 */
+function rpRoundKey(round){ var it=rpRoundItem(round); return it? it.k : ('r'+round); }
+function rpRoundFull(round){ return rpFull(rpRoundKey(round)); }
+function evalSummaryData(round, cid){
+  var teams = DB.get('teams', function(t){ return t.classId===cid; }).sort(function(a,b){ return a.no-b.no; });
+  var full = rpRoundFull(round);
+  return teams.map(function(t){
+    var p  = profRound100(t.id, round);          /* {n, mean} or null */
+    var q  = peerScore100(t.id, round);          /* trimMean: {n, mean, why, trimmed} */
+    var ir = intraRound(t.id, round);            /* {per, teamMean, full} — 팀내 */
+    var rs = roundScore100(t.id, round);         /* {score, done, ...} */
+    var intraN = ir.per.filter(function(pp){ return pp.mean!=null; }).length;
+    var s100 = rs.done? rs.score : null;
+    return { t:t, ir:ir,
+      profMean: p? p.mean : null, profN: p? p.n : 0,
+      peerMean: q.n? q.mean : null, peerN: q.n, peerTrimmed: !!q.trimmed,
+      intraMean: ir.teamMean, intraN: intraN,
+      score: s100, conv: (s100==null? null : s100/100*full) };
+  });
+}
+/* ---- 루브릭 양식(무엇을 어떤 기준으로 평가했나) — 3종 (교수·팀간·팀내) ----
+   화면·인쇄용 HTML. 값은 DB.get('rubrics') 그대로, 문구는 rbLevels(r) 그대로. */
+function evalRubricHTML(round){
+  var h = '';
+  [['prof','교수평가'],['inter','동료평가 — 팀간'],['intra','동료평가 — 팀내']].forEach(function(k){
+    var rs = DB.get('rubrics', function(r){ return r.round===round && r.kind===k[0]; })
+               .sort(function(a,b){ return a.order-b.order; });
+    if(!rs.length){ h += '<div class="scnote"><b>['+k[1]+']</b> 등록된 루브릭이 없습니다.</div>'; return; }
+    var sum=0; rs.forEach(function(r){ sum += (r.max||4); });
+    h += '<div class="scnote"><b>['+k[1]+'] 평가 기준</b> — '+rs.length+'개 항목 · 항목마다 4단계 · 합계 '+sum+'점</div>';
+    rs.forEach(function(r){
+      var lv = rbLevels(r), max = r.max||4;
+      h += '<table class="sct"><colgroup><col style="width:14mm"><col style="width:160mm"></colgroup>'+
+        '<thead><tr><th class="c" colspan="2">'+esc(r.name)+'</th></tr></thead><tbody>'+
+        lv.map(function(txt,idx){
+          return '<tr><td class="c"><b>'+(max-idx)+'점</b></td><td>'+esc(txt)+'</td></tr>';
+        }).join('')+'</tbody></table>';
+    });
+  });
+  return h;
+}
+/* ---- 팀내 동료평가 — 학생별 「받은 점수」 (평가자 신원은 익명) ---- */
+function evalIntraHTML(round, cid){
+  var teams = DB.get('teams', function(t){ return t.classId===cid; }).sort(function(a,b){ return a.no-b.no; });
+  var body = '';
+  teams.forEach(function(t){
+    var ir = intraRound(t.id, round);
+    var rows = ir.per.map(function(pp){
+      return '<tr><td class="nm">'+esc(t.no+'팀 '+t.name)+'</td>'+
+        '<td class="nm">'+esc(pp.st.name+' ('+pp.st.no+')')+'</td>'+
+        '<td class="num">'+rpNum(pp.mean)+'</td>'+
+        '<td class="num">'+(pp.n||0)+'명</td>'+
+        '<td class="num">'+(pp.ratio!=null? (Math.round(pp.ratio*100)/100).toFixed(2)+'배' : '-')+'</td></tr>';
+    }).join('');
+    body += rows;
+  });
+  return '<div class="scnote"><b>팀내 동료평가 — 학생별 받은 점수</b> <span class="dim">(100점 기준 · 팀 평균 대비 배율 · 🔒 누가 줬는지는 익명)</span></div>'+
+    '<table class="sct">'+
+    '<colgroup><col style="width:38mm"><col style="width:52mm"><col style="width:28mm"><col style="width:26mm"><col style="width:30mm"></colgroup>'+
+    '<thead><tr><th>팀</th><th>학생 (학번)</th><th class="num">받은 점수<br><span class="dim">/100</span></th><th class="num">평가자 수</th><th class="num">팀 평균 대비</th></tr></thead>'+
+    '<tbody>'+(body||'<tr><td class="c" colspan="5">팀내 평가 자료가 없습니다.</td></tr>')+'</tbody></table>';
+}
+/* ---- A4 (흐름 · 여러 장 가능) ---- */
+function evalSummarySheet(round, cid){
+  var data = evalSummaryData(round, cid);
+  var full = rpRoundFull(round);
+  var body = data.map(function(x){
+    return '<tr><td class="nm">'+esc(x.t.no+'팀 「'+x.t.name+'」')+'</td>'+
+      '<td class="num">'+rpNum(x.profMean)+'<br><span class="dim">교수 '+x.profN+'명</span></td>'+
+      '<td class="num">'+rpNum(x.peerMean)+'<br><span class="dim">'+x.peerN+'건'+(x.peerTrimmed?'·절사':'')+'</span></td>'+
+      '<td class="num">'+rpNum(x.intraMean)+'<br><span class="dim">제출 '+x.intraN+'</span></td>'+
+      '<td class="num tot"><b>'+rpNum(x.conv)+'</b><br><span class="dim">'+rpNum(x.score)+'/100</span></td></tr>';
+  }).join('');
+  return '<div class="a4sheet flow" data-what="'+esc(cid+' '+rpRoundLabel(round)+' 정리표')+'"><div class="a4in">'+
+    scHead(cid, '바이오기초설계 발표평가 정리표', ['회차', rpRoundLabel(round)+' ('+rpRoundWhere(round)+')'])+
+    '<table class="sct">'+
+    '<colgroup><col style="width:50mm"><col style="width:30mm"><col style="width:32mm"><col style="width:30mm"><col style="width:32mm"></colgroup>'+
+    '<thead><tr><th>팀</th>'+
+      '<th class="num">교수평가<br><span class="dim">/100 · 40%</span></th>'+
+      '<th class="num">동료(팀간)<br><span class="dim">/100 · 60%</span></th>'+
+      '<th class="num">동료(팀내)<br><span class="dim">/100 · 참고</span></th>'+
+      '<th class="num">발표점수<br><span class="dim">/'+full+'점 (환산)</span></th></tr></thead>'+
+    '<tbody>'+(body||'<tr><td class="c" colspan="5">팀이 없습니다.</td></tr>')+'</tbody></table>'+
+    '<div class="scnote"><b>이 표를 읽는 법</b><br>'+
+      '· 「발표점수」는 <b>실제 배점 '+full+'점으로 환산</b>한 값입니다(작은 글씨가 100점 기준). 환산 = (교수 40% + 팀간 60%) ÷ 100 × '+full+'.<br>'+
+      '· 동료(팀간)는 평가자 한 사람의 총점을 한 건으로 놓고, 5건 이상이면 최고 1·최저 1을 뺀 <b>절사평균</b>입니다.<br>'+
+      '· <b>동료(팀내)는 참고값</b>입니다 — 팀 점수에 넣지 않습니다(무임승차 감점 판단에만 씁니다). 위 표는 팀 <b>평균</b>이고, 학생별 값은 아래에 있습니다.<br>'+
+      '· 🔒 누가 누구에게 몇 점을 줬는지(평가자 신원)는 어디에도 없습니다. 교수 전용 내부 자료입니다.</div>'+
+    evalIntraHTML(round, cid)+
+    '<div class="scnote" style="margin-top:10px"><b>■ 이 회차에 사용한 평가 루브릭</b> — 무엇을 어떤 기준으로 평가했는지</div>'+
+    evalRubricHTML(round)+
+    scFoot(cid, rpRoundLabel(round)+' · 팀 '+data.length+'개')+
+    '</div></div>';
+}
+/* ---- Word ---- */
+function evalRubricDocx(round){
+  var out = dxP('■ 이 회차에 사용한 평가 루브릭 — 무엇을 어떤 기준으로 평가했는지',
+                {b:true, sz:20, before:160, after:60, keep:true});
+  [['prof','교수평가'],['inter','동료평가 — 팀간'],['intra','동료평가 — 팀내']].forEach(function(k){
+    var rs = DB.get('rubrics', function(r){ return r.round===round && r.kind===k[0]; })
+               .sort(function(a,b){ return a.order-b.order; });
+    if(!rs.length){ out += dxP('['+k[1]+'] 등록된 루브릭이 없습니다.', {sz:16, color:'8A1010', after:60}); return; }
+    var sum=0; rs.forEach(function(r){ sum += (r.max||4); });
+    out += dxP('['+k[1]+'] — '+rs.length+'개 항목 · 항목마다 4단계 · 합계 '+sum+'점',
+               {b:true, sz:17, before:100, after:40, keep:true});
+    rs.forEach(function(r){
+      var lv = rbLevels(r), max = r.max||4;
+      var rows = lv.map(function(txt,idx){ return [String(max-idx)+'점', txt]; });
+      out += dxTable([r.name, ''], rows, [900, 8738], {sz:15, align:{0:'center'}});
+    });
+  });
+  return out;
+}
+function evalSummaryDocxBody(round, cid, pg){
+  var data = evalSummaryData(round, cid);
+  var full = rpRoundFull(round);
+  var out = dxP('바이오기초설계 발표평가 정리표', {b:true, sz:30, align:'center', page:!!pg, after:60, keep:true})+
+    dxP(rpRoundLabel(round)+' ('+rpRoundWhere(round)+') · 강좌 '+cid+' · 담당교수 '+classProf(cid),
+        {sz:18, align:'center', color:'444444', after:40})+
+    dxP('교수평가 40% + 동료평가(팀간) 60% · 발표점수는 실제 배점 '+full+'점으로 환산(괄호는 100점 기준)',
+        {sz:18, align:'center', color:'444444', rule:true, after:120})+
+    rpDemoWarnDocx();
+  var head = ['팀','교수평가\n/100·40%','동료(팀간)\n/100·60%','동료(팀내)\n/100·참고','발표점수\n/'+full+'(환산)'];
+  var w = [3038, 1600, 1700, 1600, 1700];
+  var body = data.map(function(x){
+    return [x.t.no+'팀 「'+x.t.name+'」',
+      rpNum(x.profMean)+' (교수 '+x.profN+'명)',
+      rpNum(x.peerMean)+' ('+x.peerN+'건'+(x.peerTrimmed?'·절사':'')+')',
+      rpNum(x.intraMean)+' (제출 '+x.intraN+')',
+      rpNum(x.conv)+' ('+rpNum(x.score)+')'];
+  });
+  out += dxTable(head, body.length? body : [['팀이 없습니다','-','-','-','-']], w,
+    {sz:15, align:{1:'right',2:'right',3:'right',4:'right'}});
+  out += dxP('· 발표점수는 실제 배점 '+full+'점으로 환산했습니다(괄호가 100점 기준). 동료(팀간)는 5건 이상이면 최고 1·최저 1을 뺀 절사평균입니다.', {sz:15, color:'444444', before:60, after:20});
+  out += dxP('· 동료(팀내)는 참고값이며 팀 점수에 넣지 않습니다(위 표는 팀 평균). 🔒 누가 누구에게 몇 점을 줬는지(평가자 신원)는 어디에도 없습니다.', {sz:15, color:'444444', after:40});
+
+  /* 팀내 동료평가 — 학생별 받은 점수 (평가자 익명) */
+  out += dxP('팀내 동료평가 — 학생별 받은 점수 (100점 기준 · 팀 평균 대비 배율 · 🔒 평가자 익명)',
+             {b:true, sz:20, before:140, after:60, keep:true});
+  var teams = DB.get('teams', function(t){ return t.classId===cid; }).sort(function(a,b){ return a.no-b.no; });
+  var irows = [];
+  teams.forEach(function(t){
+    var ir = intraRound(t.id, round);
+    ir.per.forEach(function(pp){
+      irows.push([t.no+'팀 '+t.name, pp.st.name+' ('+pp.st.no+')', rpNum(pp.mean),
+        (pp.n||0)+'명', (pp.ratio!=null? (Math.round(pp.ratio*100)/100).toFixed(2)+'배':'-')]);
+    });
+  });
+  out += dxTable(['팀','학생 (학번)','받은 점수\n/100','평가자 수','팀 평균 대비'],
+    irows.length? irows : [['-','팀내 평가 자료가 없습니다','-','-','-']],
+    [2400, 3138, 1400, 1300, 1400], {sz:15, align:{2:'right',3:'center',4:'right'}});
+
+  out += evalRubricDocx(round);
+  out += rpFootDocx(clsFull(cid)+' '+rpRoundLabel(round)+' 정리표');
+  return out;
+}
+function evalSummaryDownloadDocx(round, cid){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  downloadDocx('eval_summary_r'+round+'_'+cid+'_'+rpFileDate()+'.docx', evalSummaryDocxBody(round, cid));
+}
+/* ---- 세 회차(중간발표1·2·최종발표) 통합 한 파일 (신설) ----
+   각 회차가 새 쪽에서 시작하도록 pg=idx>0 로 페이지 나눔을 넣습니다. */
+function evalSummaryAllDocxBody(cid){
+  var out='';
+  [1,2,3].forEach(function(round, idx){ out += evalSummaryDocxBody(round, cid, idx>0); });
+  return out;
+}
+function evalSummaryAllDownloadDocx(cid){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  downloadDocx('eval_summary_all_'+cid+'_'+rpFileDate()+'.docx', evalSummaryAllDocxBody(cid));
+}
+
+/* ==========================================================================
+   ④ 교수 튜터링 일지 — Word  (A4/PDF 는 pT_tutorlog.js 에 이미 있습니다)
+   ▸ 화면 A4 일지(tlSheet)와 같은 자료를 씁니다. 회차마다 새 쪽에서 시작합니다.
+   ========================================================================== */
+function tlTopicPlain(t){
+  var fin = DB.one('topics', function(x){ return x.teamId===t.id && x.kind==='최종'; });
+  if(fin) return '[최종] '+fin.title;
+  var tps = teamTopics(t.id);
+  if(!tps.length) return '(가주제 미정)';
+  return '[가주제] '+tps.map(function(tp, i){ return (i+1)+') '+tp.title; }).join('  ');
+}
+function tlDocxBody(list, cid){
+  var cap = teamCap(), out='';
+  list.forEach(function(round, idx){
+    var week = tlWeekOf(round), w = week? wrow(week) : null, iso = w? w.date : '';
+    out += dxP('교수 튜터링 일지 ('+round+'차)', {b:true, sz:30, align:'center', page: idx>0, after:60, keep:true})+
+      dxP('바이오기초설계 (2026학년도 2학기) · '+cid+(tlRoom(cid)?' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid),
+          {sz:18, align:'center', color:'444444', after:40})+
+      dxP((week? week+'주차':'-')+' · '+tlLongDate(iso)+' '+tlClassTime(cid)+' · '+round+'차 / 총 '+tlTotal()+'회',
+          {sz:18, align:'center', color:'444444', rule:true, after:120})+
+      rpDemoWarnDocx();
+
+    var teams = DB.get('teams', function(t){ return t.classId===cid; }).sort(function(a,b){ return a.no-b.no; });
+    var byNo = {}; teams.forEach(function(t){ byNo[t.no]=t; });
+    var head = ['팀','팀 구성원 · 팀 주제','튜터링 내용'];
+    var rows = [];
+    for(var i=1;i<=cap;i++){
+      var t = byNo[i] || null;
+      if(!t){ rows.push([i+'팀', '(팀 미구성)', '— 미작성 —']); continue; }
+      var tu = DB.one('tutoring', function(x){ return x.teamId===t.id && x.round===round; });
+      var wrote = !!(tu && tu.done!==false);
+      var ms = teamMembers(t.id);
+      var names = ms.length
+        ? ms.map(function(m){
+            return m.st.name + (tlDupName(m.st.name)? '('+m.st.no+')' : '');
+          }).join('·')
+        : '팀원 없음';
+      var memTopic = names + '\n' + tlTopicPlain(t);
+      var talk;
+      if(!wrote){ talk = '— 미작성 —'; }
+      else {
+        talk = (tu.talk || '');
+        if(tu.fix)  talk += '\n[지적] '+tu.fix;
+        if(tu.next) talk += '\n[다음까지] '+tu.next;
+      }
+      rows.push([t.no+'팀 「'+t.name+'」', memTopic, talk]);
+    }
+    out += dxTable(head, rows, [1600, 3200, 4838], {sz:15});
+    out += rpFootDocx(round+'차 교수 튜터링 일지 · '+clsFull(cid));
+  });
+  return out;
+}
+function tlDownloadDocx(list, cid){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  var one = (list.length===1);
+  downloadDocx('tutoring_log_'+cid+'_'+(one? 'r'+list[0] : 'all')+'_'+rpFileDate()+'.docx', tlDocxBody(list, cid));
+}
+
+/* ==========================================================================
+   ⑤ 화면 — 팀 점수표 · 발표평가 정리표 모아 보기 (교수 전용, 라우터 name='reports')
+   ▸ 최종 점수표는 [점수표] 화면, 튜터링 일지는 [교수 튜터링 일지] 화면에 Word 버튼을
+     각각 붙였습니다. 여기는 「없던 두 보고서」의 A4/PDF/Word 전용 화면입니다.
+   ========================================================================== */
+function rpGo(t, cid){ go('reports', { t:t, cid:cid }); }
+function viewReports(){
+  if(!isProf()) return '<div class="card"><div class="note r">⛔ 학생은 볼 수 없는 화면입니다.</div>'+
+    '<button class="btn" onclick="go(\'home\')">홈으로</button></div>';
+  var vis = visibleClasses();
+  var cid = VIEW.p.cid || myClass();
+  if(vis.indexOf(cid)<0) cid = vis[0];
+  var t = VIEW.p.t || 'team';                                  /* team · r1 · r2 · r3 · rall */
+  if(['team','r1','r2','r3','rall'].indexOf(t)<0) t='team';
+
+  var kinds = [['team','팀 점수표'],['rall','발표평가 3회차 통합'],['r1','발표평가1'],['r2','발표평가2'],['r3','최종발표평가']];
+  var chips = kinds.map(function(k){
+    return '<button class="btn sm '+(t===k[0]?'pri':'')+'" onclick="rpGo(\''+k[0]+'\',\''+cid+'\')">'+esc(k[1])+'</button>'; }).join('');
+  var clschips = vis.length>1 ? '<div class="btnrow" style="margin-top:6px">'+vis.map(function(c){
+      return '<button class="btn sm '+(cid===c?'pri':'')+'" onclick="rpGo(\''+t+'\',\''+c+'\')">'+esc(clsFull(c))+'</button>'; }).join('')+'</div>' : '';
+
+  var round = (t==='team'||t==='rall')? 0 : Number(t.slice(1));
+  var wordCall = (t==='team')? 'teamScoreDownloadDocx(\''+cid+'\')'
+               : (t==='rall')? 'evalSummaryAllDownloadDocx(\''+cid+'\')'
+               : 'evalSummaryDownloadDocx('+round+',\''+cid+'\')';
+  var sheet = (t==='team')? teamScoreSheet(cid)
+            : (t==='rall')? [1,2,3].map(function(r){ return evalSummarySheet(r, cid); }).join('')
+            : evalSummarySheet(round, cid);
+
+  var h = topbar() +
+    '<div class="card noprint"><h3>성적·평가 출력물 <span class="muted">— A4 세로 · PDF·워드</span></h3>'+
+    '<div class="btnrow">'+chips+'</div>'+ clschips +
+    '<div class="btnrow" style="margin-top:10px">'+
+      '<button class="btn pri" onclick="tlPrint()">🖨 인쇄 · PDF로 저장</button>'+
+      '<button class="btn" onclick="'+wordCall+'">📄 워드(.docx)로 받기</button>'+
+      '<button class="btn" onclick="go(\'outputs\')">📄 출력물 허브</button>'+
+      '<button class="btn" onclick="go(\'admin\',{p:\'grade\'})">팀 점수 순위로</button>'+
+    '</div>'+
+    '<div class="hint"><b>PDF</b>는 [인쇄]를 누른 뒤 인쇄 창에서 「대상」을 <b>PDF로 저장</b>으로 고르시면 됩니다. '+
+      '<b>워드</b>는 A4 세로·여백까지 넣어 만듭니다. 지금 보이는 것: <b>'+esc(kinds.filter(function(k){return k[0]===t;})[0][1])+'</b> · '+esc(clsFull(cid))+'.</div>'+
+    '<div class="note">🔒 '+(t==='team'
+        ? '팀 점수표에는 <b>개별 학생 점수·평가자 신원이 들어 있지 않습니다</b>(팀 집계값만).'
+        : '발표평가 정리표에는 팀내 <b>학생별 받은 점수</b>는 실리지만 <b>누가 누구에게 몇 점을 줬는지(평가자 신원)는 익명</b>입니다.')+
+      ' 학생에게는 보이지 않는 <b>교수 전용</b> 화면입니다.</div>'+
+    '<div id="tlWarn"></div>'+
+    '<div class="note" style="margin-top:8px">아래가 <b>실제 인쇄되는 모습 그대로</b>입니다. 용지는 <b>A4 세로</b>, 배율은 <b>기본(100%)</b>으로 두십시오.</div>'+
+    '</div>';
+
+  h += '<div class="a4wrap"><div class="a4scale">'+ sheet +'</div></div>';
+  setTimeout(tlFit, 0);
+  return h + backBar();
+}
+
+/* ==========================================================================
+   ⑥ 설문 결과 A4 — 사전 · 최종 각각 한 종류 (R13 신설)
+   ▸ 값은 pY_svreport.js 의 집계함수(svrAggRows·svrRespond·svrRate)를 그대로 씁니다.
+   ▸ 문항별 응답수·평균·분포를 표로 정리합니다. 그래프 대시보드는 [설문 결과] 화면에 있습니다.
+   ========================================================================== */
+function svAggForKind(kind, cids){
+  return svrAggRows(cids).filter(function(r, i){ return i>0 && r[0]===kind; });
+}
+function svRespInfo(kind, cids){
+  var sv = svrSv(kind);
+  var n = sv? svrRespond(sv, cids) : 0, tot=0;
+  svrRate(cids).forEach(function(x){ tot += x.tot; });
+  return { n:n, tot:tot, sv:sv };
+}
+/* 집계 한 줄 → 화면/워드 공용 셀 배열: [절, 문항, 구분/보기, 응답수, 평균, 분포] */
+function svAggCells(r){
+  var isScale = (r[7]!=='' && r[7]!=null);
+  var dist = isScale
+    ? [1,2,3,4,5].map(function(i){ return i+':'+r[7+i]; }).join(' ')
+    : '';
+  var kb = (r[5]? (r[4]==='선택'||r[4]==='선택(복수)'? r[5] : r[4]+' '+r[5]) : r[4]);
+  return [ String(r[1]), String(r[3]), String(kb),
+           String(r[6]), (isScale? String(r[7]) : '-'), dist ];
+}
+/* ---- A4 (흐름) ---- */
+function svOneSheet(kind, cids){
+  var info = svRespInfo(kind, cids);
+  var rows = svAggForKind(kind, cids);
+  var wk = (kind==='사전')? 1 : 15;
+  var body = rows.map(function(r){
+    var c = svAggCells(r);
+    return '<tr><td class="nw">'+esc(c[0])+'</td><td>'+esc(c[1])+'</td>'+
+      '<td class="nw">'+esc(c[2])+'</td><td class="num">'+esc(c[3])+'</td>'+
+      '<td class="num">'+esc(c[4])+'</td><td class="nw">'+esc(c[5])+'</td></tr>';
+  }).join('');
+  return '<div class="a4sheet flow" data-what="'+esc(kind+'설문 결과')+'"><div class="a4in">'+
+    '<div class="tlhead"><div class="tltitle">'+esc(kind)+'설문 결과</div><div class="tlrule"></div>'+
+    '<table class="tlmeta"><tr>'+
+      '<td class="k">교과목</td><td class="v">바이오기초설계 (2026학년도 2학기)</td>'+
+      '<td class="k">범위</td><td class="v">'+esc(svrScopeName(cids))+'</td></tr>'+
+    '<tr><td class="k">설문</td><td class="v">'+esc(kind)+'설문 ('+wk+'주차 '+esc(mdw(wrow(wk).date))+')</td>'+
+      '<td class="k">응답</td><td class="v">'+info.n+' / '+info.tot+'명</td></tr>'+
+    '<tr><td class="k">출력일</td><td class="v">'+esc(nowStr().slice(0,10))+'</td>'+
+      '<td class="k"></td><td class="v"></td></tr></table></div>'+
+    (DB.d&&DB.d.__demo? '<div class="scwarn">※ 예시(가짜) 데이터입니다 — 실제 응답이 아닙니다.</div>':'')+
+    '<table class="sct al"><colgroup>'+
+      '<col style="width:30mm"><col style="width:60mm"><col style="width:28mm">'+
+      '<col style="width:15mm"><col style="width:15mm"><col style="width:34mm"></colgroup>'+
+    '<thead><tr><th>절</th><th>문항</th><th>구분/보기</th>'+
+      '<th class="num">응답수</th><th class="num">평균<br><span class="dim">/5</span></th>'+
+      '<th>분포<br><span class="dim">1~5점 명수</span></th></tr></thead>'+
+    '<tbody>'+(body||'<tr><td class="c" colspan="6">아직 응답이 없습니다.</td></tr>')+'</tbody></table>'+
+    '<div class="scnote"><b>이 표를 읽는 법</b><br>'+
+      '· 5점 척도 문항은 <b>평균</b>과 <b>1~5점 분포</b>를, 선택형은 <b>보기별 응답수</b>를, 서술형은 <b>응답 건수</b>만 셉니다.<br>'+
+      '· 그래프로 보시려면 [설문 결과] 화면을, 사전↔최종 비교·엑셀은 그 화면의 [엑셀 내려받기]를 쓰십시오.<br>'+
+      '· 값은 응답을 그대로 계산한 것입니다 — 원인·효과는 이 설문만으로 판단하지 않습니다.</div>'+
+    '<div class="scfoot1">이 앱은 점수 합산까지 돕습니다. 학점 판정은 교수님들이 하십니다.</div>'+
+    '<div class="tlfoot"><span>'+esc(kind)+'설문 결과 · '+esc(svrScopeName(cids))+'</span><span class="sp"></span>'+
+      (DB.d&&DB.d.__demo? '<span class="warn">※ 예시(가짜) 데이터입니다</span>&nbsp;&nbsp;':'')+
+      '<span>출력일 '+esc(nowStr().slice(0,10))+'</span></div>'+
+    '</div></div>';
+}
+/* ---- 워드 ---- */
+function svOneDocxBody(kind, cids, pg){
+  var info = svRespInfo(kind, cids), wk=(kind==='사전')?1:15;
+  var out = dxP(kind+'설문 결과', {b:true, sz:30, align:'center', page:!!pg, after:60, keep:true})+
+    dxP('바이오기초설계 (2026학년도 2학기) · '+svrScopeName(cids), {sz:18, align:'center', color:'444444', after:40})+
+    dxP(kind+'설문 ('+wk+'주차 '+mdw(wrow(wk).date)+') · 응답 '+info.n+' / '+info.tot+'명',
+        {sz:18, align:'center', color:'444444', rule:true, after:120})+
+    (DB.d&&DB.d.__demo? dxP('※ 예시(가짜) 데이터입니다 — 실제 응답이 아닙니다.', {sz:16, color:'8A1010', after:100}):'');
+  var rows = svAggForKind(kind, cids).map(svAggCells);
+  out += dxTable(['절','문항','구분/보기','응답수','평균/5','분포(1~5)'],
+    rows.length? rows : [['-','아직 응답이 없습니다','-','-','-','-']],
+    [1500, 3200, 1600, 900, 900, 1538],
+    {sz:14, align:{3:'center',4:'right'}});
+  out += dxP('· 5점 척도는 평균과 1~5점 분포를, 선택형은 보기별 응답수를, 서술형은 건수만 셉니다. 원인·효과는 이 설문만으로 판단하지 않습니다.',
+             {sz:14, color:'666666', before:120, after:0});
+  out += dxP('출력일 '+rpDate()+' · '+kind+'설문 결과 · '+svrScopeName(cids), {sz:14, color:'666666'});
+  return out;
+}
+/* scope = 'ALL' 또는 강좌ID */
+function svScopeCids(scope){
+  var vis = visibleClasses();
+  if(scope==='ALL') return vis.slice();
+  return (scope && vis.indexOf(scope)>=0)? [scope] : [myClass()];
+}
+function svOneDownloadDocx(kind, scope){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  var cids = svScopeCids(scope);
+  downloadDocx('survey_'+(kind==='사전'?'pre':'post')+'_report_'+(cids.length>1?'ALL':cids[0])+'_'+rpFileDate()+'.docx',
+    svOneDocxBody(kind, cids));
+}
+/* ---- 사전+최종 통합 한 파일 (신설) — 사전이 앞, 최종이 새 쪽에서 시작 ---- */
+function svAllDocxBody(cids){
+  return svOneDocxBody('사전', cids, false) + svOneDocxBody('최종', cids, true);
+}
+function svAllDownloadDocx(scope){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  var cids = svScopeCids(scope);
+  downloadDocx('survey_all_report_'+(cids.length>1?'ALL':cids[0])+'_'+rpFileDate()+'.docx', svAllDocxBody(cids));
+}
+/* ---- 화면 (라우터 name='svone') ---- */
+function svOneGo(kind, cid){ go('svone', { kind:kind, cid:cid }); }
+function viewSurveyOne(){
+  if(!isProf()) return '<div class="card"><div class="note r">⛔ 학생은 볼 수 없는 화면입니다.</div>'+
+    '<button class="btn" onclick="go(\'home\')">홈으로</button></div>';
+  var vis = visibleClasses();
+  var kind = (VIEW.p.kind==='최종')? '최종' : (VIEW.p.kind==='통합')? '통합' : '사전';
+  var cvid = VIEW.p.cid;
+  var cids = (cvid==='ALL')? vis.slice() : ((cvid && vis.indexOf(cvid)>=0)? [cvid] : [myClass()]);
+  var scopeVal = (cids.length>1)? 'ALL' : cids[0];
+
+  var kchips = [['통합','사전+최종 통합'],['사전','사전설문'],['최종','최종설문']].map(function(k){
+    return '<button class="btn sm '+(kind===k[0]?'pri':'')+'" onclick="svOneGo(\''+k[0]+'\',\''+scopeVal+'\')">'+k[1]+'</button>'; }).join('');
+  var cchips = (vis.length>1)? '<div class="btnrow" style="margin-top:6px">'+
+    vis.map(function(c){ return '<button class="btn sm '+(cids.length===1&&cids[0]===c?'pri':'')+'" onclick="svOneGo(\''+kind+'\',\''+c+'\')">'+esc(clsFull(c))+'</button>'; }).join('')+
+    '<button class="btn sm '+(cids.length>1?'pri':'')+'" onclick="svOneGo(\''+kind+'\',\'ALL\')">3개 강좌 합계</button></div>' : '';
+
+  var h = topbar() +
+    '<div class="card noprint"><h3>설문 결과 출력물 <span class="muted">— A4 세로 · PDF·워드</span></h3>'+
+    '<div class="btnrow">'+kchips+'</div>'+ cchips +
+    '<div class="btnrow" style="margin-top:10px">'+
+      '<button class="btn pri" onclick="tlPrint()">🖨 인쇄 · PDF로 저장'+(kind==='통합'?' (2장)':'')+'</button>'+
+      '<button class="btn" onclick="'+(kind==='통합'? 'svAllDownloadDocx(\''+scopeVal+'\')' : 'svOneDownloadDocx(\''+kind+'\',\''+scopeVal+'\')')+'">📄 워드(.docx)로 받기'+(kind==='통합'?' (사전+최종)':'')+'</button>'+
+      '<button class="btn" onclick="svrGo(\''+scopeVal+'\')">그래프 대시보드로</button>'+
+      '<button class="btn" onclick="go(\'outputs\')">📄 출력물 허브</button>'+
+    '</div>'+
+    '<div class="hint">지금 보이는 것: <b>'+(kind==='통합'?'사전+최종설문 통합':esc(kind)+'설문')+'</b> · '+esc(svrScopeName(cids))+'. 그래프·엑셀·사전↔최종 비교는 <b>[설문 결과]</b> 화면에 있습니다.</div>'+
+    '<div id="tlWarn"></div></div>';
+  h += '<div class="a4wrap"><div class="a4scale">'+
+       (kind==='통합'? (svOneSheet('사전', cids)+svOneSheet('최종', cids)) : svOneSheet(kind, cids))+
+       '</div></div>';
+  setTimeout(tlFit, 0);
+  return h + backBar();
+}
+
+/* ==========================================================================
+   ⑦ 현장견학 일지 A4 — 11주차 팀별 견학 의견 (R13 신설)
+   ▸ 값은 컬렉션 excursion 그대로 · 작성자·시각 포함 · 팀별로 묶습니다.
+   ========================================================================== */
+function exData(cid){
+  var teams = DB.get('teams', function(t){ return t.classId===cid; }).sort(function(a,b){ return a.no-b.no; });
+  return teams.map(function(t){
+    var list = DB.get('excursion', function(x){ return x.teamId===t.id; })
+                 .sort(function(a,b){ return (a.at||'')<(b.at||'')? -1:1; });
+    return { t:t, list:list };
+  });
+}
+function exSheet(cid){
+  var data = exData(cid), total=0, wrote=0;
+  data.forEach(function(d){ total+=d.list.length; if(d.list.length) wrote++; });
+  var nt = DB.one('weekNotice', function(x){ return x.classId===cid && x.n===11; });
+  var body = '';
+  data.forEach(function(d){
+    body += '<div class="alh">'+esc(d.t.no+'팀 「'+d.t.name+'」')+' <span class="dim">— '+d.list.length+'개</span></div>';
+    if(!d.list.length){ body += '<div class="alp">이 팀은 아직 견학 의견을 남기지 않았습니다.</div>'; return; }
+    body += '<table class="sct al"><colgroup><col style="width:32mm"><col style="width:34mm"><col style="width:118mm"></colgroup>'+
+      '<thead><tr><th>작성자</th><th>작성 시각</th><th>견학 의견</th></tr></thead><tbody>'+
+      d.list.map(function(x){
+        return '<tr><td class="nw">'+esc(x.author||'-')+'</td><td class="nw">'+esc(x.at||'-')+'</td>'+
+          '<td>'+esc(x.text||'').replace(/\n/g,'<br>')+'</td></tr>';
+      }).join('')+'</tbody></table>';
+  });
+  return '<div class="a4sheet flow" data-what="'+esc(cid+' 현장견학 일지')+'"><div class="a4in">'+
+    '<div class="tlhead"><div class="tltitle">현장견학 일지 — 11주차</div><div class="tlrule"></div>'+
+    '<table class="tlmeta"><tr>'+
+      '<td class="k">교과목</td><td class="v">바이오기초설계 (2026학년도 2학기)</td>'+
+      '<td class="k">강좌</td><td class="v">'+esc(cid)+(tlRoom(cid)?' ('+esc(tlRoom(cid))+')':'')+'</td></tr>'+
+    '<tr><td class="k">담당교수</td><td class="v">'+esc(classProf(cid))+'</td>'+
+      '<td class="k">일시</td><td class="v">'+esc(tlLongDate(wrow(11).date))+'</td></tr>'+
+    '<tr><td class="k">참여</td><td class="v">'+wrote+' / '+data.length+'팀 · 의견 '+total+'개</td>'+
+      '<td class="k">출력일</td><td class="v">'+esc(nowStr().slice(0,10))+'</td></tr></table></div>'+
+    (nt? '<div class="scnote"><b>견학 안내</b><br>'+esc(nt.body).replace(/ · /g,'<br>')+'</div>':'')+
+    (DB.d&&DB.d.__demo? '<div class="scwarn">※ 예시(가짜) 데이터입니다 — 실제 의견이 아닙니다.</div>':'')+
+    body +
+    '<div class="scfoot1">현장견학에서 학생들이 팀별로 남긴 의견을 그대로 옮긴 것입니다.</div>'+
+    '<div class="tlfoot"><span>현장견학 일지 · '+esc(clsFull(cid))+'</span><span class="sp"></span>'+
+      (DB.d&&DB.d.__demo? '<span class="warn">※ 예시(가짜) 데이터입니다</span>&nbsp;&nbsp;':'')+
+      '<span>출력일 '+esc(nowStr().slice(0,10))+'</span></div>'+
+    '</div></div>';
+}
+function exDocxBody(cid){
+  var data = exData(cid), total=0, wrote=0;
+  data.forEach(function(d){ total+=d.list.length; if(d.list.length) wrote++; });
+  var out = dxP('현장견학 일지 — 11주차', {b:true, sz:30, align:'center', after:60, keep:true})+
+    dxP('바이오기초설계 (2026학년도 2학기) · 강좌 '+cid+(tlRoom(cid)?' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid),
+        {sz:18, align:'center', color:'444444', after:40})+
+    dxP(tlLongDate(wrow(11).date)+' · 참여 '+wrote+' / '+data.length+'팀 · 의견 '+total+'개',
+        {sz:18, align:'center', color:'444444', rule:true, after:120})+
+    (DB.d&&DB.d.__demo? dxP('※ 예시(가짜) 데이터입니다 — 실제 의견이 아닙니다.', {sz:16, color:'8A1010', after:100}):'');
+  data.forEach(function(d){
+    out += dxP(d.t.no+'팀 「'+d.t.name+'」 — '+d.list.length+'개', {b:true, sz:20, before:140, after:50, keep:true});
+    if(!d.list.length){ out += dxP('이 팀은 아직 견학 의견을 남기지 않았습니다.', {sz:16, color:'666666', after:60}); return; }
+    var rows = d.list.map(function(x){ return [x.author||'-', x.at||'-', x.text||'']; });
+    out += dxTable(['작성자','작성 시각','견학 의견'], rows, [1600, 1900, 6138], {sz:15});
+  });
+  out += dxP('현장견학에서 학생들이 팀별로 남긴 의견을 그대로 옮긴 것입니다.', {sz:14, color:'666666', before:120, after:0});
+  out += dxP('출력일 '+rpDate()+' · 현장견학 일지 · '+clsFull(cid), {sz:14, color:'666666'});
+  return out;
+}
+function exDownloadDocx(cid){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  downloadDocx('excursion_log_'+cid+'_'+rpFileDate()+'.docx', exDocxBody(cid));
+}
+function exGo(cid){ go('exlog', { cid:cid }); }
+function viewExcursion(){
+  if(!isProf()) return '<div class="card"><div class="note r">⛔ 학생은 볼 수 없는 화면입니다.</div>'+
+    '<button class="btn" onclick="go(\'home\')">홈으로</button></div>';
+  var vis = visibleClasses();
+  var cid = VIEW.p.cid || myClass();
+  if(vis.indexOf(cid)<0) cid = vis[0];
+  var cchips = (vis.length>1)? '<div class="btnrow" style="margin-top:6px">'+
+    vis.map(function(c){ return '<button class="btn sm '+(cid===c?'pri':'')+'" onclick="exGo(\''+c+'\')">'+esc(clsFull(c))+'</button>'; }).join('')+'</div>' : '';
+  var h = topbar() +
+    '<div class="card noprint"><h3>현장견학 일지 <span class="muted">— 11주차 · A4 세로 · PDF·워드</span></h3>'+
+    cchips +
+    '<div class="btnrow" style="margin-top:10px">'+
+      '<button class="btn pri" onclick="tlPrint()">🖨 인쇄 · PDF로 저장</button>'+
+      '<button class="btn" onclick="exDownloadDocx(\''+cid+'\')">📄 워드(.docx)로 받기</button>'+
+      '<button class="btn" onclick="go(\'outputs\')">📄 출력물 허브</button>'+
+    '</div>'+
+    '<div class="hint">11주차 현장견학에서 팀별로 학생들이 남긴 의견을 작성자·시각과 함께 A4로 정리합니다.</div>'+
+    '<div id="tlWarn"></div></div>';
+  h += '<div class="a4wrap"><div class="a4scale">'+ exSheet(cid) +'</div></div>';
+  setTimeout(tlFit, 0);
+  return h + backBar();
+}
+
+/* ==========================================================================
+   ⓪ 주차별 계획 — 한 학기 개요 A4 1장 (R14 신설, 라우터 name='wplan')
+   ▸ 교수님 지시: "출력물 1번은 주차별 계획을 정리한 내용이 A4 1장. 1주차=오리엔테이션
+     +사전설문, 2주차=팀구성·가주제 선정 등 활동 내용과 결과물을 구분해서, 15주차까지
+     한 학기에 뭐 했는지 한눈에."
+   ▸ 값은 WEEKDEF(제목·kind·tutor·round·flag)와 주차설정(wrow 날짜) 그대로 씁니다.
+     회차·주제를 손으로 박지 않으므로 WEEKDEF 가 바뀌면 이 표도 저절로 따라갑니다.
+   ▸ A4 세로 1장에 16주가 다 들어가도록 tlFit 이 글자를 줄입니다(8pt까지).
+   ▸ 강좌와 무관한 「강좌 공통 학기 계획」입니다 — 날짜·수업시간은 3개 강좌가 같습니다.
+   ========================================================================== */
+/* 한 주차 → {act:[활동 내용], res:[결과물]} — def 의 성질에서 뽑습니다 */
+function wpCells(def){
+  var act=[], res=[], K=def.kind;
+  if(K==='survey'){ act.push('오리엔테이션 · 평가방식 안내'); act.push('사전설문조사'); res.push('사전설문 응답'); }
+  else if(K==='team'){ act.push('팀 구성(팀명·의미)'); act.push('가주제 3개 선정'); act.push('KOSAc 소개'); res.push('팀 편성표'); res.push('가주제 3개'); }
+  else if(K==='research'){ act.push('가주제 조사 · 자료 제출'); res.push('조사 자료 제출물'); }
+  else if(K==='finaltopic'){ act.push('최종 주제 1개 선정'); res.push('최종 주제'); }
+  else if(K==='video'){ act.push('광고 영상 제작'); res.push('광고 영상 가편집본'); }
+  else if(K==='activity'){ act.push('최종 앱 개발'); res.push('앱 개발 기록'); if(def.boost) act.push('영상 보강(필요 팀)'); }
+  else if(K==='prep'){ act.push('최종 앱 개발'); act.push('최종발표 평가기준 공개'); res.push('발표 준비 상황'); res.push('평가기준 공개'); }
+  else if(K==='eval'){
+    var lbl = def.round===1?'중간발표1' : def.round===2?'중간발표2' : (def.n===13?'최종발표1':'최종발표2');
+    act.push(lbl+' 발표 · 평가');
+    if(def.film) act.push('KOSAc(광고영상) 제출');
+    if(def.joint) act.push('3개 강좌 합동');
+    if(def.intra) act.push('팀내 평가');
+    res.push((def.round===3?'최종발표평가':('발표평가'+def.round))+' 점수(교수·동료)');
+    if(def.intra) res.push('팀내 평가 결과');
+  }
+  else if(K==='notice'){
+    if(def.n===8){ act.push('중간고사(서면 평가)'); res.push('중간고사 점수'); }
+    else if(def.n===11){ act.push('현장견학'); res.push('팀별 견학 의견(견학 일지)'); }
+    else act.push(def.full||def.title);
+  }
+  else if(K==='final'){ act.push('기말고사'); act.push('최종설문조사'); res.push('기말 점수'); res.push('최종설문 응답'); }
+  else if(K==='result'){ act.push('최종 결과 확인(6개 분야 점수+총합)'); res.push('개인 최종 점수표'); }
+  else act.push(def.full||def.title);
+  if(def.tutor){ act.push('교수 튜터링 '+def.tutor+'회차'); res.push('튜터링 일지 '+def.tutor+'차'); }
+  if(!res.length) res.push('—');
+  return { act:act, res:res };
+}
+function wpMd(iso){ if(!iso) return ''; var p=String(iso).split('-'); return (+p[1])+'/'+(+p[2])+'('+dow(iso)+')'; }
+/* ---- A4 한 장 ---- */
+function weeklyPlanSheet(){
+  var rows = WEEKDEF.map(function(def){
+    var w = wrow(def.n), c = wpCells(def);
+    return '<tr>'+
+      '<td class="c"><b>'+def.n+'주</b><br><span class="dim">'+esc(wpMd(w?w.date:''))+'</span></td>'+
+      '<td class="nm">'+esc(def.title)+'</td>'+
+      '<td>'+c.act.map(function(x){return esc(x);}).join('<br>')+'</td>'+
+      '<td>'+c.res.map(function(x){return esc(x);}).join('<br>')+'</td></tr>';
+  }).join('');
+  return '<div class="a4sheet" data-what="주차별 계획"><div class="a4in">'+
+    '<div class="tlhead">'+
+      '<div class="tltitle">바이오기초설계 주차별 계획</div>'+
+      '<div class="tlrule"></div>'+
+      '<table class="tlmeta"><tr>'+
+        '<td class="k">교과목</td><td class="v">바이오기초설계 (2026학년도 2학기)</td>'+
+        '<td class="k">대상</td><td class="v">3개 강좌 공통 (수요일 10:00~13:00)</td></tr>'+
+      '<tr>'+
+        '<td class="k">담당</td><td class="v">성동은 · 곽호석 · 최병규 교수</td>'+
+        '<td class="k">출력일</td><td class="v">'+esc(nowStr().slice(0,10))+'</td></tr>'+
+      '</table></div>'+
+    '<table class="sct al wpt">'+
+      '<colgroup><col style="width:18mm"><col style="width:26mm"><col style="width:72mm"><col style="width:66mm"></colgroup>'+
+      '<thead><tr><th class="c">주차</th><th>제목</th><th>활동 내용</th><th>결과물(산출물)</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody></table>'+
+    '<div class="scnote"><b>이 표를 읽는 법</b><br>'+
+      '· <b>활동 내용</b>은 그 주에 무엇을 했는지, <b>결과물</b>은 그 활동으로 앱·기록에 남는 것을 나눠 적었습니다.<br>'+
+      '· 회차·주제·날짜는 앱의 주차설정에서 자동으로 옵니다 — 휴강·보강으로 날짜가 바뀌면 이 표도 따라갑니다.</div>'+
+    '<div class="scfoot1">한 학기 계획 요약본입니다. 각 주차의 상세 기록은 [주차별 활동기록]에서 뽑으십시오.</div>'+
+    '<div class="tlfoot"><span>주차별 계획 · 바이오기초설계</span><span class="sp"></span>'+
+      '<span>출력일 '+esc(nowStr().slice(0,10))+'</span></div>'+
+    '</div></div>';
+}
+/* ---- 워드 ---- */
+function weeklyPlanDocxBody(){
+  var out = dxP('바이오기초설계 주차별 계획', {b:true, sz:30, align:'center', after:60, keep:true})+
+    dxP('2026학년도 2학기 · 3개 강좌 공통 (수요일 10:00~13:00) · 성동은·곽호석·최병규 교수',
+        {sz:18, align:'center', color:'444444', after:40})+
+    dxP('한 학기 활동 내용과 결과물을 주차별로 정리 · 회차·날짜는 앱 주차설정에서 자동',
+        {sz:18, align:'center', color:'444444', rule:true, after:120});
+  var rows = WEEKDEF.map(function(def){
+    var w = wrow(def.n), c = wpCells(def);
+    return [def.n+'주\n'+wpMd(w?w.date:''), def.title, c.act.join('\n'), c.res.join('\n')];
+  });
+  out += dxTable(['주차','제목','활동 내용','결과물(산출물)'], rows, [1000, 1900, 3369, 3369], {sz:15, align:{0:'center'}});
+  out += dxP('· 활동 내용은 그 주에 한 일, 결과물은 앱·기록에 남는 산출물입니다. 상세 기록은 [주차별 활동기록]에서 뽑으십시오.',
+             {sz:14, color:'666666', before:120, after:0});
+  out += dxP('출력일 '+rpDate()+' · 바이오기초설계 주차별 계획', {sz:14, color:'666666'});
+  return out;
+}
+function weeklyPlanDownloadDocx(){
+  if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
+  downloadDocx('weekly_plan_'+rpFileDate()+'.docx', weeklyPlanDocxBody());
+}
+function wpGo(){ go('wplan', {}); }
+function viewWeeklyPlan(){
+  if(!isProf()) return '<div class="card"><div class="note r">⛔ 학생은 볼 수 없는 화면입니다.</div>'+
+    '<button class="btn" onclick="go(\'home\')">홈으로</button></div>';
+  var h = topbar() +
+    '<div class="card noprint"><h3>주차별 계획 <span class="muted">— 한 학기 한눈에 · A4 세로 1장</span></h3>'+
+    '<div class="btnrow" style="margin-top:10px">'+
+      '<button class="btn pri" onclick="tlPrint()">🖨 인쇄 · PDF로 저장</button>'+
+      '<button class="btn" onclick="weeklyPlanDownloadDocx()">📄 워드(.docx)로 받기</button>'+
+      '<button class="btn" onclick="go(\'outputs\')">📄 출력물 허브</button>'+
+    '</div>'+
+    '<div class="hint">1주차부터 16주차까지 <b>활동 내용</b>과 <b>결과물</b>을 나눠 A4 한 장에 정리합니다. '+
+      '한 학기에 무엇을 했는지 한눈에 보실 수 있습니다.</div>'+
+    '<div id="tlWarn"></div>'+
+    '<div class="note" style="margin-top:8px">아래가 <b>실제 인쇄되는 모습 그대로</b>입니다. 용지는 <b>A4 세로</b>, 배율은 <b>기본(100%)</b>으로 두십시오.</div>'+
+    '</div>';
+  h += '<div class="a4wrap"><div class="a4scale">'+ weeklyPlanSheet() +'</div></div>';
+  setTimeout(tlFit, 0);
+  return h + backBar();
+}
+
+/* ==========================================================================
+   📄 출력물 허브 — 모든 A4 출력물을 한 곳에 (R13 신설, 라우터 name='outputs')
+   ▸ 교수 화면 상단·홈에서 바로 닿습니다. 15주차 안에 숨어 있던 것을 꺼냈습니다.
+   ========================================================================== */
+function viewOutputs(){
+  if(!isProf()) return '<div class="card"><div class="note r">⛔ 학생은 볼 수 없는 화면입니다.</div>'+
+    '<button class="btn" onclick="go(\'home\')">홈으로</button></div>';
+  var cid = myClass();
+  function card(title, desc, btns){
+    return '<div class="card"><h3>'+title+'</h3><p class="muted">'+desc+'</p>'+
+      '<div class="menu">'+btns+'</div></div>';
+  }
+  var h = topbar() +
+    '<div class="card"><h2>📄 출력물</h2>'+
+    '<p class="muted">성적·평가·설문·활동·견학을 <b>A4 세로</b>로 정리해 <b>인쇄(→PDF)</b>와 <b>워드(.docx)</b>로 받는 곳입니다. '+
+    '모든 출력물은 <b>교수 전용</b>이며, 화면·파일 어디에도 <b>교번은 나오지 않습니다</b>.</p>'+
+    '<div class="note">🟢 항목마다 <b>「통합본」</b>은 그 항목의 모든 회차/부분을 <b>한 파일</b>에 담습니다(회차마다 새 장). 낱장이 필요하면 그 옆 버튼을 쓰십시오.<br>'+
+    '🔒 발표평가 정리표는 팀내 <b>학생별 받은 점수</b>는 실리되 <b>평가자 신원은 익명</b>입니다. 그 밖의 표는 팀 집계값입니다.</div></div>';
+
+  h += card('① 주차별 계획 <span class="muted">— 한 학기 한눈에 (A4 1장)</span>',
+    '1주차부터 16주차까지 <b>활동 내용</b>과 <b>결과물</b>을 나눠 A4 <b>한 장</b>에. 한 학기에 무엇을 했는지 한눈에.',
+    '<button class="btn pri" onclick="wpGo()">주차별 계획 A4 1장</button>');
+
+  h += card('② 성적 — 점수표',
+    '학생 개인 총점(출석·시험·발표 포함)과 강좌 전체 명부. 발표평가는 <b>실제 배점으로 환산</b>해 표시합니다.',
+    '<button class="btn pri" onclick="go(\'score\',{cid:\''+cid+'\'})">강좌 점수표 (전체 명부 1장)</button>'+
+    '<button class="btn" onclick="scDownloadAllOnesDocx(\''+cid+'\')">개인 점수표 25명 묶음(워드)</button>'+
+    '<button class="btn" onclick="go(\'reports\',{t:\'team\',cid:\''+cid+'\'})">팀 점수표</button>');
+
+  h += card('③ 평가 — 발표평가 정리표',
+    '회차별 교수평가·동료평가(팀간·팀내) + <b>학생별 팀내 받은 점수</b> + 그 회차에 쓴 <b>루브릭(평가 기준)</b>까지 함께.',
+    '<button class="btn pri" onclick="go(\'reports\',{t:\'rall\',cid:\''+cid+'\'})">통합본 — 3회차 한 파일</button>'+
+    '<button class="btn" onclick="go(\'reports\',{t:\'r1\',cid:\''+cid+'\'})">발표평가1</button>'+
+    '<button class="btn" onclick="go(\'reports\',{t:\'r2\',cid:\''+cid+'\'})">발표평가2</button>'+
+    '<button class="btn" onclick="go(\'reports\',{t:\'r3\',cid:\''+cid+'\'})">최종발표평가</button>');
+
+  h += card('④ 교수 튜터링 일지',
+    '1차부터 6차까지 <b>한 파일에 이어서</b>(회차마다 A4 1장). 낱장이 필요하면 화면에서 회차를 고르십시오.',
+    '<button class="btn pri" onclick="tlOpen(\'all\')">통합본 — 1~6차 한 파일</button>'+
+    '<button class="btn" onclick="tlOpen(1)">회차별 낱장</button>');
+
+  h += card('⑤ 주차별 활동기록',
+    '1주차부터 15주차까지 <b>한 파일에</b>(주차마다 새 장). 낱장도 화면에서 고를 수 있습니다.',
+    '<button class="btn pri" onclick="alGo(\'all\')">통합본 — 전체 15주 한 파일</button>'+
+    '<button class="btn" onclick="alGo(1)">주차별 낱장</button>');
+
+  h += card('⑥ 설문 결과',
+    '사전(1주차)·최종(15주차)을 <b>한 파일에</b>. 그래프·엑셀·사전↔최종 비교는 [설문 결과] 화면에.',
+    '<button class="btn pri" onclick="svOneGo(\'통합\',\''+cid+'\')">통합본 — 사전+최종 한 파일</button>'+
+    '<button class="btn" onclick="svOneGo(\'사전\',\''+cid+'\')">사전설문</button>'+
+    '<button class="btn" onclick="svOneGo(\'최종\',\''+cid+'\')">최종설문</button>'+
+    '<button class="btn" onclick="svrGo(\''+cid+'\')">설문 그래프·엑셀</button>');
+
+  h += card('⑦ 현장견학 일지',
+    '11주차 현장견학에서 팀별로 학생들이 남긴 의견을 작성자·시각과 함께 (팀 전체 한 파일).',
+    '<button class="btn pri" onclick="exGo(\''+cid+'\')">현장견학 일지 A4</button>');
+
+  h += card('⑧ 원자료 (CSV · 엑셀)',
+    '보고서가 아니라 <b>원자료</b>가 필요할 때 — 설문·동료평가·튜터링 원본을 표 형태로.',
+    '<button class="btn" onclick="go(\'admin\',{p:\'down\'})">CSV 다운로드</button>');
+
   return h + backBar();
 }
 
@@ -10318,6 +11823,9 @@ var DBCONF = {
      ③ 위 DBCONF.mode                            (기본값) */
 var DBMODE_KEY = 'bio_db_mode';
 (function(){
+  /* 🧪 미리보기 모드면 무조건 로컬(서버 미접속) — 서버에 한 줄도 쓰지 않게 합니다.
+     이 선택은 localStorage 에 기억시키지 않습니다(주소에 ?demo=1 이 있을 때만 켜지는 1회성). */
+  if(typeof PREVIEW!=='undefined' && PREVIEW){ DBCONF.mode = 'local'; return; }
   var q = (location.search + location.hash).match(/[?&#]db=(local|remote)/);
   if(q){ try{ localStorage.setItem(DBMODE_KEY, q[1]); }catch(e){} DBCONF.mode = q[1]; return; }
   var s=null; try{ s = localStorage.getItem(DBMODE_KEY); }catch(e){}
@@ -10348,6 +11856,7 @@ var TBL = {
   topics       : { db:'topics',        cols:[['teamId','team_id'],['kind','kind'],['no','no']] },
   submits      : { db:'submits',       cols:[['teamId','team_id'],['topicId','topic_id'],['week','week'],['rev','rev']] },
   activity     : { db:'activity',      cols:[['teamId','team_id'],['week','week']] },
+  excursion    : { db:'excursion',     cols:[['teamId','team_id']] },   /* 🚌 11주차 견학 의견 — 서버 표 excursion 필요(아래 loadAll 안전장치 참고) */
   tutoring     : { db:'tutoring',      cols:[['teamId','team_id'],['round','round']] },
   surveys      : { db:'surveys',       cols:[['kind','kind']] },
   questions    : { db:'questions',     cols:[['surveyId','survey_id'],['order','ord']] },
@@ -10676,7 +12185,15 @@ var DBR = {
       /* 표마다 받을 칸 — 대부분 * 지만, accounts 는 읽을 수 있는 칸만(위 TBL 주석) */
       var sel = TBL[t].sel || '*';
       return self.call('/rest/v1/'+TBL[t].db+'?select='+sel, {headers:self.hdr(false)})
-        .then(function(rows){ return {t:t, rows:(rows||[]).map(function(r){ return self.fromDb(t,r); })}; });
+        .then(function(rows){ return {t:t, rows:(rows||[]).map(function(r){ return self.fromDb(t,r); })}; },
+          function(err){
+            /* 🚌 11주차 견학 의견 표(excursion)는 서버에 나중에 만들 수 있습니다.
+               아직 없더라도 이 표 하나 때문에 전체 시작(Promise.all)이 깨지지 않게, 이 표만 빈 채로 넘어갑니다.
+               (저장을 시도하면 DBR.failed 에 쌓여 사람이 보게 되므로 「조용히 사라지는」 사고는 아닙니다.)
+               ⛔ 다른 표는 그대로 크게 실패하게 둡니다 — 그래야 진짜 문제를 놓치지 않습니다. */
+            if(t==='excursion'){ return {t:t, rows:[]}; }
+            throw err;
+          });
     })).then(function(list){
       var d = DB.d || {};
       list.forEach(function(x){ d[x.t]=x.rows; });
@@ -10894,6 +12411,11 @@ function render(){
       case 'svprint':  h=viewSvPrint();  break; /* 📄 설문 결과 A4 인쇄본 */
       case 'score':    h=viewScoreSheet(); break; /* 🧮 A4 점수표 (19차) */
       case 'actlog':   h=viewActLog(); break;     /* 🗂 주차별 활동기록 (20차) */
+      case 'reports':  h=viewReports(); break;    /* 📄 팀 점수표·발표평가 정리표 (R12) */
+      case 'outputs':  h=viewOutputs(); break;    /* 📄 출력물 허브 (R13) */
+      case 'wplan':    h=viewWeeklyPlan(); break; /* 📄 주차별 계획 A4 1장 (R14) */
+      case 'svone':    h=viewSurveyOne(); break;  /* 📄 설문 결과 A4 (사전·최종) (R13) */
+      case 'exlog':    h=viewExcursion(); break;  /* 🚌 현장견학 일지 A4 (R13) */
       default:        h=viewLogin();
     }
   }catch(e){
@@ -10903,10 +12425,13 @@ function render(){
   }
   /* 🧪 예시 데이터가 채워져 있으면 어느 화면에서든 알려 드립니다 —
      실제 학생 이름에 가짜 점수가 붙은 상태를 실제로 오해하시면 안 되므로 */
-  if(DB.d && DB.d.__demo && VIEW.name!=='login')
+  if(DB.d && DB.d.__demo && VIEW.name!=='login' && !(typeof PREVIEW!=='undefined'&&PREVIEW))
     h = '<div class="note a" style="margin:10px 0 0"><b>예시 데이터가 채워져 있습니다</b> — '+
         '팀·제출물·점수는 전부 <b>가짜</b>입니다(학생 이름만 실제). '+
         '위 <b>[처음으로 되돌리기]</b>를 누르면 「학기 시작 직전」으로 돌아갑니다.</div>' + h;
+
+  /* 🧪 미리보기 모드면 화면 맨 위에 굵은 띠를 상시 붙입니다 (?demo=1 일 때만) */
+  if(typeof previewBar==='function'){ var _pv=previewBar(); if(_pv) h = _pv + h; }
 
   /* 🏁 배포본은 깔끔한 푸터(제목만) · 교내용은 개발정보 유지 */
   if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY)
@@ -10916,7 +12441,7 @@ function render(){
        '설계서: 교육\\PBL_app_screen_spec.md · 저장은 이 브라우저 안에만 됩니다</div>';
   /* 🖨 일지 화면일 때만 「인쇄하면 일지만 남기기」 규칙이 걸립니다 (12차) */
   /* 🖨 인쇄 화면일 때만 「인쇄하면 그 종이만 남기기」 규칙이 걸립니다 (12·14차) */
-  document.body.className = (VIEW.name==='tulog'||VIEW.name==='svprint'||VIEW.name==='score'||VIEW.name==='actlog') ? 'printsheet' : '';
+  document.body.className = (VIEW.name==='tulog'||VIEW.name==='svprint'||VIEW.name==='score'||VIEW.name==='actlog'||VIEW.name==='reports'||VIEW.name==='svone'||VIEW.name==='exlog'||VIEW.name==='wplan') ? 'printsheet' : '';
   $('app').innerHTML = h;
 }
 
@@ -11350,11 +12875,9 @@ window.__protoCheck = function(){
         ['2주차 팀',      stMyTeam(DB.one('teams',T.id), DB.one('students',A.id))],
         ['2주차 가주제',  stTopics(DB.one('teams',T.id))],
         ['3주차 제출함',  (VIEW={name:'week',p:{n:3}}, stResearch())],
-        ['5주차 최종주제',(VIEW={name:'week',p:{n:5}}, stFinalTopic())],
-        ['6주차 영상',    (VIEW={name:'week',p:{n:6}}, stVideo())],
-        /* ⛔ 18차 — 「7주차 영상제출」은 없어졌습니다(교수님: 파일은 따로 받으심) → 검사 대상에서 뺍니다 */
-        ['9주차 활동',    (VIEW={name:'week',p:{n:9}}, stActivity(9, wdef(9)))],
-        ['12주차 준비',   (VIEW={name:'week',p:{n:12}}, stPrep())]
+        ['5주차 최종주제',(VIEW={name:'week',p:{n:5}}, stFinalTopic())]
+        /* ⛔ 18차 — 「7주차 영상제출」은 없어졌습니다(교수님: 파일은 따로 받으심).
+           ⛔ 2026-08-23 — 6·9·10·12주차는 「타이틀만」으로 바뀌어 학생 제출(수정 버튼)이 없습니다 → 검사 대상에서 뺍니다. */
       ];
       var noBtn=[], oldWord=[], noWhen=[];
       screens.forEach(function(x){
@@ -11367,24 +12890,35 @@ window.__protoCheck = function(){
          (noBtn.length? '수정 버튼 없음: '+noBtn.join(',')+' / ':'')+
          (oldWord.length? '옛말 「고치기」 남음: '+oldWord.join(',')+' / ':'')+
          (noWhen.length? '「언제까지」 줄 없음: '+noWhen.join(','):
-           '2주차 팀·가주제 · 3주차 제출함 · 5·6·7·9·12주차 전건 확인'));
+           '2주차 팀·가주제 · 3주차 제출함 · 5주차 최종주제 전건 확인'));
 
-      /* 마감으로 바꾸면 그 화면들이 전부 버튼을 거두는가 */
-      [2,5,6,7,9,12].forEach(function(n2){ DB.set('weeks','w'+n2,{state:'마감'}); });
-      var still=[];
-      [['2주차 가주제', stTopics(DB.one('teams',T.id))],
-       ['5주차 최종주제',(VIEW={name:'week',p:{n:5}}, stFinalTopic())],
-       ['6주차 영상',    (VIEW={name:'week',p:{n:6}}, stVideo())],
-       ['9주차 활동',    (VIEW={name:'week',p:{n:9}}, stActivity(9, wdef(9)))],
-       ['12주차 준비',   (VIEW={name:'week',p:{n:12}}, stPrep())]
-      ].forEach(function(x){ if(x[1].indexOf('btn fix')>=0 || x[1].indexOf(FIX_LOCKED)<0) still.push(x[0]); });
+      /* 마감으로 바꾸면 2주차 가주제는 버튼을 거두는가 (6·9·10·12주차는 타이틀만이라 대상 아님) */
+      [2,5].forEach(function(n2){ DB.set('weeks','w'+n2,{state:'마감'}); });
+      var lockH = stTopics(DB.one('teams',T.id));
+      var topicLocked = (lockH.indexOf('btn fix')<0 && lockH.indexOf(FIX_LOCKED)>=0);
       /* 저장 함수도 실제로 거부하는지 — 화면만 감추고 함수가 뚫리면 소용없습니다 */
       var b4t = DB.get('topics', function(x){return x.teamId===T.id&&x.kind==='가주제'&&x.no===1;})[0].title;
       saveTopics(T.id);
       var kept = DB.get('topics', function(x){return x.teamId===T.id&&x.kind==='가주제'&&x.no===1;})[0].title===b4t;
-      [2,5,6,7,9,12].forEach(function(n2){ DB.set('weeks','w'+n2,{state:'열림'}); });
-      ok('🔴 마감 뒤에는 5곳 모두 버튼을 거두고 이유만 남김 · 저장 함수도 거부', still.length===0 && kept,
-         still.length? '아직 버튼이 남은 곳: '+still.join(',') : '2주차 가주제 · 5·6·9·12주차 · 저장 시도해도 값이 그대로 '+(kept?'○':'✗'));
+      ok('🔴 마감 뒤 2주차 가주제는 버튼 거두고 저장도 거부', topicLocked && kept,
+         (!topicLocked?'⛔ 2주차 가주제 버튼이 남음 ':'')+(!kept?'⛔ 저장이 뚫림':'2주차 가주제 잠김·저장 거부 ○'));
+
+      /* 🔴 R10 (2026-08-23) — 5주차 최종주제는 예외입니다: 마감돼도 「교수 승인 전」이면 계속 수정할 수 있어야 하고,
+         잠그는 것은 오직 「교수 승인(ok)」뿐입니다. (평가의 1회 수정 잠금과 다릅니다 — 여기는 마감·횟수 제한 없음) */
+      VIEW={name:'week',p:{n:5}};
+      var finOpenH = stFinalTopic();
+      var finEditable = (finOpenH.indexOf('btn fix')>=0 || finOpenH.indexOf('제출하기')>=0) && finOpenH.indexOf('언제든')>=0;
+      var finRow = DB.one('topics', function(x){return x.teamId===T.id&&x.kind==='최종';});
+      var madeFin = false;
+      if(!finRow){ finRow = DB.add('topics',{teamId:T.id,kind:'최종',no:1,title:'검사용 최종주제',summary:'검사용',from:'',ok:false}); madeFin=true; }
+      DB.set('topics', finRow.id, {ok:true});
+      var finLockedH = stFinalTopic();
+      var finLockedAfterApprove = (finLockedH.indexOf('승인이 끝나')>=0 && finLockedH.indexOf('btn fix')<0);
+      DB.set('topics', finRow.id, {ok:false});
+      if(madeFin) DB.del('topics', finRow.id);
+      [2,5].forEach(function(n2){ DB.set('weeks','w'+n2,{state:'열림'}); });
+      ok('🔴 R10 — 5주차 최종주제는 마감돼도 수정 가능, 교수 승인 시에만 잠김', finEditable && finLockedAfterApprove,
+         (!finEditable?'⛔ 마감 뒤 수정 버튼이 사라짐 ':'')+(!finLockedAfterApprove?'⛔ 승인 뒤에도 안 잠김':'마감 중 수정 O · 승인 시 잠김 O'));
 
       /* 검사하며 만든 것 치우기 */
       DB.get('topics', function(x){return x.teamId===T.id&&x.kind==='최종';}).forEach(function(x){ DB.del('topics', x.id); });
@@ -11777,7 +13311,7 @@ window.__protoCheck = function(){
        '칸: '+hdrT+' · 줄 '+(rowsT.length-1)+'개(저장된 기록만)');
 
     tuOpen={}; tuPeek={}; tuHist={};
-    for(var z=1;z<=15;z++) delete previewOpen[z];
+    for(var z=1;z<=WEEKDEF.length;z++) delete previewOpen[z];
     SESS.acc=keepU.a; SESS.role=keepU.r; SESS.me=keepU.m; SESS.scope=keepU.sc; VIEW=keepU.v;
   })();
 
@@ -11831,7 +13365,7 @@ window.__protoCheck = function(){
   var save={v:VIEW, sc:SESS.scope, a:SESS.acc, r:SESS.role, m:SESS.me};
   function sweep(){
     var bad=[];
-    for(var n=1;n<=15;n++){
+    for(var n=1;n<=WEEKDEF.length;n++){
       previewOpen[n]=true;
       try{ VIEW={name:'week',p:{n:n}}; var html=viewWeek(); if(!html || html.length<400) bad.push(n+'(내용없음)'); }
       catch(e){ bad.push(n+'('+e.message+')'); }
@@ -11841,13 +13375,13 @@ window.__protoCheck = function(){
   var stu = DB.one('students', function(s){return s.active!==false && s.teamId;});
   SESS.acc=DB.one('accounts', stu.accountId); SESS.role='student'; SESS.me=stu; SESS.scope='mine';
   var badS = sweep();
-  ok('15개 주차 — 학생 화면', badS.length===0, badS.length? '문제: '+badS.join(','):'1~15 전부 그려짐');
+  ok(WEEKDEF.length+'개 주차 — 학생 화면', badS.length===0, badS.length? '문제: '+badS.join(','):'1~'+WEEKDEF.length+' 전부 그려짐');
   SESS.acc=DB.one('accounts','p2'); SESS.role='super'; SESS.me=null; SESS.scope='mine';
   var badP = sweep();
-  ok('15개 주차 — 교수 화면', badP.length===0, badP.length? '문제: '+badP.join(','):'1~15 전부 그려짐');
+  ok(WEEKDEF.length+'개 주차 — 교수 화면', badP.length===0, badP.length? '문제: '+badP.join(','):'1~'+WEEKDEF.length+' 전부 그려짐');
   SESS.scope='all';
   var badP2 = sweep();
-  ok('15개 주차 — 교수 [전체] 모드', badP2.length===0, badP2.length? '문제: '+badP2.join(','):'1~15 전부 그려짐');
+  ok(WEEKDEF.length+'개 주차 — 교수 [전체] 모드', badP2.length===0, badP2.length? '문제: '+badP2.join(','):'1~'+WEEKDEF.length+' 전부 그려짐');
   SESS.acc=save.a; SESS.role=save.r; SESS.me=save.m; SESS.scope=save.sc;
 
   /* 2-1. 관리 화면이 전부 그려지는가 */
@@ -13246,7 +14780,7 @@ window.__protoCheck = function(){
 
       /* 16-14. 15주 전부가 그려지는가 · 주차 이름과 날짜가 들어가는가 */
       var bad=[], keepV=VIEW;
-      WEEKDEF.forEach(function(d){
+      WEEKDEF.filter(function(d){ return d.kind!=='result'; }).forEach(function(d){
         var sh=alSheet(d.n, cid);
         if(sh.length<400) bad.push(d.n+'주차 내용없음');
         if(sh.indexOf(esc(d.full))<0) bad.push(d.n+'주차 활동명 없음');
@@ -13328,7 +14862,7 @@ window.__protoCheck = function(){
     })();
 
     SESS.acc=keep.a; SESS.role=keep.r; SESS.me=keep.m; SESS.scope=keep.sc; VIEW=keep.v;
-    for(var z2=1; z2<=15; z2++) delete previewOpen[z2];
+    for(var z2=1; z2<=WEEKDEF.length; z2++) delete previewOpen[z2];
   })();
 
   /* 되돌리기 — 점검하려고 채운 예시 데이터는 도로 지웁니다 */
@@ -13338,7 +14872,7 @@ window.__protoCheck = function(){
     ok('점검이 끝나고 시작 상태로 되돌림', DB.get('teams').length===0 && DB.get('students').length===ROSTER_FACT.total,
        '팀 0개 · 학생 '+DB.get('students').length+'명 · 실제 명단만 남음');
   }
-  VIEW=save.v; for(var n2=1;n2<=15;n2++) delete previewOpen[n2];
+  VIEW=save.v; for(var n2=1;n2<=WEEKDEF.length;n2++) delete previewOpen[n2];
   render();
   if(window.console && console.table) console.table(out);
   return out;
