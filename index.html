@@ -2858,7 +2858,7 @@ function viewHome(){
     '<p class="muted" style="margin-top:8px">'+(DB.d.__demo
       ? '<b>예시 데이터</b>가 채워져 있어 「오늘」을 <b>4주차 수업일(9/16)</b>로 가정했습니다.'
       : '지금은 <b>1주차 수업일(8/26)</b> 기준입니다. 2주차부터는 「닫힘」이지만')+
-      ' 눌러 들어가면 <b>미리 보기</b>로 화면을 보실 수 있습니다.</p></div>';
+      (isProf()? ' 눌러 들어가면 <b>미리 보기</b>로 화면을 보실 수 있습니다.':' 아직 열리지 않은 주차는 담당교수님이 열면 보입니다.')+'</p></div>';
   if(!isProf()){
     var t=teamOf(SESS.me);
     h += '<div class="card"><h3>내 정보 · 우리 팀</h3><div class="kv">'+
@@ -2923,7 +2923,7 @@ function viewWeek(){
     head += '<div class="card" style="text-align:center">'+
       '<h3>🔒 아직 열리지 않았습니다</h3>'+
       '<p class="muted">'+n+'주차는 '+mdw(def.date)+'에 열립니다.</p>'+
-      '<button class="btn pri" onclick="previewOpen['+n+']=true;render()">🔎 이 주차 화면 미리 보기</button>'+
+      (isProf()? '<button class="btn pri" onclick="previewOpen['+n+']=true;render()">🔎 이 주차 화면 미리 보기</button>':'<p class="muted">담당교수님이 이 주차를 열면 볼 수 있습니다.</p>')+
       (canEdit(myClass())? ' <button class="btn" onclick="DB.set(\'weeks\',\'w'+n+'\',{state:\'열림\'});render()">이 주차 열기</button>':'')+
       '</div>' + pager(n);
     return head;
