@@ -297,6 +297,17 @@ input:disabled,textarea:disabled,select:disabled{background:#f0f2f5;color:#8a939
 /* 헤더 바로 아래 첫 라벨은 위 여백을 줄여 헤더에 붙게(칸 사이는 그대로) */
 .igroup label.f:first-of-type{margin-top:9px}
 
+/* 📝 설문 문항 카드 (2026-08-25) — 사전·최종 설문의 문항 하나하나를 .igroup 카드로
+   또렷이 나눕니다(가주제 입력과 같은 시각 언어). 긴 문항 글에 맞춰 번호 배지를 글
+   맨 위에 정렬하고, 헤더와 응답칸 사이에 한 줄 틈을 둡니다. 배지가 없는 문항(자유
+   의견 등)은 .gn 을 그리지 않아 깔끔한 헤더가 됩니다.
+   🔴 R22 미응답 붉은 표시(.miss)는 카드 테두리·왼쪽 바·번호 배지가 함께 붉어집니다. */
+.igroup.sv>.ghd{align-items:flex-start;margin:0 0 9px}
+.igroup.sv>.ghd .gt{font-weight:700;line-height:1.55}
+.igroup.sv.miss{border-color:var(--red);border-left-color:var(--red);background:var(--red-w)}
+.igroup.sv.miss>.ghd .gn{background:var(--red)}
+.svmiss{color:var(--red);font-weight:700;font-size:13.5px;margin-top:9px}
+
 /* ===== 표 ===== */
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 0 8px;max-width:100%}
 .card,.note,.acc{overflow-wrap:anywhere}
@@ -3215,51 +3226,61 @@ function svGo(i){
 
 /* ---- 문항 하나 ---- */
 /* 문항 번호를 앞에 붙일지 — 원문에 이미 번호가 있으면 붙이지 않습니다.
-   원본 Ⅱ·Ⅳ절 문항은 글 안에 「1. 」이 들어 있고(표의 문항 칸), Ⅲ·Ⅴ절은
-   번호가 딴 칸(No)에 있어 글에는 없습니다. 그대로 붙이면 「1. 1. 과제를…」이 됩니다. */
+   (🔴 설문 화면 svHead 는 이제 배지로 번호를 보여 주므로 이 함수를 쓰지 않지만,
+    관리자 문항목록 p8_admin·설문 대시보드 pS_dashsurvey 가 여전히 씁니다 — 지우지 마십시오.) */
 function qNum(q){
   if(!q.no) return '';
   return String(q.text).indexOf(q.no + '.') === 0 ? '' : q.no + '. ';
 }
+/* 문항 글에서 「맨 앞에 붙은 번호」만 표시에서 뗍니다 — 이제 번호는 카드의 배지가
+   대신 보여 주므로, 「1」 배지 옆에 「1. 과제를…」이 겹쳐 보이지 않게 합니다.
+   원본 Ⅱ·Ⅳ·Ⅴ절 문항은 글 안에 「1. 」이 들어 있고(표의 문항 칸), Ⅲ절 등은 번호가
+   딴 칸(No)에 있어 글에는 없습니다. 뗀 뒤에도 문항의 실제 내용은 한 글자도 바뀌지
+   않습니다(맨 앞 번호 표기만 배지로 옮겨 갑니다). 번호 없는 문항(자유 의견)은 그대로. */
+function svQText(q){
+  var t = String(q.text);
+  if(q.no) t = t.replace(new RegExp('^\\s*'+q.no+'\\.\\s*'), '');
+  return esc(t).replace(/\n/g,'<br>');
+}
+/* 카드의 머리(.ghd) — 번호가 있으면 「배지 + 문항 글」, 없으면 배지 없이 문항 글만 */
 function svHead(q){
-  return '<div style="font-weight:700;font-size:17px;line-height:1.6;margin:16px 0 6px">'+
-    qNum(q)+esc(q.text).replace(/\n/g,'<br>')+
-    (q.req? ' <span class="req">*</span>':' <span class="muted">(선택)</span>')+'</div>';
+  var gt = '<span class="gt">'+svQText(q)+
+    (q.req? ' <span class="req">*</span>':' <span class="muted">(선택)</span>')+'</span>';
+  return '<div class="ghd">'+(q.no? '<span class="gn">'+q.no+'</span>':'')+gt+'</div>';
 }
 function svQ(q){
-  var h = svHead(q);
+  var body = '';
   if(q.type==='5점'){
     if(q.dual){
       /* 🔴 원본은 11칸짜리 표입니다. 폰에서 표로 만들면 못 씁니다 — 세로로 쌓습니다 */
-      h += svScale(q, q.id, q.dual[0]) + svScale(q, q.id+'#b', q.dual[1]);
+      body += svScale(q, q.id, q.dual[0]) + svScale(q, q.id+'#b', q.dual[1]);
     }else{
-      h += svScale(q, q.id, '');
+      body += svScale(q, q.id, '');
     }
   }else if(q.type==='단일'){
-    h += q.opts.map(function(o,i){
+    body += q.opts.map(function(o,i){
       var on = svDraft[q.id]===o;
       return '<div class="chk" onclick="svSet(\''+q.id+'\',\''+jsq(o)+'\')">'+
         '<input type="radio" '+(on?'checked':'')+' readonly><span>'+esc(o)+'</span></div>'+
         (q.fills[i]&&on? '<input type="text" id="svt_'+q.id+'@'+i+'" placeholder="'+esc(q.fills[i])+'" value="'+esc(svDraft[q.id+'@'+i]||'')+'" style="margin:2px 0 6px">':'');
     }).join('');
   }else if(q.type==='복수'){
-    h += q.opts.map(function(o,i){
+    body += q.opts.map(function(o,i){
       var on = svHas(q.id, o);
       return '<div class="chk" onclick="svToggle(\''+q.id+'\',\''+jsq(o)+'\')">'+
         '<input type="checkbox" '+(on?'checked':'')+' readonly><span>'+esc(o)+'</span></div>'+
         (q.fills[i]&&on? '<input type="text" id="svt_'+q.id+'@'+i+'" placeholder="'+esc(q.fills[i])+'" value="'+esc(svDraft[q.id+'@'+i]||'')+'" style="margin:2px 0 6px">':'');
     }).join('')+'<p class="muted">여러 개 고르실 수 있습니다.</p>';
   }else if(q.type==='서술짧'){
-    h += '<input type="text" id="svt_'+q.id+'" value="'+esc(svDraft[q.id]||'')+'">';
+    body += '<input type="text" id="svt_'+q.id+'" value="'+esc(svDraft[q.id]||'')+'">';
   }else{
-    h += '<textarea id="svt_'+q.id+'" style="min-height:96px">'+esc(svDraft[q.id]||'')+'</textarea>';
+    body += '<textarea id="svt_'+q.id+'" style="min-height:96px">'+esc(svDraft[q.id]||'')+'</textarea>';
   }
-  /* 🔴 넘김을 막은 미응답 문항은 붉게 감싸 시선이 가게 합니다 */
-  if(svMissIds.indexOf(q.id)>=0)
-    return '<div style="border-left:4px solid #d33;background:#fff4f4;border-radius:8px;'+
-           'padding:2px 10px 8px;margin-top:8px">'+h+
-           '<div class="muted" style="color:#d33">↑ 이 문항에 답해 주세요</div></div>';
-  return h;
+  /* 🔴 문항 하나를 카드(.igroup.sv)로 감쌉니다. 넘김을 막은 미응답 문항은 .miss 를 붙여
+     카드 테두리·왼쪽 바·번호 배지가 붉어지고 아래에 「↑ 이 문항에 답해 주세요」가 뜹니다. */
+  var miss = svMissIds.indexOf(q.id)>=0;
+  return '<div class="igroup sv'+(miss?' miss':'')+'">'+svHead(q)+body+
+    (miss? '<div class="svmiss">↑ 이 문항에 답해 주세요</div>':'')+'</div>';
 }
 function svScale(q, key, title){
   var v = svDraft[key]||'';
