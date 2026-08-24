@@ -2995,12 +2995,14 @@ function stNotice(n){
       자동 생성)에 그대로 들어 있고, 이 파일은 「그리는 일」만 합니다.
    ⛔ 문항을 다듬거나 더하거나 빼지 않습니다.
    ▸ 절(Ⅰ~Ⅵ) 단위로 한 쪽씩 넘깁니다 — 23문항을 한 화면에 쏟으면 폰에서 못 씁니다.
-   ▸ 임시 저장은 브라우저에 남습니다(제출 전까지). 제출 후에는 고칠 수 없습니다.
+   ▸ 한 쪽의 필수 문항을 다 채워야 「다음 →」으로 넘어갑니다(「← 이전」은 자유).
+   ▸ 임시 저장은 브라우저에 남습니다. 제출한 뒤에도 언제든 다시 열어 고칠 수 있습니다.
    ========================================================================== */
 var svPage = 0;        /* 지금 보고 있는 절 */
 var svDraft = {};      /* 답 — 열쇠: qId / qId+'#b'(② 수강 전의 나) / qId+'@'+보기번호(직접 입력) */
 var svOn = null;       /* 지금 열어 둔 설문 id (설문이 바뀌면 임시저장을 다시 읽습니다) */
-var svMiss = [];       /* 제출을 막은 미응답 목록 */
+var svMiss = [];       /* 넘김·제출을 막은 미응답 목록(이름표) */
+var svMissIds = [];    /* 그중 붉게 짚어 줄 문항 id */
 
 /* ---- 임시 저장 ---- */
 function svDraftRow(svId){
@@ -3008,7 +3010,7 @@ function svDraftRow(svId){
 }
 function svLoad(svId){
   if(svOn===svId) return;
-  svOn=svId; svPage=0; svMiss=[];
+  svOn=svId; svPage=0; svMiss=[]; svMissIds=[];
   var r=svDraftRow(svId);
   svDraft = r? JSON.parse(JSON.stringify(r.vals||{})) : {};
 }
@@ -3024,9 +3026,9 @@ function svReadText(){
   var es=document.querySelectorAll('[id^=svt_]');
   for(var i=0;i<es.length;i++) svDraft[es[i].id.slice(4)] = es[i].value.trim();
 }
-function svSet(key, v){ svReadText(); svDraft[key]=v; render(); }
+function svSet(key, v){ svReadText(); svDraft[key]=v; svMiss=[]; svMissIds=[]; render(); }
 function svToggle(key, v){
-  svReadText();
+  svReadText(); svMiss=[]; svMissIds=[];
   var cur = svDraft[key]? String(svDraft[key]).split(' / ') : [];
   var i = cur.indexOf(v);
   if(i>=0) cur.splice(i,1); else cur.push(v);
@@ -3067,6 +3069,50 @@ function svAnswered(svId){
   });
   return {n:n, tot:tot};
 }
+/* 🔴 「지금 이 쪽」의 미응답만 — 다음 장으로 넘어가기 전 이 쪽부터 채우게 하려고 씁니다.
+   labels: 안내에 쓸 이름표 · ids: 붉게 짚어 줄 문항 id (주관식·기타·자유의견은 선택이라 세지 않습니다) */
+function svMissingPage(svId, pg){
+  var sv=DB.one('surveys', svId); if(!sv) return {labels:[], ids:[]};
+  var secs=svSects(sv);
+  if(pg<0 || pg>=secs.length) return {labels:[], ids:[]};
+  var sec=secs[pg];
+  var labels=[], ids=[];
+  if(sec.basic) return {labels:labels, ids:ids};   /* Ⅰ. 기본 정보 — 자동으로 채워지므로 필수 없음 */
+  svQs(svId).filter(function(q){return q.sect===sec.t;}).forEach(function(q){
+    if(!q.req) return;
+    var bad=false;
+    if(!svDraft[q.id]){ labels.push(svLabel(q,false)); bad=true; }
+    if(q.dual && !svDraft[q.id+'#b']){ labels.push(svLabel(q,true)); bad=true; }
+    if(bad && ids.indexOf(q.id)<0) ids.push(q.id);
+  });
+  return {labels:labels, ids:ids};
+}
+/* 🔁 제출한 뒤 다시 열었는데 임시저장이 비어 있을 때 — 이미 낸 답을 svDraft 로 되살립니다.
+   (보통은 제출해도 임시저장을 지우지 않으므로 이 함수까지 오지 않습니다. 임시저장이 사라진
+    경우의 안전망입니다.) 저장 때 붙였던 「(기타: …)」 꼬리는 떼어 원래 선택·직접입력으로 되돌립니다. */
+function svFillFromAnswers(sv, mine){
+  svQs(sv.id).forEach(function(q){
+    var a=mine.filter(function(x){return x.qId===q.id && x.part!=='수강전';})[0];
+    var b=mine.filter(function(x){return x.qId===q.id && x.part==='수강전';})[0];
+    if(a){
+      var val=a.val||'';
+      var hasFill=(q.fills||[]).some(function(f){return f;});
+      if(hasFill){
+        var m=val.match(/^([\s\S]*)\s\(([\s\S]+)\)$/);
+        if(m){
+          val=m[1];
+          m[2].split(' / ').forEach(function(pair){
+            var idx=pair.indexOf(': '); if(idx<0) return;
+            var lab=pair.slice(0,idx), txt=pair.slice(idx+2);
+            (q.fills||[]).forEach(function(f,i){ if(f===lab) svDraft[q.id+'@'+i]=txt; });
+          });
+        }
+      }
+      svDraft[q.id]=val;
+    }
+    if(b) svDraft[q.id+'#b']=b.val||'';
+  });
+}
 
 /* ==========================================================================
    학생 화면
@@ -3075,6 +3121,7 @@ function stSurvey(n, kind){
   var sv = DB.one('surveys', function(s){return s.kind===kind;});
   if(!sv) return '<div class="card"><div class="note a">설문이 준비되지 않았습니다.</div></div>';
   var mine = DB.get('answers', function(a){return a.surveyId===sv.id && a.studentId===SESS.me.id;});
+  var submitted = mine.length>0;                 /* 이미 한 번 제출한 학생인가 */
   var cs = DB.one('consents', function(c){return c.no===SESS.me.no;});
 
   var h = '<div class="card"><h3>① 수강 동의 <span class="muted">(필수)</span></h3>'+
@@ -3082,43 +3129,28 @@ function stSurvey(n, kind){
     '<span>개인정보 수집·이용에 동의합니다 <span class="muted">— 동의하지 않으면 설문을 시작할 수 없습니다</span></span></div>'+
     '<p class="muted">⚠️ 동의 문구는 교내 심의 결과가 나온 뒤 확정됩니다.</p></div>';
 
-  /* ── 이미 낸 경우 — 제출 후에는 고칠 수 없습니다 (1-6절) ── */
-  if(mine.length){
-    h += '<div class="card"><h3>② '+esc(sv.title)+' <span class="bg green">✅ 제출 완료</span></h3>'+
-      '<div class="note">🔒 <b>설문은 한 번 제출하면 고칠 수 없습니다.</b> 내가 답한 내용만 아래에 보여 드립니다.</div>';
-    svSects(sv).forEach(function(sec){
-      var qs = svQs(sv.id).filter(function(q){return q.sect===sec.t;});
-      if(sec.basic){ h += '<div class="hr"></div><b>'+esc(sec.t)+'</b><div>'+esc(sn(SESS.me))+'</div>'; return; }
-      h += '<div class="hr"></div><b>'+esc(sec.t)+'</b>';
-      qs.forEach(function(q){
-        var a  = mine.filter(function(x){return x.qId===q.id && x.part!=='수강전';})[0];
-        var b2 = mine.filter(function(x){return x.qId===q.id && x.part==='수강전';})[0];
-        h += '<div style="margin-top:6px">'+svHead(q)+
-          '<div>→ '+esc(svShow(q, a? a.val:''))+ (q.dual? ' <span class="muted">('+esc(q.dual[0])+')</span>':'')+'</div>'+
-          (q.dual? '<div>→ '+esc(svShow(q, b2? b2.val:''))+' <span class="muted">('+esc(q.dual[1])+')</span></div>':'')+'</div>';
-      });
-    });
-    return h + '<p class="muted" style="margin-top:10px">'+esc(sv.outro||'')+'</p></div>';
-  }
-
   if(!(cs&&cs.ok)) return h + '<div class="card"><h3>② '+esc(sv.title)+'</h3>'+
     '<div class="note a">동의를 하셔야 설문이 시작됩니다.</div></div>';
 
   svLoad(sv.id);
+  /* 🔁 제출한 뒤 다시 열었는데 임시저장이 비어 있으면, 이미 낸 답을 채워 넣어 그 위에서 고치게 합니다 */
+  if(submitted && !Object.keys(svDraft).length) svFillFromAnswers(sv, mine);
+
   var secs = svSects(sv), pg = Math.min(svPage, secs.length-1), sec = secs[pg];
   var qs = svQs(sv.id).filter(function(q){return q.sect===sec.t;});
   var pr = svAnswered(sv.id);
 
-  h += '<div class="card"><h3>② '+esc(sv.title)+'</h3>'+
+  h += '<div class="card"><h3>② '+esc(sv.title)+(submitted? ' <span class="bg green">✅ 제출 완료 · 수정 가능</span>':'')+'</h3>'+
     '<div class="note b">'+(sv.intro||[]).map(function(x){return esc(x);}).join('<br>')+'</div>'+
+    (submitted? '<div class="note a" style="margin-top:8px">✏️ <b>이미 제출하셨습니다.</b> 고치실 내용이 있으면 아래에서 바꾼 뒤 다시 <b>제출하기</b>를 누르시면 됩니다 — <b>제출한 뒤에도 언제든 수정할 수 있습니다.</b></div>':'')+
     '<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap">'+
       '<b>'+esc(sec.t)+'</b><span style="flex:1"></span>'+
       '<span class="bg '+(pr.n>=pr.tot?'green':'gray')+'">응답 '+pr.n+'/'+pr.tot+'</span>'+
       '<span class="muted">'+(pg+1)+' / '+secs.length+' 쪽</span></div>';
 
-  if(svMiss.length) h += '<div class="note r" style="margin-top:8px">⛔ <b>아직 답하지 않은 것이 '+svMiss.length+'개 있습니다.</b><br>'+
+  if(svMiss.length) h += '<div class="note r" style="margin-top:8px">⛔ <b>이 쪽에서 아직 답하지 않은 것이 '+svMiss.length+'개 있습니다.</b><br>'+
     esc(svMiss.slice(0,12).join(' · '))+(svMiss.length>12? ' …':'')+'<br>'+
-    '<span class="muted">위 쪽수를 눌러 옮겨 다니며 채워 주세요. 주관식·기타·자유 의견은 비워 두셔도 됩니다.</span></div>';
+    '<span class="muted">아래 붉게 표시된 문항을 채우셔야 다음 쪽으로 넘어갈 수 있습니다. 주관식·기타·자유 의견은 비워 두셔도 됩니다.</span></div>';
 
   (sec.notes||[]).forEach(function(x){ h += '<div class="note a" style="margin-top:8px">'+esc(x)+'</div>'; });
 
@@ -3140,10 +3172,30 @@ function stSurvey(n, kind){
     '<div class="btnrow" style="margin-top:6px">'+secs.map(function(s2,i){
       return '<button class="btn sm '+(i===pg?'pri':'')+'" onclick="svGo('+i+')">'+(i+1)+'</button>'; }).join('')+'</div>'+
     '<p class="muted">💾 <b>임시 저장</b>을 누르면 이 브라우저에 남습니다 — 23문항이라 한 번에 못 하셔도 됩니다.<br>'+
-    '🔒 <b>제출은 한 번만</b> 할 수 있고, 제출 후에는 고칠 수 없습니다.</p></div>';
+    '🔄 <b>제출한 뒤에도 언제든 수정</b>할 수 있습니다 — 고친 뒤 다시 <b>제출하기</b>를 누르면 저장됩니다.</p></div>';
   return h;
 }
-function svGo(i){ svReadText(); svSaveDraft(svOn, true); svPage=i; svMiss=[]; window.scrollTo(0,0); render(); }
+/* 쪽 옮기기 — 「다음 →」·번호 버튼으로 앞으로 갈 땐, 지금 쪽부터 목적지 앞 쪽까지 필수 문항이
+   다 찼는지 검사해 비어 있으면 막습니다. 「← 이전」·같은 쪽·뒤로 가기는 검사 없이 자유입니다. */
+function svGo(i){
+  svReadText();
+  if(i > svPage){
+    var miss=null, at=svPage;
+    for(var p=svPage; p<i; p++){
+      var m=svMissingPage(svOn, p);
+      if(m.labels.length){ miss=m; at=p; break; }
+    }
+    if(miss){
+      svPage=at;                                  /* 비어 있는 그 쪽을 펼쳐 짚어 줍니다 */
+      svMiss=miss.labels; svMissIds=miss.ids;
+      svSaveDraft(svOn, true);
+      toast('⛔ 이 쪽을 다 채워야 넘어갈 수 있습니다 — 아직 '+miss.labels.length+'개 남았습니다: '+
+            miss.labels.slice(0,3).join(' · ')+(miss.labels.length>3?' …':''));
+      window.scrollTo(0,0); render(); return;
+    }
+  }
+  svSaveDraft(svOn, true); svPage=i; svMiss=[]; svMissIds=[]; window.scrollTo(0,0); render();
+}
 
 /* ---- 문항 하나 ---- */
 /* 문항 번호를 앞에 붙일지 — 원문에 이미 번호가 있으면 붙이지 않습니다.
@@ -3186,6 +3238,11 @@ function svQ(q){
   }else{
     h += '<textarea id="svt_'+q.id+'" style="min-height:96px">'+esc(svDraft[q.id]||'')+'</textarea>';
   }
+  /* 🔴 넘김을 막은 미응답 문항은 붉게 감싸 시선이 가게 합니다 */
+  if(svMissIds.indexOf(q.id)>=0)
+    return '<div style="border-left:4px solid #d33;background:#fff4f4;border-radius:8px;'+
+           'padding:2px 10px 8px;margin-top:8px">'+h+
+           '<div class="muted" style="color:#d33">↑ 이 문항에 답해 주세요</div></div>';
   return h;
 }
 function svScale(q, key, title){
@@ -3215,28 +3272,42 @@ function setConsent(v){
   else DB.add('consents',{no:SESS.me.no, ok:v, at:nowStr(), ver:'v1(초안)'});
   render();
 }
+/* 🔴 본인 응답 1건을 「있으면 고치고 없으면 새로」 — 재제출이 중복 행을 만들지 않게 합니다.
+   짝(qId)+part(''=단일/'현재', '수강전')을 열쇠로 학생 본인 것만 찾아 갱신합니다. */
+function svPutAnswer(svId, qId, part, val){
+  var row=DB.one('answers', function(a){
+    return a.surveyId===svId && a.studentId===SESS.me.id && a.qId===qId && (a.part||'')===(part||'');
+  });
+  if(row) DB.set('answers', row.id, {val:val, at:nowStr()});
+  else DB.add('answers', {surveyId:svId, qId:qId, studentId:SESS.me.id, val:val, part:part, at:nowStr()});
+}
 function svSubmit(svId){
   svReadText();
-  var miss = svMissing(svId);
+  var miss = svMissing(svId);              /* 전체 이중 안전 — 넘김에서 막았어도 마지막에 한 번 더 */
   if(miss.length){
     svMiss = miss; svSaveDraft(svId, true);
     toast('⛔ 아직 답하지 않은 것이 '+miss.length+'개 있습니다: '+miss.slice(0,3).join(' · ')+(miss.length>3?' …':''));
     render(); return;
   }
   var sv=DB.one('surveys', svId);
-  APP.confirm('설문을 제출합니다.\n\n· 제출 후에는 고칠 수 없습니다\n· 응답은 성적에 반영되지 않습니다\n\n진행할까요?', function(){
-    svQs(svId).forEach(function(q){
-      var extra='';
-      (q.fills||[]).forEach(function(f,i){ if(f && svDraft[q.id+'@'+i]) extra += (extra?' / ':'')+f+': '+svDraft[q.id+'@'+i]; });
-      var v = svDraft[q.id]||'';
-      DB.add('answers',{surveyId:svId, qId:q.id, studentId:SESS.me.id,
-        val: v + (extra? ' ('+extra+')':''), part:(q.dual? '현재':''), at:nowStr()});
-      if(q.dual) DB.add('answers',{surveyId:svId, qId:q.id, studentId:SESS.me.id,
-        val: svDraft[q.id+'#b']||'', part:'수강전', at:nowStr()});
-    });
-    var dr=svDraftRow(svId); if(dr) DB.del('sdraft', dr.id);
-    svDraft={}; svPage=0; svOn=null; svMiss=[];
-    toast('설문을 제출했습니다. 수정은 할 수 없습니다.'); render();
+  var again=!!DB.one('answers', function(a){return a.surveyId===svId && a.studentId===SESS.me.id;});
+  APP.confirm('설문을 '+(again?'다시 ':'')+'제출합니다.\n\n· 제출한 뒤에도 언제든 다시 열어 수정할 수 있습니다\n· 응답은 성적에 반영되지 않습니다\n\n진행할까요?', function(){
+    DB.hold();
+    try{
+      svQs(svId).forEach(function(q){
+        var extra='';
+        (q.fills||[]).forEach(function(f,i){ if(f && svDraft[q.id+'@'+i]) extra += (extra?' / ':'')+f+': '+svDraft[q.id+'@'+i]; });
+        var v = svDraft[q.id]||'';
+        svPutAnswer(svId, q.id, (q.dual? '현재':''), v + (extra? ' ('+extra+')':''));
+        if(q.dual) svPutAnswer(svId, q.id, '수강전', svDraft[q.id+'#b']||'');
+      });
+    }finally{ DB.release(); }
+    /* 임시 저장은 지우지 않습니다 — 다시 열었을 때 고른 그대로(직접입력 포함) 보이게 합니다 */
+    svSaveDraft(svId, true);
+    svMiss=[]; svMissIds=[];
+    toast(again? '수정한 내용을 다시 저장했습니다. 언제든 또 고치실 수 있습니다.'
+               : '설문을 제출했습니다. 제출한 뒤에도 언제든 수정할 수 있습니다.');
+    render();
   });
 }
 
@@ -13052,20 +13123,33 @@ window.__protoCheck = function(){
     ok('💾 임시 저장 — 나갔다 들어와도 남아 있음', kept>0 && !!svDraftRow(post.id),
        '답한 '+kept+'칸이 그대로 · 23문항을 한 번에 못 해도 됩니다');
 
-    /* 11-7. 제출하면 답이 저장되고, 그 뒤에는 고칠 수 없는가 */
+    /* 11-7. 🔴 제출하면 답이 저장되고, 그 뒤에도 다시 열어 고칠 수 있는가 (2026-08-24 개정)
+       — 옛 동작(제출하면 읽기전용·수정 불가)을 「제출 후에도 수정 가능」으로 바꿨습니다.
+         · 재제출은 본인 응답 1건을 「갱신」하고 중복 행을 만들지 않습니다(svPutAnswer). */
     svDraft={};
     qq.forEach(function(q){ if(q.req){ svDraft[q.id]='4'; if(q.dual) svDraft[q.id+'#b']='2'; } });
     var okMiss=svMissing(post.id).length;
-    /* 확인창을 거치지 않고 저장 부분만 그대로 시켜 봅니다 */
+    /* 확인창을 거치지 않고 저장 부분만 그대로 시켜 봅니다 (실제 svSubmit 이 쓰는 업서트로) */
     qq.forEach(function(q){
-      DB.add('answers',{surveyId:post.id,qId:q.id,studentId:SESS.me.id,val:svDraft[q.id]||'',part:(q.dual?'현재':''),at:nowStr()});
-      if(q.dual) DB.add('answers',{surveyId:post.id,qId:q.id,studentId:SESS.me.id,val:svDraft[q.id+'#b']||'',part:'수강전',at:nowStr()});
+      svPutAnswer(post.id, q.id, (q.dual?'현재':''), svDraft[q.id]||'');
+      if(q.dual) svPutAnswer(post.id, q.id, '수강전', svDraft[q.id+'#b']||'');
     });
+    var c1=DB.get('answers', function(a){return a.surveyId===post.id && a.studentId===SESS.me.id;}).length;
+    svPage=post.sections.map(function(s){return !!s.basic;}).indexOf(false);  /* 척도가 있는 Ⅱ절로 맞춰 렌더 */
     var after=stSurvey(15,'최종');
-    ok('제출하면 저장되고, 그 뒤에는 고칠 수 없음', okMiss===0 &&
-       after.indexOf('✅ 제출 완료')>=0 && after.indexOf('한 번 제출하면 고칠 수 없습니다')>=0 &&
-       after.indexOf('class="scale"')<0,
-       '필수 전부 응답 → 미응답 0 · 제출 뒤에는 척도 버튼이 사라지고 읽기 전용');
+    var editable = after.indexOf('✅ 제출 완료 · 수정 가능')>=0 &&
+                   after.indexOf('class="scale"')>=0 &&           /* 척도 버튼이 그대로 남아 고칠 수 있음 */
+                   after.indexOf('제출한 뒤에도 언제든 수정')>=0 &&
+                   after.indexOf('제출하기')>=0;
+    /* 값 하나를 고쳐 다시 저장 — 행이 늘지 않고 그 값만 바뀌는가 */
+    var chg=qq.filter(function(q){return q.req && !q.dual;})[0];
+    svPutAnswer(post.id, chg.id, '', '5');
+    var c2=DB.get('answers', function(a){return a.surveyId===post.id && a.studentId===SESS.me.id;}).length;
+    var chgRow=DB.one('answers', function(a){return a.surveyId===post.id && a.studentId===SESS.me.id && a.qId===chg.id && (a.part||'')==='';});
+    ok('🔴 제출해도 저장되고, 그 뒤에도 다시 열어 수정·재제출 가능 (중복 행 안 쌓임)',
+       okMiss===0 && editable && c1===c2 && !!chgRow && chgRow.val==='5',
+       '필수 전부 응답 → 미응답 0 · 제출 뒤에도 척도 버튼이 남아 편집 가능 · '+
+       '재저장해도 행 '+c1+'→'+c2+'건 그대로(본인 것 갱신) · 고친 값 반영 '+(chgRow&&chgRow.val==='5'?'○':'✗'));
 
     /* 11-8. 🔴 사전↔최종 짝 — 번호가 아니라 「짝 이름」으로 이어짐 */
     function pairOf(list,no){ var q=list.filter(function(x){return x.no===no;})[0]; return q? q.pair:''; }
