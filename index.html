@@ -10657,8 +10657,8 @@ function wpCells(def){
   else if(K==='research'){ act.push('가주제 조사 · 자료 제출'); res.push('조사 자료 제출물'); }
   else if(K==='finaltopic'){ act.push('최종 주제 1개 선정'); res.push('최종 주제'); }
   else if(K==='video'){ act.push('광고 영상 제작'); res.push('광고 영상 가편집본'); }
-  else if(K==='activity'){ act.push('최종 앱 개발'); res.push('앱 개발 기록'); if(def.boost) act.push('영상 보강(필요 팀)'); }
-  else if(K==='prep'){ act.push('최종 앱 개발'); act.push('최종발표 평가기준 공개'); res.push('발표 준비 상황'); res.push('평가기준 공개'); }
+  else if(K==='activity'){ act.push('앱 개발'); res.push('앱 개발 기록'); if(def.boost) act.push('영상 보강(필요 팀)'); }
+  else if(K==='prep'){ act.push('앱 개발'); act.push('최종발표 평가기준 공개'); res.push('발표 준비 상황'); res.push('평가기준 공개'); }
   else if(K==='eval'){
     var lbl = def.round===1?'중간발표1' : def.round===2?'중간발표2' : (def.n===13?'최종발표1':'최종발표2');
     act.push(lbl+' 발표 · 평가');
