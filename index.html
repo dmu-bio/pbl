@@ -1965,16 +1965,16 @@ function isoAdd(iso, days){
 var WEEKDEF = [
   {n:1, title:'오리엔테이션', full:'오리엔테이션 · 사전설문조사', win:'수업+당일', kind:'survey'},
   {n:2, title:'팀·가주제',   full:'팀 만들기 · 가주제 3개 · KOSAc 소개', win:'마감일까지', kind:'team'},
-  {n:3, title:'팀활동1',     full:'팀 활동1 · 조사 자료 제출', win:'마감일까지', kind:'research', tutor:1},
+  {n:3, title:'팀활동1',     full:'팀 활동 1 · 조사 자료 제출', win:'마감일까지', kind:'research', tutor:1},
   {n:4, title:'중간발표1',   full:'중간발표1 — 가주제 정리 발표', win:'수업시간', kind:'eval', round:1},
-  {n:5, title:'팀활동2',     full:'팀 활동2 — 최종 주제 1개 선정', win:'마감일까지', kind:'finaltopic', tutor:2},
-  {n:6, title:'광고영상',    full:'광고 영상 제작', win:'수업시간', kind:'video', tutor:3},
+  {n:5, title:'팀활동2',     full:'팀 활동 2 · 최종 주제 선정', win:'마감일까지', kind:'finaltopic', tutor:2},
+  {n:6, title:'팀활동3',     full:'팀 활동 3 · 광고 영상 제작', win:'수업시간', kind:'video', tutor:3},
   {n:7, title:'중간발표2',   full:'중간발표2 — 1분 광고영상 · KOSAc 제출', win:'수업시간', kind:'eval', round:2, film:true},
   {n:8, title:'중간고사',    full:'중간고사 (서면 평가)', kind:'notice'},
-  {n:9, title:'최종앱①',     full:'최종 앱 개발 ①', win:'수업시간', kind:'activity', tutor:4, boost:true},
-  {n:10,title:'최종앱②',     full:'최종 앱 개발 ②', win:'수업시간', kind:'activity', tutor:5},
+  {n:9, title:'팀활동4',     full:'팀 활동 4 · 최종 앱 개발', win:'수업시간', kind:'activity', tutor:4, boost:true},
+  {n:10,title:'팀활동5',     full:'팀 활동 5 · 최종 앱 개발', win:'수업시간', kind:'activity', tutor:5},
   {n:11,title:'현장견학',    full:'현장견학', kind:'notice'},
-  {n:12,title:'최종앱③',     full:'최종 앱 개발 ③ · 최종발표 평가기준 공개', win:'수업시간', kind:'prep', tutor:6},
+  {n:12,title:'팀활동6',     full:'팀 활동 6 · 최종발표 평가기준 공개', win:'수업시간', kind:'prep', tutor:6},
   {n:13,title:'최종발표1',   full:'최종발표1 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true},
   {n:14,title:'최종발표2',   full:'최종발표2 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true, intra:true},
   {n:15,title:'기말·설문',   full:'기말고사 · 최종설문조사', win:'수업+당일', kind:'final'},
@@ -2880,7 +2880,7 @@ function viewHome(){
      자주 쓰는 세 가지를 위로 빼고, 나머지는 아래에 둡니다. */
   h += '<div class="card"><h3>자주 쓰는 것</h3><div class="menu">'+
     '<button class="btn pri" onclick="go(\'outputs\')">📄 출력물 (인쇄·PDF·워드)</button>'+
-    '<button class="btn" onclick="alGo(\'all\')">주차별 활동기록</button>'+
+    '<button class="btn" onclick="alGo(\'all\')">학생의 주차별 활동기록</button>'+
     '<button class="btn" onclick="tlOpen(1)">교수 튜터링 일지</button>'+
     '<button class="btn" onclick="svrGo(myClass())">설문 결과 (엑셀·그래프)</button>'+
     mbtn('학생 명단','students')+
@@ -7701,7 +7701,7 @@ function admDown(){
       '<button class="btn" onclick="go(\'reports\',{t:\'team\',cid:\''+myClass()+'\'})">팀 점수표</button>'+
       '<button class="btn" onclick="go(\'reports\',{t:\'r1\',cid:\''+myClass()+'\'})">발표평가 정리표 (교수·동료+루브릭)</button>'+
       '<button class="btn" onclick="tlOpen(1)">교수 튜터링 일지</button>'+
-      '<button class="btn" onclick="alGo(\'all\')">주차별 활동기록</button>'+
+      '<button class="btn" onclick="alGo(\'all\')">학생의 주차별 활동기록</button>'+
       '<button class="btn" onclick="svOneGo(\'사전\',\''+myClass()+'\')">사전설문 결과 A4</button>'+
       '<button class="btn" onclick="svOneGo(\'최종\',\''+myClass()+'\')">최종설문 결과 A4</button>'+
       '<button class="btn" onclick="exGo(\''+myClass()+'\')">현장견학 일지 A4</button>'+
@@ -9485,11 +9485,10 @@ function makeDocxXmlForCheck(bodyXml){
    ▸ 낱장도 됩니다 — `[3주차만]` / `[전체 15주차]`.
    ▸ 🔒 교번은 어디에도 없습니다 · 학생 이름에는 학번을 병기합니다.
 
-   ⚠️ **튜터링 일지(A4 1장)와의 관계**
-      튜터링 일지는 **6회차를 한 장씩** 뽑는 「교수 기록물」이고,
-      활동기록은 **15주 전체**를 모으는 「학기 전체 기록」입니다.
-      활동기록 안의 튜터링 부분은 **일지와 같은 내용**을 씁니다(따로 적지 않습니다).
-      일지가 필요하시면 [교수 튜터링 일지]에서 그대로 뽑으시면 됩니다.
+   🔴 **2026-08-24 — 이 기록은 「학생의 주차별 활동기록」입니다.**
+      학생이 앱에 입력한 활동만 담습니다(팀 편성·조사 제출·최종 주제·설문·견학 의견·평가 제출 등).
+      ⛔ **교수 튜터링 블록은 이 활동기록에서 뺐습니다.** 교수 튜터링 기록이 필요하시면
+         [교수 튜터링 일지] 출력물에서 그대로 뽑으십시오 — 그 기능·데이터는 손대지 않았습니다.
    ========================================================================== */
 
 function alDash(v){ return (v==null || v==='') ? '—' : String(v); }
@@ -9650,28 +9649,9 @@ function alBlocks(n, cid){
       text:'누가 누구를 어떻게 평가했는지는 이 기록에도 남기지 않습니다. 교수님께도 익명입니다.'});
   }
 
-  /* 7. 튜터링 (3·5·6·9·10·12주차) */
-  if(def.tutor){
-    out.push({t:'교수 튜터링 '+def.tutor+'회차', type:'table',
-      head:['팀','팀 구성원','팀 주제','튜터링 내용'], w:[1500,2200,2200,3738],
-      rows: teams.map(function(t){
-        var tu=DB.one('tutoring', function(x){ return x.teamId===t.id && x.round===def.tutor; });
-        var wrote = !!(tu && tu.done!==false);
-        var ms=teamMembers(t.id);
-        var names = ms.map(function(m){
-          return m.st.name; }).join(' · ');
-        var fin=DB.one('topics', function(x){ return x.teamId===t.id && x.kind==='최종'; });
-        var tps=teamTopics(t.id);
-        var topic = fin? ('[최종] '+fin.title)
-                       : (tps.length? tps.map(function(tp,i){ return (i+1)+') '+tp.title; }).join('\n') : '가주제 미정');
-        var talk = wrote
-          ? (alDash(tu.talk) + (tu.fix? '\n【지적】 '+tu.fix:'') + (tu.next? '\n【다음까지】 '+tu.next:''))
-          : '— 미작성 —';
-        return [alTeamLabel(t), names||'팀원 없음', topic, talk];
-      })});
-    out.push({t:'', type:'p',
-      text:'※ 튜터링 일지는 [교수 튜터링 일지] 화면에서 회차별 A4 1장으로 따로 뽑을 수 있습니다. 여기 내용과 같습니다.'});
-  }
+  /* 7. 🔴 교수 튜터링 블록은 이 「학생의 주차별 활동기록」에서 뺐습니다 (2026-08-24).
+     교수님 지시: 이 활동기록에는 학생이 앱에 입력한 활동만 남깁니다.
+     교수 튜터링 기록은 [교수 튜터링 일지] 출력물에서 그대로 뽑으십시오 — 그 기능·데이터는 손대지 않았습니다. */
 
   /* 8. 아무것도 없는 주차 */
   if(out.length===1) out.push({t:'', type:'p', text:'이 주차에는 앱에 쌓인 기록이 없습니다. (안내문만 있는 주차이거나 아직 시작되지 않았습니다)'});
@@ -9697,7 +9677,7 @@ function alSheet(n, cid){
   }).join('');
   return '<div class="a4sheet" data-what="'+esc(n+'주차 활동기록')+'"><div class="a4in">'+
     '<div class="tlhead">'+
-      '<div class="tltitle">주차별 활동기록 — '+n+'주차</div>'+
+      '<div class="tltitle">학생의 주차별 활동기록 — '+n+'주차</div>'+
       '<div class="tlrule"></div>'+
       '<table class="tlmeta"><tr>'+
         '<td class="k">교과목</td><td class="v">바이오기초설계 (2026학년도 2학기)</td>'+
@@ -9724,7 +9704,7 @@ function alDocxBody(list, cid){
   var out='';
   list.forEach(function(n, idx){
     var w=wrow(n), def=wdef(n);
-    out += dxP('주차별 활동기록 — '+n+'주차', {b:true, sz:30, align:'center', page: idx>0, after:60, keep:true});
+    out += dxP('학생의 주차별 활동기록 — '+n+'주차', {b:true, sz:30, align:'center', page: idx>0, after:60, keep:true});
     out += dxP('바이오기초설계 (2026학년도 2학기) · '+cid+(tlRoom(cid)? ' ('+tlRoom(cid)+')':'')+
                ' · 담당교수 '+classProf(cid), {sz:18, align:'center', color:'444444', after:40});
     out += dxP(tlLongDate(w.date)+' '+tlClassTime(cid)+' · '+def.full,
@@ -9781,7 +9761,7 @@ function viewActLog(){
       return '<button class="btn sm '+(cid===c?'pri':'')+'" onclick="alGo('+(one?list[0]:"'all'")+',\''+c+'\')">'+esc(clsFull(c))+'</button>'; }).join('')+'</div>' : '';
 
   var h = topbar() +
-    '<div class="card noprint"><h3>주차별 활동기록 <span class="muted">— A4 세로 · 워드·PDF·인쇄</span></h3>'+
+    '<div class="card noprint"><h3>학생의 주차별 활동기록 <span class="muted">— A4 세로 · 워드·PDF·인쇄</span></h3>'+
     '<div class="btnrow">'+chips+'</div>'+ cls +
     '<div class="btnrow" style="margin-top:10px">'+
       '<button class="btn pri" onclick="tlPrint()">🖨 인쇄 · PDF로 저장</button>'+
@@ -9792,8 +9772,8 @@ function viewActLog(){
       '별도 PDF 버튼을 두지 않은 이유는 브라우저 인쇄가 글꼴이 깨지지 않고 미리보기와 결과가 같기 때문입니다.<br>'+
       '<b>워드 파일</b>은 A4 세로·여백까지 넣어 만들었고, <b>주차마다 새 쪽에서 시작</b>합니다.</div>'+
     '<div class="note" style="margin-top:8px">지금 뽑는 것: <b>'+(one? list[0]+'주차 한 장':'15주차 전체')+'</b> · '+esc(clsFull(cid))+'</div>'+
-    '<div class="note">⚠️ <b>튜터링 일지와 겹칩니다.</b> 활동기록 안의 튜터링 부분은 <b>일지와 같은 내용</b>입니다. '+
-      '회차별 A4 1장이 필요하시면 <b>[교수 튜터링 일지]</b>에서 따로 뽑으십시오 — 없애지 않았습니다.</div>'+
+    '<div class="note">ℹ️ 이 기록에는 <b>학생이 앱에 입력한 활동만</b> 담깁니다(팀 편성·조사 제출·최종 주제·설문·견학 의견·평가 제출 등). '+
+      '<b>교수 튜터링 기록</b>은 <b>[교수 튜터링 일지]</b>에서 따로 뽑으십시오 — 그 기능은 그대로 있습니다.</div>'+
     '<div id="tlWarn"></div>'+
     '</div>';
 
@@ -10626,7 +10606,7 @@ function weeklyPlanSheet(){
     '<div class="scnote"><b>이 표를 읽는 법</b><br>'+
       '· <b>활동 내용</b>은 그 주에 무엇을 했는지, <b>결과물</b>은 그 활동으로 앱·기록에 남는 것을 나눠 적었습니다.<br>'+
       '· 회차·주제·날짜는 앱의 주차설정에서 자동으로 옵니다 — 휴강·보강으로 날짜가 바뀌면 이 표도 따라갑니다.</div>'+
-    '<div class="scfoot1">한 학기 계획 요약본입니다. 각 주차의 상세 기록은 [주차별 활동기록]에서 뽑으십시오.</div>'+
+    '<div class="scfoot1">한 학기 계획 요약본입니다. 각 주차의 상세 기록은 [학생의 주차별 활동기록]에서 뽑으십시오.</div>'+
     '<div class="tlfoot"><span>주차별 계획 · 바이오기초설계</span><span class="sp"></span>'+
       '<span>출력일 '+esc(nowStr().slice(0,10))+'</span></div>'+
     '</div></div>';
@@ -10643,7 +10623,7 @@ function weeklyPlanDocxBody(){
     return [def.n+'주\n'+wpMd(w?w.date:''), def.title, c.act.join('\n'), c.res.join('\n')];
   });
   out += dxTable(['주차','제목','활동 내용','결과물(산출물)'], rows, [1000, 1900, 3369, 3369], {sz:15, align:{0:'center'}});
-  out += dxP('· 활동 내용은 그 주에 한 일, 결과물은 앱·기록에 남는 산출물입니다. 상세 기록은 [주차별 활동기록]에서 뽑으십시오.',
+  out += dxP('· 활동 내용은 그 주에 한 일, 결과물은 앱·기록에 남는 산출물입니다. 상세 기록은 [학생의 주차별 활동기록]에서 뽑으십시오.',
              {sz:14, color:'666666', before:120, after:0});
   out += dxP('출력일 '+rpDate()+' · 바이오기초설계 주차별 계획', {sz:14, color:'666666'});
   return out;
@@ -10714,7 +10694,7 @@ function viewOutputs(){
     '<button class="btn pri" onclick="tlOpen(\'all\')">통합본 — 1~6차 한 파일</button>'+
     '<button class="btn" onclick="tlOpen(1)">회차별 낱장</button>');
 
-  h += card('⑤ 주차별 활동기록',
+  h += card('⑤ 학생의 주차별 활동기록',
     '1주차부터 15주차까지 <b>한 파일에</b>(주차마다 새 장). 낱장도 화면에서 고를 수 있습니다.',
     '<button class="btn pri" onclick="alGo(\'all\')">통합본 — 전체 15주 한 파일</button>'+
     '<button class="btn" onclick="alGo(1)">주차별 낱장</button>');
@@ -14783,7 +14763,7 @@ window.__protoCheck = function(){
       DEMO.fillScores();
     })();
 
-    /* ---- 🗂 주차별 활동기록 ---- */
+    /* ---- 🗂 학생의 주차별 활동기록 ---- */
     (function(){
       SESS.acc=DB.one('accounts','p2'); SESS.role='super'; SESS.me=null; SESS.scope='mine';
       var cid='F2';
@@ -14797,7 +14777,7 @@ window.__protoCheck = function(){
         if(sh.indexOf(String(Number(wrow(d.n).date.split('-')[2])))<0) bad.push(d.n+'주차 날짜 없음');
         if(/undefined|NaN/.test(sh)) bad.push(d.n+'주차 undefined/NaN');
       });
-      ok('🗂 주차별 활동기록 — 15주 전부가 그려지고 활동명·날짜가 들어감',
+      ok('🗂 학생의 주차별 활동기록 — 15주 전부가 그려지고 활동명·날짜가 들어감',
          bad.length===0, bad.length? '⛔ '+bad.slice(0,3).join(' / ') : '1~15주차 전건 · undefined·NaN 0건');
 
       /* 16-15. 낱장(3주차만)과 전체(15주)가 모두 되는가 */
@@ -14831,17 +14811,17 @@ window.__protoCheck = function(){
       ok('🔒 워드 활동기록에 교번이 없음', leak18.length===0,
          leak18.length? '⛔ '+leak18.join(',') : '담당교수는 이름만 나옵니다');
 
-      /* 16-19. 활동기록의 튜터링이 일지와 같은 내용인가 */
+      /* 16-19. 🔴 교수 튜터링은 「학생의 주차별 활동기록」에서 빠졌고, [교수 튜터링 일지]에는 그대로 있는가 (2026-08-24) */
       (function(){
         var t1=DB.get('teams', function(t){return t.classId===cid;})[0];
         var tu=DB.one('tutoring', function(x){return x.teamId===t1.id && x.round===1;});
         var sh3=alSheet(3, cid);
         var log=tlSheet(1, cid);
-        var sameText = !tu || (sh3.indexOf(esc(String(tu.talk).slice(0,25)))>=0 && log.indexOf(esc(String(tu.talk).slice(0,25)))>=0);
-        ok('🗂 활동기록의 튜터링이 [교수 튜터링 일지]와 같은 내용 (따로 적지 않음)',
-           sameText && sh3.indexOf('교수 튜터링 1회차')>=0 &&
-           sh3.indexOf('[교수 튜터링 일지] 화면에서 회차별 A4 1장으로 따로 뽑을 수 있습니다')>=0,
-           '같은 tutoring 표를 읽습니다 — 한쪽만 고쳐질 수가 없습니다. 일지는 없애지 않았습니다');
+        var goneFromActLog = sh3.indexOf('교수 튜터링')<0;
+        var keptInJournal   = !tu || log.indexOf(esc(String(tu.talk).slice(0,25)))>=0;
+        ok('🗂 교수 튜터링이 학생 활동기록에서 빠지고 [교수 튜터링 일지]에는 그대로 있음',
+           goneFromActLog && keptInJournal,
+           '활동기록에는 학생 입력만 남습니다 · 교수 튜터링 기록은 일지 출력물에서 뽑습니다(그 기능은 유지)');
       })();
 
       /* 16-20. 학생은 활동기록에 들어올 수 없는가 */
@@ -14852,9 +14832,9 @@ window.__protoCheck = function(){
         VIEW={name:'actlog',p:{n:3, cid:cid}};
         var blocked=viewActLog();
         SESS.acc=keep20.a; SESS.role=keep20.r; SESS.me=keep20.m; VIEW=keep20.v;
-        ok('⛔ 학생은 [주차별 활동기록]에 들어올 수 없음',
+        ok('⛔ 학생은 [학생의 주차별 활동기록]에 들어올 수 없음',
            blocked.indexOf('학생은 볼 수 없는 화면입니다')>=0,
-           '활동기록에는 튜터링 일지가 들어 있습니다 — 17차 「튜터링 학생 비공개」와 어긋나면 안 됩니다');
+           '교수 전용 출력물입니다 — 학생이 주소로 들어와도 막혀야 합니다');
       })();
     })();
 
