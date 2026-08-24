@@ -1987,10 +1987,10 @@ var WEEKDEF = [
   {n:6, title:'팀활동3',     full:'팀 활동 3 · 광고 영상 제작', win:'수업시간', kind:'video', tutor:3},
   {n:7, title:'중간발표2',   full:'중간발표2 — 1분 광고영상 · KOSAc 제출', win:'수업시간', kind:'eval', round:2, film:true},
   {n:8, title:'중간고사',    full:'중간고사 (서면 평가)', kind:'notice'},
-  {n:9, title:'팀활동4',     full:'팀 활동 4 · 최종 앱 개발', win:'수업시간', kind:'activity', tutor:4, boost:true},
-  {n:10,title:'팀활동5',     full:'팀 활동 5 · 최종 앱 개발', win:'수업시간', kind:'activity', tutor:5},
+  {n:9, title:'팀활동4',     full:'팀 활동 4', win:'수업시간', kind:'activity', tutor:4, boost:true},
+  {n:10,title:'팀활동5',     full:'팀 활동 5', win:'수업시간', kind:'activity', tutor:5},
   {n:11,title:'현장견학',    full:'현장견학', kind:'notice'},
-  {n:12,title:'팀활동6',     full:'팀 활동 6 · 최종발표 평가기준 공개', win:'수업시간', kind:'prep', tutor:6},
+  {n:12,title:'팀활동6',     full:'팀 활동 6', win:'수업시간', kind:'prep', tutor:6},
   {n:13,title:'최종발표1',   full:'최종발표1 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true},
   {n:14,title:'최종발표2',   full:'최종발표2 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true, intra:true},
   {n:15,title:'기말·설문',   full:'기말고사 · 최종설문조사', win:'수업+당일', kind:'final'},
@@ -3663,10 +3663,12 @@ function subBox(t, tp, i, ro){
   var why = '';
   /* ⚠️ 마감 문구는 화면 맨 위에 한 번만 — 칸마다 세 번 되풀이하면 정작 볼 것이 묻힙니다 */
   if(!ro && r && r.done) why = fixLine(3);
-  return '<div class="acc" style="padding:10px;margin:8px 0 0">'+
-    '<div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap">'+
-      '<b>가주제 '+CIRC[i]+'</b><span style="flex:1;min-width:120px">'+esc(tp.title)+'</span></div>'+
-    (tp.summary? '<div class="muted" style="margin:2px 0 0">'+esc(tp.summary)+'</div>':'')+
+  /* 🔢 가주제 1·2·3을 저마다 「번호 배지 + 옅은 카드」(.igroup)로 감싸 한눈에 나뉘게 합니다
+     (2026-08-24 · 2주차 가주제 입력과 같은 시각 언어). 개폐 동작·입력 id·저장은 그대로. */
+  return '<div class="igroup" style="margin:8px 0 0">'+
+    '<div class="ghd"><span class="gn">'+(i+1)+'</span>'+
+      '<span class="gt">가주제 '+CIRC[i]+' '+esc(tp.title)+'</span></div>'+
+    (tp.summary? '<div class="muted" style="margin:4px 0 0">'+esc(tp.summary)+'</div>':'')+
     '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:6px">'+stat+
       '<span style="flex:1"></span>'+
       (open? '<button class="btn sm" onclick="subClose()">접기</button>' : btn)+'</div>'+
@@ -3753,6 +3755,10 @@ function stFinalTopic(){
       ' onclick="finPick(\''+esc(tp.title).replace(/'/g,"\\'")+'\')"><span>가주제 '+tp.no+' 「'+esc(tp.title)+'」</span></div>'; }).join('')+
     '<div class="chk"><input type="radio" name="fin" value="__new__" '+(isNew?'checked':'')+
       ' onclick="finPick(\'\')"><span>✏️ 새 주제 직접 작성 (가주제에 없던 주제로 정하기)</span></div>'+
+    /* ✅ 최종 주제를 확정해 적는 곳을 하나의 도드라진 카드(.igroup)로 묶어, 위의 가주제 후보
+       고르기와 시각적으로 분리합니다 (2026-08-24). 라디오·input id·finPick·saveFinal 동작은 그대로. */
+    '<div class="igroup" style="margin-top:14px"><div class="ghd"><span class="gn">✓</span>'+
+      '<span class="gt">최종 주제 작성 — 여기에 확정해 적습니다</span></div>'+
     '<label class="f">최종 주제명 <span class="req">*</span> <span class="lim">40자 · 가주제를 고르면 자동으로 채워집니다. 다듬거나 새로 적어도 됩니다</span></label>'+
     '<input type="text" id="fnTitle" maxlength="40" value="'+esc(fin?fin.title:'')+'">'+
     '<label class="f">선정/작성 사유 <span class="req">*</span> <span class="lim">500자 · 왜 이 주제를 최종으로 정했는지</span></label>'+
@@ -3764,6 +3770,7 @@ function stFinalTopic(){
     '<div class="muted">'+(fin? (fin.ok? '승인 후에도 <b>언제든</b> 수정할 수 있습니다. 수정하면 교수님이 다시 확인합니다.'
                                        : '<b>언제든 제한 없이</b> 수정할 수 있습니다 (마감·횟수 제한 없음).')
                               : '낸 뒤에도 <b>언제든</b> 수정할 수 있습니다.')+'</div>'+
+    '</div>'+
     (fin && !fin.ok? '<div class="note b" style="margin-top:8px">제출됨'+
           (fin.edited? ' · <b>수정됨</b> ('+esc(fin.editedAt||'')+')':'')+
           ' — 교수 승인을 기다리는 중입니다.</div>':'')+'</div>';
@@ -3892,9 +3899,9 @@ function saveWeek6(tid){
   toast('6주차 진행 상황을 제출했습니다.'); render();
 }
 
-/* ===== 9·10주차 — 최종 앱 개발 (타이틀만) ===== */
+/* ===== 9·10주차 — 팀 활동 4·5 (타이틀만) ===== */
 function stActivity(n, def){
-  return stTitleOnly(n, '최종 앱 개발 '+(n===9?'①':'②'),
+  return stTitleOnly(n, (n===9?'팀 활동 4':'팀 활동 5'),
     '최종 주제를 앱으로 구현하는 단계입니다. 수업 시간에 진행하며 앱에 따로 낼 것은 없습니다.');
 }
 function saveActivity(tid,n){
@@ -3907,11 +3914,11 @@ function saveActivity(tid,n){
   toast(n+'주차 활동 기록을 제출했습니다.'); render();
 }
 
-/* ===== 12주차 — 최종 앱 개발 ③ (타이틀만, 학생 입력 없음) =====
+/* ===== 12주차 — 팀 활동 6 (타이틀만, 학생 입력 없음) =====
    ▸ 학생 입력(준비도·발표자·남은 과제)은 삭제했습니다.
    ▸ 다만 「최종발표 평가 기준(3회차 루브릭)」 공개는 입력이 아니라 학생이 봐야 할 정보라 그대로 둡니다. */
 function stPrep(){
-  var h = stTitleOnly(12, '최종 앱 개발 ③',
+  var h = stTitleOnly(12, '팀 활동 6',
     '최종발표를 앞둔 마무리 개발 단계입니다. 수업에서 진행하며 앱에 따로 낼 것은 없습니다.');
   var open = DB.get('rubrics', function(r){return r.round===3 && r.openAt;});
   if(open.length){
