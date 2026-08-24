@@ -3333,9 +3333,9 @@ function stTeam(){
   var st = DB.one('students', SESS.me.id) || SESS.me;   /* 방금 바뀐 값을 다시 읽습니다 */
   SESS.me = st;
   var t = teamOf(st);
-  if(!t) return stTeamMake(st, null) + stKosac();
-  if(teamEditOpen && teamEditable(t, st)) return stTeamMake(st, t) + stKosac();
-  return stMyTeam(t, st) + stTopics(t) + stKosac();
+  if(!t) return stTeamMake(st, null);
+  if(teamEditOpen && teamEditable(t, st)) return stTeamMake(st, t);
+  return stMyTeam(t, st) + stTopics(t);
 }
 
 /* ---- 팀이 이미 있을 때 — 「우리 팀」 화면 ----
