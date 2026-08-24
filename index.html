@@ -281,6 +281,22 @@ input:disabled,textarea:disabled,select:disabled{background:#f0f2f5;color:#8a939
 .lvpick button.on{border-color:var(--blue);border-width:2px;background:var(--blue-w);font-weight:600}
 .lvpick button.on .n{background:var(--blue);color:#fff}
 
+/* 🔢 번호가 붙는 입력 묶음 카드 (2026-08-24) — 비슷한 입력칸이 1·2·3 …으로
+   여러 번 되풀이될 때 "여기부터 여기까지가 한 덩어리"를 큰 번호로 또렷이 보여 줍니다.
+   평가 항목의 .lvgroup 과 같은 시각 언어(옅은 바탕 + 파란 왼쪽 강조)에 큰 번호 배지를
+   더한 것입니다. 안의 입력칸은 흰 바탕이라 옅은 회색 카드 위에서 도드라집니다. */
+.igroup{background:var(--soft);border:1px solid var(--line);border-left:4px solid var(--blue);
+  border-radius:10px;padding:12px 14px 14px;margin:0 0 14px}
+.igroup:last-child{margin-bottom:2px}
+.igroup>.ghd{display:flex;gap:10px;align-items:center;margin:0;
+  font-weight:800;font-size:16px;color:var(--ink)}
+.igroup>.ghd .gn{flex:0 0 auto;width:30px;height:30px;border-radius:50%;
+  background:var(--blue);color:#fff;font-weight:800;font-size:16px;
+  text-align:center;line-height:30px;font-variant-numeric:tabular-nums}
+.igroup>.ghd .gt{flex:1;min-width:0;overflow-wrap:anywhere}
+/* 헤더 바로 아래 첫 라벨은 위 여백을 줄여 헤더에 붙게(칸 사이는 그대로) */
+.igroup label.f:first-of-type{margin-top:9px}
+
 /* ===== 표 ===== */
 .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 0 8px;max-width:100%}
 .card,.note,.acc{overflow-wrap:anywhere}
@@ -3503,12 +3519,16 @@ function stTopics(t){
   var h = '<div class="card"><h3>[2단계] 가주제 3개 <span class="muted">— 팀원 누구나 입력할 수 있습니다</span></h3>';
   for(var i=1;i<=3;i++){
     var tp = tps.filter(function(x){return x.no===i;})[0];
-    h += '<div class="hr"></div><b>가주제 '+i+'</b>'+
+    /* 🔢 가주제 1·2·3을 저마다 「번호 배지 + 옅은 카드」로 감싸 한눈에 나뉘게 합니다
+       (2026-08-24 · 평가 항목의 .lvgroup 과 같은 시각 언어). 입력 id·저장은 그대로. */
+    h += '<div class="igroup"><div class="ghd"><span class="gn">'+i+'</span>'+
+        '<span class="gt">가주제 '+i+'</span></div>'+
       '<label class="f">제목 <span class="req">*</span> <span class="lim">40자</span></label>'+
       '<input type="text" id="tp'+i+'t" maxlength="40" value="'+esc(tp?tp.title:'')+'">'+
       '<label class="f">한 줄 설명 <span class="req">*</span> <span class="lim">100자</span></label>'+
       '<input type="text" id="tp'+i+'s" maxlength="100" value="'+esc(tp?tp.summary:'')+'">'+
-      (tp&&tp.comment? '<div class="note b" style="margin-top:6px">👩‍🏫 교수 의견: '+esc(tp.comment)+'</div>':'');
+      (tp&&tp.comment? '<div class="note b" style="margin-top:6px">👩‍🏫 교수 의견: '+esc(tp.comment)+'</div>':'')+
+      '</div>';
   }
   var hasTp = tps.length>=3;
   h += (canFix(2)
@@ -4543,10 +4563,15 @@ function weekProf(n, def){
       h += acc('▸ '+esc(t.classId+'-'+t.no+' 「'+t.name+'」  ('+classProf(t.classId)+' 교수)'), false,
         /* ↓ 본문은 아래, 무엇을 하는 곳인지는 버튼 글자로 */
         tps.map(function(tp){
-          return '<div class="hr"></div><b>가주제 '+tp.no+'.</b> '+esc(tp.title)+'<br><span class="muted">'+esc(tp.summary)+'</span>'+
+          /* 🔢 가주제 1·2·3의 교수 의견칸을 번호 배지 카드로 나눕니다 — 학생 2주차 화면과
+             같은 시각 언어(.igroup). id(cm_…)·saveComment 은 그대로. (2026-08-24) */
+          return '<div class="igroup"><div class="ghd"><span class="gn">'+tp.no+'</span>'+
+              '<span class="gt">가주제 '+tp.no+'. '+esc(tp.title)+'</span></div>'+
+            (tp.summary? '<div class="muted" style="margin-top:3px">'+esc(tp.summary)+'</div>':'')+
             '<label class="f">교수 의견 <span class="lim">학생에게 보입니다</span></label>'+
             '<input type="text" id="cm_'+tp.id+'" value="'+esc(tp.comment)+'" '+(canEdit(t.classId)?'':'disabled')+'>'+
-            (canEdit(t.classId)? '<button class="btn sm pri" style="margin-top:5px" onclick="saveComment(\''+tp.id+'\')">저장</button>':'');
+            (canEdit(t.classId)? '<button class="btn sm pri" style="margin-top:5px" onclick="saveComment(\''+tp.id+'\')">저장</button>':'')+
+            '</div>';
         }).join('') || '<p class="muted">아직 가주제가 없습니다.</p>');
     });
     h += '</div>';
