@@ -2242,7 +2242,35 @@ function profOfClass(cid){ for(var i=0;i<CLASSES.length;i++) if(CLASSES[i].id===
 function classOfProf(pid){ for(var i=0;i<PROFS.length;i++) if(PROFS[i].id===pid) return PROFS[i].classId; return null; }
 
 function team(tid){ return DB.one('teams', tid); }
-function teamOf(st){ return st && st.teamId ? DB.one('teams', st.teamId) : null; }
+/* 🔴 팀 찾기 — st.teamId 가 진짜 근거이되, 비어 있으면 members 명부로 되짚습니다(이중 안전).
+   [왜] 서버 RLS 는 A 가 팀원 B 를 members 에 넣는 것은 허용하지만(같은 반), B 의
+        students.teamId 를 A 가 고치는 것은 막습니다(본인·교수만). 그래서 서버엔 B 의
+        members 행은 있어도 teamId 가 비어, teamId 만 보면 B 가 팀이 없다고 나옵니다.
+        (원격 loadAll 이 끝나면 reconcileTeamIds 가 teamId 자체를 members 로 채우므로
+         보통은 위 branch 로 끝나고, 이 폴백은 그 사이·누락 대비 그물입니다.) */
+function teamOf(st){
+  if(!st) return null;
+  if(st.teamId) return DB.one('teams', st.teamId);
+  var m = DB.one('members', function(x){return x.studentId===st.id;});
+  return (m && m.teamId) ? DB.one('teams', m.teamId) : null;
+}
+/* 🔴 members 명부를 근거로 students.teamId 를 메모리에서 맞춥니다(reconcile).
+   원격에서 받은 뒤 부릅니다 — 팀원이 로그인하면 teamId 가 채워져 팀이 보입니다.
+   ⛔ 서버로 되쓰지 않습니다(RLS 가 어차피 막고, 본인이 로그인하면 자연히 저장됩니다).
+      실제로 존재하는 팀을 가리키는 member 만 반영합니다(사라진 팀을 가리키는 유령은 무시). */
+function reconcileTeamIds(){
+  var d = (typeof DB!=='undefined') && DB.d;
+  if(!d || !d.members || !d.students) return 0;
+  var stById={}, teamById={}, i, n=0;
+  for(i=0;i<d.students.length;i++) stById[d.students[i].id]=d.students[i];
+  for(i=0;i<(d.teams||[]).length;i++) teamById[d.teams[i].id]=1;
+  for(i=0;i<d.members.length;i++){
+    var m=d.members[i], s=stById[m.studentId];
+    if(!s || !m.teamId || !teamById[m.teamId]) continue;
+    if(s.teamId!==m.teamId){ s.teamId=m.teamId; n++; }
+  }
+  return n;
+}
 function teamMembers(tid){
   return DB.get('members', function(m){return m.teamId===tid;})
     .map(function(m){ var s=DB.one('students',m.studentId); return s?{st:s,role:m.role}:null; })
@@ -2383,11 +2411,28 @@ function teamCreate(creator, ids, name, meaning){
 }
 /* 한 사람을 팀에 넣기 / 빼기 — 「학생 표」와 「팀원 표」를 언제나 함께 고칩니다.
    한쪽만 고치면 홈에는 팀이 보이는데 팀원 목록엔 없는 유령이 생깁니다. */
+/* students.teamId 를 「서버에 써도 되는가」 — 원격 RLS 는 본인·교수만 허용합니다.
+   ▸ 로컬 저장(DBR.on=false)이면 서버가 없으니 언제나 그대로 씁니다.
+   ▸ 원격이면 교수·슈퍼는 아무 학생이나, 학생은 본인 것만 서버가 받습니다.
+   남(A)이 팀원(B)의 teamId 를 서버에 쓰려 하면 403 → 실패큐에 쌓여 빨간 경고가 뜨므로,
+   못 쓸 것은 메모리만 고칩니다(화면엔 바로 보이되 헛된 403 을 안 냅니다).
+   소속의 진짜 근거는 members 이고, B 가 로그인하면 reconcileTeamIds 가 채워 줍니다. */
+function teamIdWritable(sid){
+  if(typeof DBR==='undefined' || !DBR.on) return true;
+  if(typeof isProf==='function' && isProf()) return true;
+  return !!(SESS && SESS.me && SESS.me.id===sid);
+}
+/* 서버로 보내지 않고 메모리(students.teamId)만 고치고 저장(스냅샷)합니다 */
+function setStudentTeamLocal(sid, tid){
+  var s=DB.one('students', sid);
+  if(s){ s.teamId=tid; DB.flush(); }
+}
 function teamJoin(tid, sid, role){
   var ex=DB.one('members', function(m){return m.studentId===sid;});
   if(ex) DB.del('members', ex.id);
   DB.add('members', {teamId:tid, studentId:sid, role:role||'팀원'});
-  DB.set('students', sid, {teamId:tid});
+  if(teamIdWritable(sid)) DB.set('students', sid, {teamId:tid});
+  else setStudentTeamLocal(sid, tid);
   return true;
 }
 function teamLeave(sid){
@@ -3836,54 +3881,64 @@ function saveFinal(tid){
   render();
 }
 
-/* ===== 11주차 — 현장견학 「팀별 견학 의견」 (2026-08-23 신설) =====
-   교수님 지시: "11주차 현장 견학에 대해서 팀별로 견학에 대한 학생들이 의견을 적어서 기록할 수 있게."
-   ▸ 목록형입니다 — 한 팀이 함께 쓰는 칸 하나가 아니라, 팀원들이 각자 한 줄씩 쌓습니다.
-     기록마다 작성자 이름·시각이 남습니다("학생들이 의견을 적어서"에 맞춘 해석).
-   ▸ 견학 안내(집합·교통·준비물)는 stNotice 가 위에 그대로 보여 주고, 그 아래에 이 영역이 붙습니다.
-   ▸ 저장은 기존 관문(DB.add/set/del) 그대로 — 원격이면 excursion 표로 갑니다.            */
+/* ===== 11주차 — 현장견학 「나의 현장견학 일지」 (2026-08-26 개인별로 전환) =====
+   교수님 지시: "개인적으로 입력해야 하는 현장견학 일지는 개인별로 작성하도록."
+   ▸ 학생마다 자기 일지 하나입니다 — 있으면 그 위에서 고치고(수정), 없으면 새로 씁니다.
+     남의 일지는 보이지 않습니다(예전의 팀 전체 목록형에서 바뀌었습니다).
+   ▸ 견학은 개인 활동이라 팀이 없어도 씁니다("팀에 들어가야" 문구 없음).
+   ▸ 저장은 기존 관문(DB.add/set/del) 그대로 · excursion 표도 그대로입니다.
+     teamId 는 남겨 둡니다(교수 모아보기에서 팀별 묶음에 씁니다) — 화면 표시는 개인별입니다.
+   ▸ 교수는 [견학 모아보기]에서 학생별로 모두 봅니다(교수 화면).                          */
+function myExcursion(){
+  if(!SESS.me) return null;
+  return DB.one('excursion', function(x){
+    return x.authorId===SESS.me.id && (x.week===11 || x.week===undefined); });
+}
 function stExcursion(){
-  var t=teamOf(SESS.me);
-  if(!t) return '<div class="card"><h3>[의견] 우리 팀 견학 의견</h3>'+
-    '<div class="note a">아직 팀에 들어가 있지 않습니다. 견학 의견은 <b>팀 단위</b>로 기록합니다.</div></div>';
-  var list=DB.get('excursion', function(x){return x.teamId===t.id;})
-             .sort(function(a,b){return (b.at||'')<(a.at||'')?-1:1;});   /* 최근이 위로 */
-  var h='<div class="card"><h3>[의견] 우리 팀 견학 의견 <span class="muted">— '+list.length+'개</span></h3>'+
-    '<p class="muted">현장견학에서 보고 느낀 점을 팀원 누구나 한 줄씩 남길 수 있습니다. 남긴 사람과 시각이 함께 기록됩니다.</p>';
-  if(list.length){
-    h += list.map(function(x){
-      var mine = (SESS.me && x.authorId===SESS.me.id);
-      return '<div class="note" style="margin-top:6px"><b>'+esc(x.author||'-')+'</b> '+
-        '<span class="muted">'+esc(x.at||'')+'</span><br>'+esc(x.text).replace(/\n/g,'<br>')+
-        (mine && canFix(11)? '<div style="margin-top:5px"><button class="btn sm" onclick="delExcursion(\''+x.id+'\')">🗑 내 의견 지우기</button></div>':'')+
-        '</div>';
-    }).join('');
-  } else {
-    h += '<div class="note">아직 남긴 의견이 없습니다. 첫 의견을 남겨 보세요.</div>';
+  var mine=myExcursion();
+  var h='<div class="card"><h3>[일지] 나의 현장견학 일지</h3>'+
+    '<p class="muted">현장견학에서 보고 느낀 점을 <b>내 일지</b>에 적습니다. 나만 보이며, 담당교수님이 확인합니다.</p>';
+  if(mine){
+    h += '<div class="muted" style="margin:2px 0 6px">마지막 저장: '+esc(mine.at||'-')+
+         (mine.edited?' · 수정함':'')+'</div>';
   }
   if(canFix(11)){
-    h += '<label class="f">견학 의견 남기기 <span class="req">*</span> <span class="lim">500자</span></label>'+
-      '<textarea id="excText" placeholder="예) ○○기업의 배양 공정을 직접 보니 수업에서 배운 스케일업이 이해되었다."></textarea>'+
-      '<div class="btnrow" style="margin-top:8px"><button class="btn pri" onclick="addExcursion(\''+t.id+'\')">의견 남기기</button></div>';
+    h += '<label class="f">현장견학 일지 <span class="req">*</span> <span class="lim">500자</span></label>'+
+      '<textarea id="excText" placeholder="예) ○○기업의 배양 공정을 직접 보니 수업에서 배운 스케일업이 이해되었다.">'+
+        esc(mine? (mine.text||'') : '')+'</textarea>'+
+      '<div class="btnrow" style="margin-top:8px">'+
+        '<button class="btn pri" onclick="saveExcursion()">'+(mine?'일지 저장':'일지 쓰기')+'</button>'+
+        (mine? ' <button class="btn sm" onclick="delExcursion(\''+esc(mine.id)+'\')">🗑 일지 지우기</button>':'')+
+      '</div>';
   } else {
+    if(mine) h += '<div class="note">'+esc(mine.text||'').replace(/\n/g,'<br>')+'</div>';
+    else     h += '<div class="note">아직 남긴 일지가 없습니다.</div>';
     h += '<div class="note">⬛ <b>'+FIX_LOCKED+'</b></div>';
   }
   return h+'</div>';
 }
-function addExcursion(tid){
+function saveExcursion(){
   if(!canFix(11)){ toast('⛔ '+FIX_LOCKED); return; }
   var tx=val('excText');
-  if(!tx || tx.length<5){ toast('의견을 5자 이상 적어 주세요.'); return; }
-  DB.add('excursion', {teamId:tid, classId:(SESS.me?SESS.me.classId:myClass()), week:11,
-    author:(SESS.acc?SESS.acc.name:(SESS.me?SESS.me.name:'-')), authorId:(SESS.me?SESS.me.id:''),
-    text:tx, at:nowStr()});
-  toast('견학 의견을 남겼습니다.'); render();
+  if(!tx || tx.length<5){ toast('일지를 5자 이상 적어 주세요.'); return; }
+  var mine=myExcursion(), t=teamOf(SESS.me);
+  if(mine){
+    DB.set('excursion', mine.id, {text:tx, at:nowStr(), edited:true, editedAt:nowStr(),
+      teamId:(t? t.id : (mine.teamId||null))});
+    toast('현장견학 일지를 저장했습니다.');
+  }else{
+    DB.add('excursion', {teamId:(t? t.id : null), classId:(SESS.me?SESS.me.classId:myClass()), week:11,
+      author:(SESS.acc?SESS.acc.name:(SESS.me?SESS.me.name:'-')), authorId:(SESS.me?SESS.me.id:''),
+      text:tx, at:nowStr()});
+    toast('현장견학 일지를 남겼습니다.');
+  }
+  render();
 }
 function delExcursion(id){
   var x=DB.one('excursion', id); if(!x) return;
-  if(!(SESS.me && x.authorId===SESS.me.id)){ toast('내가 남긴 의견만 지울 수 있습니다.'); return; }
+  if(!(SESS.me && x.authorId===SESS.me.id)){ toast('내 일지만 지울 수 있습니다.'); return; }
   if(!canFix(11)){ toast('⛔ '+FIX_LOCKED); return; }
-  DB.del('excursion', id); toast('내 견학 의견을 지웠습니다.'); render();
+  DB.del('excursion', id); toast('내 현장견학 일지를 지웠습니다.'); render();
 }
 
 /* ===== 타이틀 전용 주차 (6·9·10·12) — 학생 입력 없음 (2026-08-23 교수님 지시) =====
@@ -5086,23 +5141,36 @@ function approveTopic(id, ok){
   DB.log(ok?'최종 주제 승인':'최종 주제 보완 요청', id); toast(ok?'승인했습니다.':'보완을 요청했습니다.'); render();
 }
 
-/* 🚌 11주차 — 팀별 견학 의견 모아 보기 (2026-08-23 신설)
-   학생들이 stExcursion 에서 남긴 의견을 교수님이 팀별로 접어서 봅니다. 읽기 전용입니다. */
+/* 🚌 11주차 — 현장견학 일지 모아 보기 (2026-08-26 개인별로 전환)
+   학생마다 자기 일지 하나를 씁니다(팀이 없어도 씁니다). 교수님이 학생별로 모두 봅니다.
+   팀이 있으면 팀별로 묶고, 팀이 없으면 「팀 없음」으로 묶습니다 — 아무도 빠지지 않게. 읽기 전용입니다. */
 function profExcursionPanel(cids){
-  var teams=DB.get('teams', function(t){return cids.indexOf(t.classId)>=0;})
-    .sort(function(a,b){ return a.classId===b.classId? a.no-b.no : (a.classId<b.classId?-1:1); });
-  var all=DB.get('excursion', function(x){return true;});
-  var wrote=0; teams.forEach(function(t){ if(DB.one('excursion', function(x){return x.teamId===t.id;})) wrote++; });
-  var h='<div class="card"><h3>팀별 견학 의견 <span class="muted">— 총 '+all.length+'개 · '+wrote+'/'+teams.length+' 팀 참여</span></h3>';
-  if(!teams.length) h += '<p class="muted">아직 만들어진 팀이 없습니다.</p>';
-  teams.forEach(function(t){
-    var list=DB.get('excursion', function(x){return x.teamId===t.id;})
-              .sort(function(a,b){return (b.at||'')<(a.at||'')?-1:1;});
-    h += acc('▸ '+esc(t.classId+'-'+t.no+' 「'+t.name+'」  ('+classProf(t.classId)+' 교수) · '+list.length+'개'), false,
-      (list.length? list.map(function(x){
-        return '<div class="note" style="margin-top:6px"><b>'+esc(x.author||'-')+'</b> <span class="muted">'+esc(x.at||'')+'</span><br>'+
-          esc(x.text).replace(/\n/g,'<br>')+'</div>';
-      }).join('') : '<p class="muted">아직 남긴 의견이 없습니다.</p>'));
+  /* 일지 줄의 강좌 — classId 우선, 없으면 팀의 강좌로 되짚습니다 */
+  function cidOfRow(x){
+    if(x.classId) return x.classId;
+    var t=x.teamId? DB.one('teams', x.teamId) : null; return t? t.classId : '';
+  }
+  var all=DB.get('excursion', function(x){ return cids.indexOf(cidOfRow(x))>=0; })
+            .sort(function(a,b){ return (b.at||'')<(a.at||'')?-1:1; });
+  /* 팀이 있으면 팀별로, 없으면 강좌별 「팀 없음」으로 묶습니다 */
+  var groups=[], gmap={};
+  all.forEach(function(x){
+    var t=x.teamId? DB.one('teams', x.teamId) : null;
+    var key = t? ('T'+t.id) : ('N'+cidOfRow(x));
+    var label = t? (t.classId+'-'+t.no+' 「'+t.name+'」  ('+classProf(t.classId)+' 교수)')
+                 : (cidOfRow(x)+' · 팀 없음');
+    if(!gmap[key]){ gmap[key]={label:label, rows:[]}; groups.push(gmap[key]); }
+    gmap[key].rows.push(x);
+  });
+  var stuN=(function(){ var s={}; all.forEach(function(x){ if(x.authorId) s[x.authorId]=1; }); return Object.keys(s).length; })();
+  var h='<div class="card"><h3>현장견학 일지 모아보기 <span class="muted">— 총 '+all.length+'개 · '+stuN+'명 작성</span></h3>';
+  if(!all.length) h += '<p class="muted">아직 남긴 일지가 없습니다.</p>';
+  groups.forEach(function(g){
+    h += acc('▸ '+esc(g.label)+' · '+g.rows.length+'명', false,
+      g.rows.map(function(x){
+        return '<div class="note" style="margin-top:6px"><b>'+esc(x.author||'-')+'</b> <span class="muted">'+esc(x.at||'')+
+          (x.edited?' · 수정함':'')+'</span><br>'+esc(x.text||'').replace(/\n/g,'<br>')+'</div>';
+      }).join(''));
   });
   return h+'</div>';
 }
@@ -10569,25 +10637,34 @@ function viewSurveyOne(){
 }
 
 /* ==========================================================================
-   ⑦ 현장견학 일지 A4 — 11주차 팀별 견학 의견 (R13 신설)
-   ▸ 값은 컬렉션 excursion 그대로 · 작성자·시각 포함 · 팀별로 묶습니다.
+   ⑦ 현장견학 일지 A4 — 11주차 현장견학 일지 (R13 · 2026-08-26 개인별로 전환)
+   ▸ 값은 컬렉션 excursion 그대로 · 작성자·시각 포함.
+   ▸ 견학 일지는 개인별입니다 — 학생마다 자기 일지 하나. 팀이 있으면 팀별로 묶고,
+     팀이 없는 학생 일지는 「팀 없음」으로 빠짐없이 싣습니다.
+   ▸ 그룹 모양: { t(팀 또는 null), title, list }. title 은 화면·문서 제목에 그대로 씁니다.
    ========================================================================== */
 function exData(cid){
   var teams = DB.get('teams', function(t){ return t.classId===cid; }).sort(function(a,b){ return a.no-b.no; });
-  return teams.map(function(t){
+  var seen={};
+  var out = teams.map(function(t){
     var list = DB.get('excursion', function(x){ return x.teamId===t.id; })
                  .sort(function(a,b){ return (a.at||'')<(b.at||'')? -1:1; });
-    return { t:t, list:list };
+    list.forEach(function(x){ seen[x.id]=1; });
+    return { t:t, title:t.no+'팀 「'+t.name+'」', list:list };
   });
+  var noTeam = DB.get('excursion', function(x){ return x.classId===cid && !seen[x.id]; })
+                 .sort(function(a,b){ return (a.at||'')<(b.at||'')? -1:1; });
+  if(noTeam.length) out.push({ t:null, title:'팀 없음', list:noTeam });
+  return out;
 }
 function exSheet(cid){
-  var data = exData(cid), total=0, wrote=0;
-  data.forEach(function(d){ total+=d.list.length; if(d.list.length) wrote++; });
+  var data = exData(cid), total=0, wrote=0, nTeams=0;
+  data.forEach(function(d){ total+=d.list.length; if(d.t){ nTeams++; if(d.list.length) wrote++; } });
   var nt = DB.one('weekNotice', function(x){ return x.classId===cid && x.n===11; });
   var body = '';
   data.forEach(function(d){
-    body += '<div class="alh">'+esc(d.t.no+'팀 「'+d.t.name+'」')+' <span class="dim">— '+d.list.length+'개</span></div>';
-    if(!d.list.length){ body += '<div class="alp">이 팀은 아직 견학 의견을 남기지 않았습니다.</div>'; return; }
+    body += '<div class="alh">'+esc(d.title)+' <span class="dim">— '+d.list.length+'개</span></div>';
+    if(!d.list.length){ body += '<div class="alp">이 팀은 아직 견학 일지를 남기지 않았습니다.</div>'; return; }
     body += '<table class="sct al"><colgroup><col style="width:32mm"><col style="width:34mm"><col style="width:118mm"></colgroup>'+
       '<thead><tr><th>작성자</th><th>작성 시각</th><th>견학 의견</th></tr></thead><tbody>'+
       d.list.map(function(x){
@@ -10602,33 +10679,33 @@ function exSheet(cid){
       '<td class="k">강좌</td><td class="v">'+esc(cid)+(tlRoom(cid)?' ('+esc(tlRoom(cid))+')':'')+'</td></tr>'+
     '<tr><td class="k">담당교수</td><td class="v">'+esc(classProf(cid))+'</td>'+
       '<td class="k">일시</td><td class="v">'+esc(tlLongDate(wrow(11).date))+'</td></tr>'+
-    '<tr><td class="k">참여</td><td class="v">'+wrote+' / '+data.length+'팀 · 의견 '+total+'개</td>'+
+    '<tr><td class="k">참여</td><td class="v">'+wrote+' / '+nTeams+'팀 · 일지 '+total+'개</td>'+
       '<td class="k">출력일</td><td class="v">'+esc(nowStr().slice(0,10))+'</td></tr></table></div>'+
     (nt? '<div class="scnote"><b>견학 안내</b><br>'+esc(nt.body).replace(/ · /g,'<br>')+'</div>':'')+
     (DB.d&&DB.d.__demo? '<div class="scwarn">※ 예시(가짜) 데이터입니다 — 실제 의견이 아닙니다.</div>':'')+
     body +
-    '<div class="scfoot1">현장견학에서 학생들이 팀별로 남긴 의견을 그대로 옮긴 것입니다.</div>'+
+    '<div class="scfoot1">현장견학에서 학생들이 개인별로 남긴 일지를 그대로 옮긴 것입니다.</div>'+
     '<div class="tlfoot"><span>현장견학 일지 · '+esc(clsFull(cid))+'</span><span class="sp"></span>'+
       (DB.d&&DB.d.__demo? '<span class="warn">※ 예시(가짜) 데이터입니다</span>&nbsp;&nbsp;':'')+
       '<span>출력일 '+esc(nowStr().slice(0,10))+'</span></div>'+
     '</div></div>';
 }
 function exDocxBody(cid){
-  var data = exData(cid), total=0, wrote=0;
-  data.forEach(function(d){ total+=d.list.length; if(d.list.length) wrote++; });
+  var data = exData(cid), total=0, wrote=0, nTeams=0;
+  data.forEach(function(d){ total+=d.list.length; if(d.t){ nTeams++; if(d.list.length) wrote++; } });
   var out = dxP('현장견학 일지 — 11주차', {b:true, sz:30, align:'center', after:60, keep:true})+
     dxP('바이오기초설계 (2026학년도 2학기) · 강좌 '+cid+(tlRoom(cid)?' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid),
         {sz:18, align:'center', color:'444444', after:40})+
-    dxP(tlLongDate(wrow(11).date)+' · 참여 '+wrote+' / '+data.length+'팀 · 의견 '+total+'개',
+    dxP(tlLongDate(wrow(11).date)+' · 참여 '+wrote+' / '+nTeams+'팀 · 일지 '+total+'개',
         {sz:18, align:'center', color:'444444', rule:true, after:120})+
     (DB.d&&DB.d.__demo? dxP('※ 예시(가짜) 데이터입니다 — 실제 의견이 아닙니다.', {sz:16, color:'8A1010', after:100}):'');
   data.forEach(function(d){
-    out += dxP(d.t.no+'팀 「'+d.t.name+'」 — '+d.list.length+'개', {b:true, sz:20, before:140, after:50, keep:true});
-    if(!d.list.length){ out += dxP('이 팀은 아직 견학 의견을 남기지 않았습니다.', {sz:16, color:'666666', after:60}); return; }
+    out += dxP(d.title+' — '+d.list.length+'개', {b:true, sz:20, before:140, after:50, keep:true});
+    if(!d.list.length){ out += dxP('이 팀은 아직 견학 일지를 남기지 않았습니다.', {sz:16, color:'666666', after:60}); return; }
     var rows = d.list.map(function(x){ return [x.author||'-', x.at||'-', x.text||'']; });
     out += dxTable(['작성자','작성 시각','견학 의견'], rows, [1600, 1900, 6138], {sz:15});
   });
-  out += dxP('현장견학에서 학생들이 팀별로 남긴 의견을 그대로 옮긴 것입니다.', {sz:14, color:'666666', before:120, after:0});
+  out += dxP('현장견학에서 학생들이 개인별로 남긴 일지를 그대로 옮긴 것입니다.', {sz:14, color:'666666', before:120, after:0});
   out += dxP('출력일 '+rpDate()+' · 현장견학 일지 · '+clsFull(cid), {sz:14, color:'666666'});
   return out;
 }
@@ -12329,6 +12406,10 @@ var DBR = {
         .then(function(s){
           if(s && s[0] && s[0].data) d.settings = s[0].data;
           DB.d = d;
+          /* 🔴 팀 소속 맞추기 — members 를 근거로 students.teamId 를 채웁니다.
+             (RLS 때문에 팀 만든 사람만 자기 teamId 를 서버에 남길 수 있어, 팀원은
+              members 행만 있고 teamId 가 비어 팀이 안 보이던 것을 바로잡습니다.) */
+          if(typeof reconcileTeamIds==='function') reconcileTeamIds();
           /* 🔒 교수 교번은 보통 읽기에서 빠져 있습니다(설계서 1-1-4).
                 슈퍼 관리자일 때만 전용 함수로 따로 받아 [교수 계정] 화면에 채웁니다.
                 🔴 슈퍼가 아니면 이 함수는 일부러 거부(400)합니다. 그래서 슈퍼일 때만 부릅니다 —
