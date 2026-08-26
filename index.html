@@ -12077,6 +12077,7 @@ var DBR = {
   failed  : [],           /* 서버가 거부한 저장 (사람이 봐야 합니다) */
   down    : false,        /* 지금 접속이 끊겼는가 */
   busy    : false,
+  _serverTeamOf : null,   /* {학생id: 서버가 아는 team_id} — reconcile 로 덮이기 전 스냅샷(syncSelfTeam 이 봅니다) */
 
   MSG_DOWN : '지금 접속이 되지 않습니다. 잠시 뒤 다시 시도해 주세요.',
 
@@ -12406,6 +12407,11 @@ var DBR = {
         .then(function(s){
           if(s && s[0] && s[0].data) d.settings = s[0].data;
           DB.d = d;
+          /* 🔴 팀원 「본인」이 서버에 team_id 를 남기려면, reconcile 이 메모리를 덮기 전에
+             「서버가 지금 아는 team_id」를 적어 둡니다. syncSelfTeam 이 이 값과 members 를
+             견주어 「서버엔 없던 것을 새로 쓸 때에만」 다시 받게 합니다(무한 재로딩 방지). */
+          DBR._serverTeamOf = {};
+          (d.students||[]).forEach(function(s){ DBR._serverTeamOf[s.id] = (s.teamId||null); });
           /* 🔴 팀 소속 맞추기 — members 를 근거로 students.teamId 를 채웁니다.
              (RLS 때문에 팀 만든 사람만 자기 teamId 를 서버에 남길 수 있어, 팀원은
               members 행만 있고 teamId 가 비어 팀이 안 보이던 것을 바로잡습니다.) */
@@ -12438,6 +12444,59 @@ var DBR = {
   },
 
   /* ------------------------------------------------------------------------
+     7c. 🔴 팀원 「본인」의 team_id 를 서버에 스스로 남깁니다 — 팀 자료 읽기 열기
+     ------------------------------------------------------------------------
+     [문제] 서버 RLS 의 권한 함수 app_team() = (SELECT students.team_id …) 입니다.
+        팀 단위 표(가주제·최종주제 topics · 활동 activity · 제출 submits · 튜터링 tutoring
+        …)의 읽기 규칙은 team_id = app_team() 입니다. 팀을 만든 사람 A 는 본인 team_id 를
+        서버에 넣어(본인 행 수정 허용) app_team() 이 팀을 알지만, 팀원 B 의 team_id 는
+        A 가 못 씁니다(RLS 는 본인·교수만 허용). 그래서 B 는 서버 team_id 가 비어
+        app_team()=null → 팀 자료가 0건으로 와서 가주제·최종주제 등이 안 보였습니다.
+        (reconcileTeamIds 는 「메모리」만 고쳐 화면의 팀 이름·팀원은 보이게 했지만,
+         서버 읽기 권한 app_team 은 여전히 안 풀렸습니다.)
+     [고침] B 가 로그인하면, members 가 가리키는 팀을 「본인 행」에 스스로 기록합니다
+        (RLS stu_upd: id = app_student() 허용 → 실패큐에 안 쌓입니다). 서버에 반영된 뒤
+        한 번만 다시 받아 오면 app_team() 이 팀을 알아 팀 자료가 정상으로 들어옵니다.
+     🔴 무한 재로딩 방지: 서버에 「없던 것을 새로 쓴 때」에만 다시 받습니다(_serverTeamOf
+        스냅샷과 견줍니다). 다시 받은 뒤에는 서버 값이 이미 members 와 같아 두 번 안 받습니다.
+     🔴 본인 것만 씁니다 — 다른 팀원 것은 권한이 없습니다(각자 로그인할 때 각자 기록).
+     🔴 만든 사람 A 는 서버 team_id 가 이미 있어(=members 와 같아) 이 경로를 안 탑니다.
+     ▸ 로컬(PC 테스트)은 DBR.on=false 라 바로 통과합니다 — 서버·RLS 가 없어 이미 즉시 공유됩니다. */
+  syncSelfTeam: function(next){
+    var self=this, done=function(){ if(next) next(); };
+    if(!this.on){ done(); return; }
+    var me = (typeof SESS!=='undefined' && SESS) ? SESS.me : null;
+    if(!me || !me.id || SESS.role!=='student'){ done(); return; }   /* 학생 「본인」일 때만 */
+    if(!this.tok || !this.tok.access_token){ done(); return; }        /* 출입증 없으면 서버에 못 씀 */
+    /* 서버가 지금 아는 나의 team_id (reconcile 로 덮이기 전 스냅샷) */
+    var serverTeam;
+    if(this._serverTeamOf && this._serverTeamOf.hasOwnProperty(me.id)){
+      serverTeam = this._serverTeamOf[me.id];
+    }else{
+      var ss=DB.one('students', me.id); serverTeam = ss ? (ss.teamId||null) : null;
+    }
+    /* members 가 가리키는 나의 팀 — 실제로 존재하는 팀만 */
+    var m = DB.one('members', function(x){ return x.studentId===me.id; });
+    var memTeam = (m && m.teamId && DB.one('teams', m.teamId)) ? m.teamId : null;
+    /* 팀이 없거나(=아직 팀 편성 전) 서버가 이미 같은 값을 알면 → 아무것도 안 함(가드) */
+    if(!memTeam || memTeam===serverTeam){ done(); return; }
+    /* 본인 행이 서버에 있어야 씁니다(없으면 건너뜀) */
+    if(!DB.one('students', me.id)){ done(); return; }
+    /* 본인 것만 서버에 기록 → 서버에 반영될 때까지 기다렸다 → 한 번만 다시 받기 */
+    DB.set('students', me.id, {teamId: memTeam});
+    this.drainThen(function(){
+      self.loadAll().then(function(){
+        /* app_team() 이 작동하는 상태에서 팀 자료를 정상으로 받았습니다.
+           다시 받은 사본에 맞춰 SESS.me 를 새 객체로 가리키게 합니다(정체성 어긋남 방지). */
+        if(typeof studentOfAcc==='function' && SESS && SESS.acc && SESS.role==='student'){
+          var fresh=studentOfAcc(SESS.acc.id); if(fresh) SESS.me=fresh;
+        }
+        done();
+      }, done);
+    });
+  },
+
+  /* ------------------------------------------------------------------------
      8. 시작 — pA_boot.js 끝에서 부릅니다
      ------------------------------------------------------------------------ */
   start: function(next){
@@ -12454,12 +12513,21 @@ var DBR = {
       next(); return;
     }
     this.loadAll().then(function(){
-      self.bar('', ''); self.pump(); next();
+      self.bar('', ''); self.pump();
+      /* 🔴 SESS 를 먼저 세워(누가 로그인해 있는지) 본인 팀을 서버에 남깁니다.
+         (start 는 loadAll 을 먼저 돌리고 뒤에 appStart 가 loadSess 하므로, 여기서 한 번 당겨
+          부릅니다. appStart 가 다시 loadSess 해도 같은 값이라 문제 없습니다.) */
+      if(typeof loadSess==='function') loadSess();
+      self.syncSelfTeam(function(){ next(); });
     }, function(err){
       if(err && err.kind==='auth'){
         self.refresh().then(function(){
           return self.loadAll();
-        }).then(function(){ self.bar('',''); self.pump(); next(); },
+        }).then(function(){
+          self.bar('',''); self.pump();
+          if(typeof loadSess==='function') loadSess();
+          self.syncSelfTeam(function(){ next(); });
+        },
         function(){
           self.clearTok(); try{ localStorage.removeItem(SESSKEY); }catch(e){}
           DB.boot(); self.bar('로그인이 만료되었습니다. 다시 들어와 주십시오.','amber'); next();
@@ -12587,7 +12655,11 @@ var DBR = {
           loginErr=''; SESS.acc=a; SESS.role=a.role;
           SESS.me = (a.role==='student')? studentOfAcc(a.id) : null;
           SESS.scope='mine'; saveSess();
-          DBR.seedContent(function(){ DBR.bar('',''); go('home'); });   /* 🌱 슈퍼면 처음 콘텐츠 자동 시드 */
+          /* 🔴 팀원(B)이 처음 로그인하면 본인 team_id 를 서버에 남기고 팀 자료를 다시 받습니다.
+                (학생 본인이 아니거나 이미 서버가 아는 값이면 syncSelfTeam 이 바로 통과합니다.) */
+          DBR.syncSelfTeam(function(){
+            DBR.seedContent(function(){ DBR.bar('',''); go('home'); });   /* 🌱 슈퍼면 처음 콘텐츠 자동 시드 */
+          });
         });
       }, function(err){
         if(err && err.kind==='net'){ DBR.down_('로그인'); }
