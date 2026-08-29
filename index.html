@@ -2724,7 +2724,10 @@ function go(name, p){
     if(NAVSTACK.length>NAV_MAX) NAVSTACK.shift();
     navPush();
   }
-  VIEW=next; window.scrollTo(0,0); render();
+  VIEW=next; window.scrollTo(0,0);
+  /* 🔄 화면을 옮기면 2주차 「진입 시 자동 새로고침」을 다시 무장합니다 (다음에 팀 화면에 들어올 때 1회 돌게) */
+  if(typeof teamAutoSynced!=='undefined') teamAutoSynced=false;
+  render();
 }
 
 /* 뒤로 갈 곳이 있는가 — 홈·로그인에서는 버튼을 그리지 않습니다 */
@@ -3411,7 +3414,53 @@ var teamEditOpen = false;   /* 만든 사람이 [팀 고치기]를 눌렀는가 
 var teamPreset = null;
 var teamErr = '';           /* 거부 사유 — 사라지는 토스트 말고 화면에 남겨 둡니다 */
 
+/* 🔄 새로고침 인프라 (2026-08-30 · A안) — 「내 팀이 안 보임」을 스스로 풀 수 있게.
+   ───────────────────────────────────────────────────────────────────────
+   팀장이 방금 만든 팀은, 실시간 동기화가 없어 팀원 화면에 바로 뜨지 않습니다.
+   팀원이 이 버튼을 누르면 서버 최신 상태를 다시 받아 「우리 팀」이 보이게 합니다.
+   ▸ 로컬 모드(DBR.on=false)는 서버가 없으니 그냥 다시 그리기만 — 눌러도 안전합니다.
+   ▸ 원격 모드는 DBR.loadAll 로 다시 받습니다(그 안에서 reconcileTeamIds 가 돕니다).
+   ▸ teamSyncing 잠금으로 두 번 눌러도(자동+수동 겹쳐도) 한 번만 돕니다. */
+var teamSyncing = false;
+var teamAutoSynced = false;   /* 2주차에 처음 들어왔을 때 조용히 1회만. go() 가 화면을 옮기면 다시 무장됩니다. */
+function teamRefreshBtn(){
+  return '<button class="btn'+(teamSyncing?'':' pri')+'" onclick="teamRefresh(false)"'+(teamSyncing?' disabled':'')+'>'+
+    (teamSyncing? '⏳ 불러오는 중…' : '🔄 새로고침')+'</button>';
+}
+/* 팀 없는 학생 화면 맨 위에 크게 — 「팀장이 만들었나요?」 */
+function teamWaitBanner(){
+  return '<div class="note b" style="margin-bottom:10px">'+
+    '👋 <b>팀장이 팀을 만들었나요?</b> 팀장이 나를 팀원으로 고르면, 이 화면을 '+
+    '<b>새로고침</b>해야 「우리 팀」이 나타납니다.'+
+    '<div class="btnrow" style="margin-top:8px">'+teamRefreshBtn()+'</div></div>';
+}
+function teamRefresh(silent){
+  if(typeof DBR==='undefined' || !DBR.on){        /* 로컬: 서버가 없으니 최신 화면만 다시 그립니다 */
+    if(!silent) toast('최신 상태를 불러왔습니다.');
+    render(); return;
+  }
+  if(teamSyncing) return;                          /* 이미 받는 중이면 무시 (중복 클릭·자동+수동 겹침 방지) */
+  teamSyncing = true; render();                    /* 버튼을 「불러오는 중…」으로 */
+  DBR.loadAll().then(function(){
+    teamSyncing = false;
+    if(SESS && SESS.me) SESS.me = DB.one('students', SESS.me.id) || SESS.me;
+    if(!silent) toast('최신 상태를 불러왔습니다.');
+    render();
+  }, function(){
+    teamSyncing = false;
+    if(!silent) toast('⛔ 지금은 서버에서 받지 못했습니다. 잠시 뒤 다시 눌러 주세요.');
+    render();
+  });
+}
+
 function stTeam(){
+  /* 🔄 2주차에 처음 들어오면 조용히 1회 서버 최신으로 맞춥니다(원격 모드만).
+     setTimeout 으로 「이 화면을 다 그린 뒤」에 돌려 재진입 렌더가 겹치지 않게 하고,
+     teamAutoSynced·teamSyncing 두 잠금으로 폭주(무한 로드)를 막습니다. */
+  if(typeof DBR!=='undefined' && DBR.on && !teamAutoSynced && !teamSyncing){
+    teamAutoSynced = true;
+    setTimeout(function(){ teamRefresh(true); }, 0);
+  }
   var st = DB.one('students', SESS.me.id) || SESS.me;   /* 방금 바뀐 값을 다시 읽습니다 */
   SESS.me = st;
   var t = teamOf(st);
@@ -3429,6 +3478,9 @@ function stMyTeam(t, st){
   var mk = teamCreator(t);
   var mine = isTeamCreator(t, st);
   var h = '<div class="card"><h3>[1단계] 우리 팀</h3>';
+  /* 🔄 팀원이 바뀌었는데 안 보일 때(팀장이 방금 나를 넣었거나 뺐을 때) 눌러 최신으로 */
+  h += '<div class="btnrow" style="margin-bottom:8px">'+teamRefreshBtn()+
+    '<span class="muted" style="align-self:center">팀원이 안 보이면 눌러 주세요</span></div>';
   if(!mine) h += '<div class="note g">✅ <b>'+esc(mk? mk.name+' 학생':'담당교수님')+'이 우리 팀을 만들었습니다.</b><br>'+
     '따로 넣으실 것은 없습니다 — 이미 이 팀에 들어와 있습니다.</div>';
   h += '<div class="kv">'+
@@ -3459,6 +3511,10 @@ function stMyTeam(t, st){
 function stTeamMake(st, editT){
   var cid = st.classId, edit = !!editT;
   var h = '<div class="card"><h3>'+(edit? '✏️ 우리 팀 수정하기' : '[1단계] 팀 만들기')+'</h3>';
+
+  /* 🔄 팀 없는 학생(팀원 대기 중)에게 맨 위에 크게 — 팀장이 만들면 새로고침해야 보입니다.
+     수정 화면(edit)에는 넣지 않습니다. */
+  if(!edit) h += teamWaitBanner();
 
   if(!edit && teamFull(cid))
     return h + '<div class="note r"><b>이 강좌는 '+teamCap()+'팀이 모두 만들어졌습니다. 담당교수님께 말씀해 주세요.</b></div>'+
