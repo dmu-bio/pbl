@@ -422,6 +422,12 @@ tr.alt td{background:#f7f9fb}
   font-family:"Malgun Gothic","맑은 고딕",sans-serif;
 }
 .a4sheet .a4in{display:block}
+/* 이미지형 A4 낱장 — 유인물처럼 「이미 완성된 A4 페이지」를 그림으로 쌓아 보일 때.
+   a4sheet 와 같은 흰 종이·테두리·그림자·장 사이 간격을 주되, 안쪽 여백은 두지 않습니다
+   (그림 자체가 A4 여백을 이미 담고 있으므로 이중 여백이 되지 않게). 화면 폭에 맞춰 자연히 줄어듭니다. */
+.idsheet{max-width:210mm;margin:0 auto 8mm;background:#fff;border:1px solid var(--line);
+  box-shadow:0 2px 10px rgba(0,0,0,.18);overflow:hidden}
+.idsheet img{display:block;width:100%;height:auto}
 .a4sheet .tltitle{font-size:15.5pt;font-weight:800;text-align:center;letter-spacing:.5px;margin:0 0 3mm}
 .a4sheet .tlrule{border-top:1.6pt solid #000;margin:0 0 2.5mm}
 .a4sheet .tlmeta{width:100%;border-collapse:collapse;font-size:9pt;margin:0 0 4mm}
@@ -10978,27 +10984,34 @@ function viewWeeklyPlan(){
 
 /* ==========================================================================
    📄 강의소개·앱 소개 유인물 「미리보기」 화면 (라우터 name='introdoc', 2026-08-30)
-   ▸ 유인물은 이미 완성된 정적 PDF(course_intro_A4.pdf, 앱과 같은 폴더)입니다.
-     내용을 HTML로 다시 만들지 않고, 그 PDF 파일을 iframe 으로 그대로 임베드해 보입니다
-     — 실제 배부 파일과 어긋나지 않게.
-   ▸ 다른 출력물 항목처럼 화면 안에서 미리 본 뒤, 아래 버튼으로 PDF·워드를 받습니다.
+   ▸ 유인물은 이미 완성된 A4 세로 4쪽입니다. 그 4쪽을 그림(PNG)으로 만들어
+     다른 출력물 항목(주차별 계획 등)과 똑같은 A4 종이 틀(a4wrap/a4scale·idsheet)에
+     세로로 쌓아 「깨끗한 문서」로 보입니다.
+   ▸ 예전에는 PDF를 iframe 으로 임베드해 브라우저 PDF 뷰어(검은 툴바·썸네일)가 떠
+     다른 항목과 이질적이었습니다(2026-08-30 교수님 지시로 통일).
+   ▸ 그림 파일 4개는 앱과 같은 폴더의 상대경로: course_intro_A4_1~4.png.
+   ▸ 실제 배부 파일과 어긋나지 않게, 아래 버튼으로 원본 PDF·워드를 그대로 받습니다.
    ▸ 교수 전용(isProf) — 출력물 허브와 같은 가드.
    ========================================================================== */
 function viewIntroDoc(){
   if(!isProf()) return '<div class="card"><div class="note r">⛔ 학생은 볼 수 없는 화면입니다.</div>'+
     '<button class="btn" onclick="go(\'home\')">홈으로</button></div>';
-  var dl = '<a class="btn pri" href="course_intro_A4.pdf" download>📄 PDF 다운로드</a>'+
-           '<a class="btn" href="course_intro_A4.docx" download>📝 워드 다운로드</a>';
+  var pages = '';
+  for(var i=1;i<=4;i++){
+    pages += '<div class="idsheet"><img src="course_intro_A4_'+i+'.png" '+
+             'alt="강의소개·앱 소개 유인물 '+i+'쪽" loading="lazy"></div>';
+  }
   var h = topbar() +
-    '<div class="card">'+
-      '<div class="btnrow"><button class="btn" onclick="go(\'outputs\')">← 출력물로</button></div>'+
-      '<h3 style="margin-top:10px">강의소개 · 앱 소개 유인물 <span class="muted">— A4 세로 4쪽 · 학생 배부용</span></h3>'+
-      '<p class="muted">교과목·앱 소개를 담은 인쇄용 유인물입니다. 아래에서 <b>미리 보고</b>, 필요하면 <b>내려받아</b> 출력해 학생에게 나눠 주세요.</p>'+
-      '<iframe src="course_intro_A4.pdf" title="강의소개·앱 소개 유인물 미리보기" '+
-        'style="width:100%;height:80vh;border:1px solid #ccc;border-radius:10px;margin-top:6px"></iframe>'+
-      '<div class="btnrow" style="margin-top:12px">'+dl+'</div>'+
-      '<div class="hint" style="margin-top:8px">미리보기가 안 보이면(일부 휴대폰) 아래에서 내려받아 여세요.</div>'+
+    '<div class="card noprint"><h3>강의소개 · 앱 소개 유인물 <span class="muted">— A4 세로 4쪽 · 학생 배부용</span></h3>'+
+    '<div class="btnrow" style="margin-top:10px">'+
+      '<a class="btn pri" href="course_intro_A4.pdf" download>📄 PDF 다운로드</a>'+
+      '<a class="btn" href="course_intro_A4.docx" download>📝 워드 다운로드</a>'+
+      '<button class="btn" onclick="go(\'outputs\')">← 출력물로</button>'+
+    '</div>'+
+    '<div class="hint">교과목·앱 소개를 담은 인쇄용 유인물입니다. 아래에서 <b>미리 보고</b>, 필요하면 '+
+      '<b>내려받아</b> 출력해 학생에게 나눠 주세요. 아래가 실제 배부되는 A4 4쪽 그대로입니다.</div>'+
     '</div>';
+  h += '<div class="a4wrap"><div class="a4scale">'+ pages +'</div></div>';
   return h + backBar();
 }
 
