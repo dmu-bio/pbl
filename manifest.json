@@ -1,0 +1,16 @@
+{
+  "name": "바이오기초설계",
+  "short_name": "기초설계",
+  "description": "동양미래대 바이오융합공학과 바이오기초설계 PBL 수업 앱",
+  "lang": "ko",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#6b2fb5",
+  "theme_color": "#6b2fb5",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
