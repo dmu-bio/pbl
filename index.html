@@ -3776,20 +3776,38 @@ function stTeamDisband(tid){
   });
 }
 
-/* ---- [2단계] 가주제 3개 — 팀원 누구나 입력합니다 ---- */
+/* ---- [2단계] 가주제 3개 — 팀원 누구나 입력합니다 ----
+   🔴 2026-09-02 (교수님 지시) — 「임시저장」을 붙였습니다.
+      "2주차 가주제 3개 작성할 때 임시저장 기능 넣어줘."
+   ▸ [제출하기]는 지금처럼 3개를 모두 채워야 최종 제출됩니다(saveTopics).
+   ▸ [임시저장]은 다 못 채워도(부분 입력) 쓰던 것을 저장하고, 다시 들어오면 복원합니다.
+   ▸ 저장 위치는 「이 기기」(localStorage) — 팀 id 로 묶습니다. 정식 제출과 달리
+     서버에 올리지 않으므로, 같은 팀이라도 「다른 기기」에서는 이 임시본이 보이지 않습니다.
+     (3주차 제출함의 서버 임시저장과는 방식이 다릅니다 — 서버 공유가 필요하면 소장 판단.)
+   ▸ 복원 우선순위: 정식 제출된 가주제가 있으면 그 값 → 없으면 임시저장 값 → 없으면 빈칸.
+   ▸ 마감(canFix(2) false) 후에는 저장 버튼을 없애 임시저장도 잠급니다(기존 규칙 일관). */
+function topicDraftKey(tid){ return 'bbd_topicdraft_'+tid; }
+function topicDraftLoad(tid){
+  try{ var s=localStorage.getItem(topicDraftKey(tid)); return s? JSON.parse(s) : null; }
+  catch(e){ return null; }
+}
 function stTopics(t){
   var tps = DB.get('topics', function(x){return x.teamId===t.id && x.kind==='가주제';}).sort(function(a,b){return a.no-b.no;});
+  var draft = topicDraftLoad(t.id);   /* 임시저장 (이 기기) — 없으면 null */
   var h = '<div class="card"><h3>[2단계] 가주제 3개 <span class="muted">— 팀원 누구나 입력할 수 있습니다</span></h3>';
   for(var i=1;i<=3;i++){
     var tp = tps.filter(function(x){return x.no===i;})[0];
+    /* 값 채우기 — 정식 제출본이 있으면 그것을, 없으면 임시저장 값을 넣습니다 */
+    var tVal = tp? tp.title   : (draft? (draft['t'+i]||'') : '');
+    var sVal = tp? tp.summary : (draft? (draft['s'+i]||'') : '');
     /* 🔢 가주제 1·2·3을 저마다 「번호 배지 + 옅은 카드」로 감싸 한눈에 나뉘게 합니다
        (2026-08-24 · 평가 항목의 .lvgroup 과 같은 시각 언어). 입력 id·저장은 그대로. */
     h += '<div class="igroup"><div class="ghd"><span class="gn">'+i+'</span>'+
         '<span class="gt">가주제 '+i+'</span></div>'+
       '<label class="f">제목 <span class="req">*</span> <span class="lim">40자</span></label>'+
-      '<input type="text" id="tp'+i+'t" maxlength="40" value="'+esc(tp?tp.title:'')+'">'+
+      '<input type="text" id="tp'+i+'t" maxlength="40" value="'+esc(tVal)+'">'+
       '<label class="f">한 줄 설명 <span class="req">*</span> <span class="lim">100자</span></label>'+
-      '<input type="text" id="tp'+i+'s" maxlength="100" value="'+esc(tp?tp.summary:'')+'">'+
+      '<input type="text" id="tp'+i+'s" maxlength="100" value="'+esc(sVal)+'">'+
       (tp&&tp.comment? '<div class="note b" style="margin-top:6px">👩‍🏫 교수 의견: '+esc(tp.comment)+'</div>':'')+
       '</div>';
   }
@@ -3798,8 +3816,16 @@ function stTopics(t){
         ? '<div class="btnrow" style="margin-top:10px">'+
           (hasTp? fixBtn("saveTopics('"+t.id+"')", '수정 저장하기')
                 : '<button class="btn pri" onclick="saveTopics(\''+t.id+'\')">제출하기</button>')+
+          '<button class="btn" onclick="saveTopicsDraft(\''+t.id+'\')">💾 임시저장</button>'+
           '</div>'+fixLine(2)+
-          '<p class="muted">※ 3개를 모두 채워야 제출됩니다</p>'
+          '<p class="muted">※ <b>제출하기</b>는 3개를 모두 채워야 됩니다. '+
+            '<b>임시저장</b>은 다 못 채워도 됩니다 — 쓰던 것을 저장했다가 이어서 쓰세요 '+
+            '<span class="muted">(이 기기에서 이어집니다)</span>.</p>'+
+          /* 정식 제출 전이고 임시저장이 있으면 「임시저장됨 · 시각」을 보여 줍니다 */
+          (!hasTp && draft && draft.at
+            ? '<div class="note b" style="margin-top:6px">💾 <b>임시저장됨</b> · '+esc(draft.at)+
+              ' <span class="muted">— 아직 제출 전입니다</span></div>'
+            : '')
         : '<div class="note" style="margin-top:10px">⬛ <b>'+FIX_LOCKED+'</b></div>')+
     /* 🔴 8차 — 여기서 정한 3개가 3주차 제출함 3개가 됩니다. 학생이 미리 알아야
        "왜 3주차에 이 주제가 떠 있지"라고 되묻지 않습니다. */
@@ -3812,6 +3838,19 @@ function stKosac(){
     '<p class="muted">교수님이 올린 안내문·링크·파일이 여기 나옵니다.</p></div>';
 }
 
+/* [임시저장] — 다 못 채웠어도 지금 입력을 이 기기에 저장합니다(팀 id 로 묶음).
+   ▸ 필수·인원 검사를 하지 않습니다 — 부분 입력도 그대로 담아 둡니다.
+   ▸ 마감(canFix(2) false) 후에는 정식 제출과 마찬가지로 막습니다. */
+function saveTopicsDraft(tid){
+  if(!canFix(2)){ toast('⛔ '+FIX_LOCKED); return; }
+  var d={};
+  for(var i=1;i<=3;i++){ d['t'+i]=val('tp'+i+'t'); d['s'+i]=val('tp'+i+'s'); }
+  d.at=nowStr();
+  try{ localStorage.setItem(topicDraftKey(tid), JSON.stringify(d)); }
+  catch(e){ toast('⛔ 이 기기에 임시저장하지 못했습니다.'); return; }
+  toast('임시저장했습니다 — 아직 제출 전입니다. 이어서 쓰셔도 됩니다.');
+  render();
+}
 function saveTopics(tid){
   if(!canFix(2)){ toast('⛔ '+FIX_LOCKED); return; }
   var rows=[];
@@ -3826,6 +3865,8 @@ function saveTopics(tid){
     if(ex) DB.set('topics', ex.id, {title:r.title, summary:r.summary});
     else DB.add('topics',{teamId:tid,kind:'가주제',no:r.no,title:r.title,summary:r.summary,back:'',need:'',how:'',comment:''});
   });
+  /* 정식 제출이 끝났으니 이 기기의 임시저장은 지웁니다(정식 값이 우선이라 남아도 무해하지만 깔끔하게) */
+  try{ localStorage.removeItem(topicDraftKey(tid)); }catch(e){}
   toast(rows.length&&DB.get('topics',function(x){return x.teamId===tid&&x.kind==='가주제';}).length>=3
     ? '가주제 3개를 저장했습니다.' : '가주제 3개를 제출했습니다.'); render();
 }
