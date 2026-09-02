@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>바이오기초설계</title>
-<!-- PWA (홈 화면 앱 설치) — 경로는 하위경로 배포 대비 상대경로 -->
+<!-- PWA (홈 화면 앱 설치) — 다른 세션이 추가한 기능. 경로는 하위경로 배포 대비 상대경로 -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#6b2fb5">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -2368,6 +2368,20 @@ function teamEditable(t, st){
   if(t.ok) return false;
   return wState(2)!=='마감';
 }
+/* 이 학생이 이 팀의 팀원인가 (만든 사람 포함) */
+function isTeamMember(t, st){
+  if(!t || !st) return false;
+  if(st.teamId===t.id) return true;
+  return !!DB.one('members', function(m){return m.teamId===t.id && m.studentId===st.id;});
+}
+/* 팀 「이름·뜻만」 고칠 수 있는 때 — 팀원 누구나(만든 사람 포함), 교수 승인 전, 2주차 미마감.
+   (팀원 추가·삭제는 이것으로 하지 않습니다 — 그것은 여전히 만든 사람의 teamEditable 로만) */
+function teamNameEditable(t, st){
+  if(!t || !st) return false;
+  if(t.ok) return false;
+  if(wState(2)==='마감') return false;
+  return isTeamMember(t, st);
+}
 /* 고를 수 있는 사람 목록 — 같은 강좌 · 나 제외.
    🔴 이미 팀이 있는 학생도 목록에 「남겨 둡니다」(흐리게). 숨기면 학생이
       "왜 내 친구가 안 보이지" 하고 헤매다 교수님께 전화합니다. */
@@ -3490,6 +3504,11 @@ var teamEditOpen = false;   /* 만든 사람이 [팀 고치기]를 눌렀는가 
 var teamPreset = null;
 var teamErr = '';           /* 거부 사유 — 사라지는 토스트 말고 화면에 남겨 둡니다 */
 
+/* 🔴 2026-09-02 (교수님 지시) — 「팀명 수정」: 팀원 누구나 팀 이름·뜻만 고치는 간단 입력.
+   만든 사람의 [팀 수정하기](팀원까지)와는 별개의 상태·화면·입력칸(tnName/tnWhy)을 씁니다. */
+var teamNameOpen = false;   /* 팀원 누구나 [팀명 수정]을 눌렀는가 (이름·뜻만) */
+var teamNameErr = '';       /* 팀명 수정 화면의 거부 사유 (팀원 수정 teamErr 와 섞이지 않게 분리) */
+
 /* 🔄 새로고침 인프라 (2026-08-30 · A안) — 「내 팀이 안 보임」을 스스로 풀 수 있게.
    ───────────────────────────────────────────────────────────────────────
    팀장이 방금 만든 팀은, 실시간 동기화가 없어 팀원 화면에 바로 뜨지 않습니다.
@@ -3542,6 +3561,7 @@ function stTeam(){
   var t = teamOf(st);
   if(!t) return stTeamMake(st, null);
   if(teamEditOpen && teamEditable(t, st)) return stTeamMake(st, t);
+  if(teamNameOpen && teamNameEditable(t, st)) return stTeamNameEdit(t, st);
   return stMyTeam(t, st) + stTopics(t);
 }
 
@@ -3549,7 +3569,7 @@ function stTeam(){
    ★ 교수님 요구의 핵심이 여기입니다: 고른 팀원은 아무것도 입력하지 않았는데
       로그인하면 이 화면이 보입니다. 팀 만들기 버튼은 그리지 않습니다. */
 function stMyTeam(t, st){
-  teamPreset=null; teamErr='';
+  teamPreset=null; teamErr=''; teamNameOpen=false; teamNameErr='';
   var ms = teamMembers(t.id);
   var mk = teamCreator(t);
   var mine = isTeamCreator(t, st);
@@ -3568,12 +3588,20 @@ function stMyTeam(t, st){
     '<span class="k">만든 때</span><span class="muted">'+esc(t.at||'-')+'</span></div>'+
     (ms.length<3? '<div class="note a">⚠️ 팀원이 3명 이상이어야 가주제를 낼 수 있습니다</div>':'')+
     (t.ok? '<div class="note g">✅ 교수 승인 완료 — 승인 후에는 팀을 바꿀 수 없습니다</div>':'');
-  if(teamEditable(t, st))
+  if(teamNameEditable(t, st))
+    /* 🔴 [팀명 수정]은 팀원 누구나 — 팀 이름·뜻만 고칩니다.
+       만든 사람에게는 그 옆에 팀원까지 바꾸는 [팀 수정하기]·[팀 해체]를 함께 둡니다. */
     h += '<div class="btnrow" style="margin-top:8px">'+
-      fixBtn('teamOpenEdit()','팀 수정하기')+
-      '<button class="btn dan" onclick="stTeamDisband(\''+t.id+'\')">팀 해체</button></div>'+
-      '<div class="muted">팀 이름·이름의 뜻·팀원을 <b>교수 승인 전까지</b> 몇 번이든 수정할 수 있습니다.</div>'+
-      '<p class="muted">※ 수정·해체는 <b>팀을 만든 사람</b>만 할 수 있습니다.</p>';
+      fixBtn('teamNameOpenEdit()','팀명 수정')+
+      (mine
+        ? fixBtn('teamOpenEdit()','팀 수정하기')+
+          '<button class="btn dan" onclick="stTeamDisband(\''+t.id+'\')">팀 해체</button>'
+        : '')+
+      '</div>'+
+      (mine
+        ? '<div class="muted">팀 <b>이름·뜻</b>은 <b>[팀명 수정]</b>으로, 팀원까지 바꾸려면 <b>[팀 수정하기]</b>로 — <b>교수 승인 전까지</b> 몇 번이든 수정할 수 있습니다.</div>'+
+          '<p class="muted">※ 팀원 추가·삭제와 팀 해체는 <b>팀을 만든 사람</b>만 할 수 있습니다. 팀 이름은 <b>팀원 누구나</b> 고칠 수 있습니다.</p>'
+        : '<div class="muted"><b>[팀명 수정]</b>으로 팀 이름과 뜻을 <b>교수 승인 전까지</b> 고칠 수 있습니다(팀원 누구나). 팀원 추가·삭제는 <b>팀을 만든 사람</b>이 합니다.</div>');
   else
     /* 🔴 9차 — 못 고치는 곳에는 버튼을 두지 않고 「왜 못 고치는지」를 적습니다 */
     h += '<div class="muted">'+(
@@ -3698,6 +3726,43 @@ function teamSaveEdit(tid){
     teamMembers(t.id).map(function(m){return m.st.name;}).join(', '));
   teamEditOpen=false; teamPreset=null; teamErr=''; SESS.me=DB.one('students', st.id);
   toast('팀을 고쳤습니다.'); render();
+}
+
+/* ---- [팀명 수정] — 팀원 누구나 · 팀 이름과 뜻만 (팀원 목록은 손대지 않습니다) ----
+   저장은 팀 수정과 같은 관문(DB.set('teams',...))을 탑니다. 원격이면 teams UPDATE 로 갑니다.
+   검증도 같은 자(teamNameBad)를 씁니다 — 2~15자·같은 강좌 중복 불가·뜻 한 문장. */
+function stTeamNameEdit(t, st){
+  var h = '<div class="card"><h3>✏️ 팀 이름 수정</h3>'+
+    '<p class="muted">팀 <b>이름</b>과 <b>이름의 뜻</b>만 고칩니다. '+
+    '팀원 추가·삭제는 여기서 하지 않습니다 — 그것은 <b>팀을 만든 사람</b>의 [팀 수정하기]에서 합니다.</p>'+
+    '<div class="kv">'+
+      '<span class="k">지금 팀</span><span><b>'+esc(t.name)+'</b> ('+t.no+'팀)</span>'+
+    '</div>'+
+    '<label class="f">팀 이름 <span class="req">*</span> <span class="lim">2~15자 · 같은 강좌 안에서 중복 불가</span></label>'+
+    '<input type="text" id="tnName" maxlength="15" value="'+esc(t.name||'')+'" placeholder="예: 초록물결">'+
+    '<label class="f">팀 이름의 뜻 <span class="req">*</span> <span class="lim">왜 이렇게 지었는지 한 문장</span></label>'+
+    '<input type="text" id="tnWhy" maxlength="100" value="'+esc(t.meaning||'')+'" placeholder="예: 우리가 만든 것이 초록 물결처럼 퍼지기를 바라서">'+
+    (teamNameErr? '<div class="note r"><b>⛔ '+esc(teamNameErr)+'</b><br>'+
+       '<span class="muted">적으신 것은 그대로 두었습니다. 고쳐서 다시 눌러 주세요.</span></div>':'')+
+    '<div class="note b" style="margin-top:8px">💡 팀 이름은 <b>팀 모두의 것</b>입니다. 고치면 다른 팀원 화면에도 바뀝니다.</div>'+
+    '<div class="btnrow" style="margin-top:10px">'+
+      '<button class="btn fix" onclick="teamNameSave(\''+t.id+'\')">✏️ 저장하기</button>'+
+      '<button class="btn" onclick="teamNameCloseEdit()">그만두기</button>'+
+    '</div></div>';
+  return h;
+}
+function teamNameOpenEdit(){ teamNameOpen=true; teamNameErr=''; render(); }
+function teamNameCloseEdit(){ teamNameOpen=false; teamNameErr=''; render(); }
+function teamNameSave(tid){
+  var t=DB.one('teams', tid), st=DB.one('students', SESS.me.id);
+  if(!t || !teamNameEditable(t, st)){ toast('지금은 팀 이름을 고칠 수 없습니다.'); teamNameOpen=false; render(); return; }
+  var nm=val('tnName'), wy=val('tnWhy');
+  var bad=teamNameBad(t.classId, nm, wy, t.id);
+  if(bad){ teamNameErr=bad; toast('⛔ '+bad); render(); return; }
+  DB.set('teams', t.id, {name:nm, meaning:wy});   /* 기존 저장 관문 — 원격이면 teams UPDATE */
+  DB.log('팀명 수정', t.classId+' '+t.no+'팀 「'+nm+'」');
+  teamNameOpen=false; teamNameErr=''; SESS.me=DB.one('students', st.id);
+  toast('팀 이름을 고쳤습니다.'); render();
 }
 function stTeamDisband(tid){
   var t=DB.one('teams', tid); if(!t) return;
