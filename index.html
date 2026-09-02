@@ -3808,7 +3808,6 @@ function stTopics(t){
       '<input type="text" id="tp'+i+'t" maxlength="40" value="'+esc(tVal)+'">'+
       '<label class="f">한 줄 설명 <span class="req">*</span> <span class="lim">100자</span></label>'+
       '<input type="text" id="tp'+i+'s" maxlength="100" value="'+esc(sVal)+'">'+
-      (tp&&tp.comment? '<div class="note b" style="margin-top:6px">👩‍🏫 교수 의견: '+esc(tp.comment)+'</div>':'')+
       '</div>';
   }
   var hasTp = tps.length>=3;
@@ -4878,20 +4877,18 @@ function weekProf(n, def){
     cids.forEach(function(cid){ h += profTeamSummary(cid); });
     h += '<div class="note b" style="margin-top:8px">팀은 <b>학생 한 명이 팀원을 골라</b> 만듭니다. 고른 팀원은 아무것도 하지 않아도 그 팀에 들어갑니다. <b>남는 학생은 교수님이 [팀 관리]에서 기존 팀에 넣어</b> 주십니다.</div>'+
       '<button class="btn pri" onclick="go(\'admin\',{p:\'teams\'})">팀 관리로 (넣기·빼기·승인)</button></div>';
-    h += '<div class="card"><h3>가주제 열람 · 교수 의견</h3>';
+    h += '<div class="card"><h3>가주제 열람</h3>';
     DB.get('teams', function(t){return cids.indexOf(t.classId)>=0;}).forEach(function(t){
       var tps=DB.get('topics', function(x){return x.teamId===t.id&&x.kind==='가주제';}).sort(function(a,b){return a.no-b.no;});
       h += acc('▸ '+esc(t.classId+'-'+t.no+' 「'+t.name+'」  ('+classProf(t.classId)+' 교수)'), false,
         /* ↓ 본문은 아래, 무엇을 하는 곳인지는 버튼 글자로 */
         tps.map(function(tp){
-          /* 🔢 가주제 1·2·3의 교수 의견칸을 번호 배지 카드로 나눕니다 — 학생 2주차 화면과
-             같은 시각 언어(.igroup). id(cm_…)·saveComment 은 그대로. (2026-08-24) */
+          /* 🔢 가주제 1·2·3을 번호 배지 카드로 나눠 열람합니다 — 학생 2주차 화면과
+             같은 시각 언어(.igroup). 교수 의견 입력칸은 제거했습니다 — 3주차 교수
+             튜터링으로 대체 (2026-09-02). */
           return '<div class="igroup"><div class="ghd"><span class="gn">'+tp.no+'</span>'+
               '<span class="gt">가주제 '+tp.no+'. '+esc(tp.title)+'</span></div>'+
             (tp.summary? '<div class="muted" style="margin-top:3px">'+esc(tp.summary)+'</div>':'')+
-            '<label class="f">교수 의견 <span class="lim">학생에게 보입니다</span></label>'+
-            '<input type="text" id="cm_'+tp.id+'" value="'+esc(tp.comment)+'" '+(canEdit(t.classId)?'':'disabled')+'>'+
-            (canEdit(t.classId)? '<button class="btn sm pri" style="margin-top:5px" onclick="saveComment(\''+tp.id+'\')">저장</button>':'')+
             '</div>';
         }).join('') || '<p class="muted">아직 가주제가 없습니다.</p>');
     });
@@ -4962,9 +4959,6 @@ function saveNotice(cid,n){
   var ex=DB.one('weekNotice', function(x){return x.classId===cid&&x.n===n;});
   if(ex) DB.set('weekNotice', ex.id, {title:t,body:b}); else DB.add('weekNotice',{classId:cid,n:n,title:t,body:b,file:''});
   DB.log(n+'주차 안내문 저장', cid); toast('저장했습니다.');
-}
-function saveComment(tid){
-  var v=val('cm_'+tid); DB.set('topics', tid, {comment:v}); toast('교수 의견을 저장했습니다.');
 }
 function saveTutor(teamId, round){
   /* 🔴 팀 하나만 저장합니다 — 다른 팀 칸은 건드리지 않습니다 (2026-08-20 10차) */
