@@ -214,9 +214,11 @@ label.f .lim{font-weight:400;color:var(--dim);font-size:13px}
 /* ⌨️ 입력칸 — 🔴 15차: 테두리를 또렷하게, 높이를 충분히,
    커서가 들어간 칸은 테두리 색이 바뀌어 「지금 어디에 쓰고 있는지」 보이게 */
 input[type=text],input[type=number],input[type=date],input[type=time],textarea,select{
-  width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:8px;
+  width:100%;min-width:0;max-width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:8px;
   font-size:16px;line-height:1.5;min-height:46px;font-family:inherit;background:var(--card);color:var(--ink)
 }
+/* iOS 사파리에서 date 입력이 칸을 넘치던 것 방지 (2026-09-02) */
+input[type=date],input[type=time]{ -webkit-appearance:none; appearance:none; }
 input:focus,textarea:focus,select:focus{
   outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-w)
 }
