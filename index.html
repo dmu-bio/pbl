@@ -2415,7 +2415,7 @@ function teamCreate(creator, ids, name, meaning){
 
   ids = (ids||[]).filter(function(x,i,a){ return x && x!==me.id && a.indexOf(x)===i; });
   var total = ids.length+1;
-  if(total<3) return {msg:'나를 포함해 3명 또는 4명이어야 합니다. 지금 '+total+'명입니다.'};
+  if(total<2) return {msg:'나를 포함해 2명 이상 4명 이하여야 합니다. 지금 '+total+'명입니다.'};
   if(total>4) return {msg:'나를 포함해 4명까지입니다. 지금 '+total+'명입니다.'};
 
   var picked=[];
@@ -3594,7 +3594,7 @@ function stMyTeam(t, st){
         return memLabel(t, m.st) + (m.st.id===st.id? ' <span class="muted">← 나</span>':'');
       }).join('<br>') : '<span class="muted">없음</span>') +'</span>'+
     '<span class="k">만든 때</span><span class="muted">'+esc(t.at||'-')+'</span></div>'+
-    (ms.length<3? '<div class="note a">⚠️ 팀원이 3명 이상이어야 가주제를 낼 수 있습니다</div>':'')+
+    (ms.length<2? '<div class="note a">⚠️ 팀원이 2명 이상이어야 가주제를 낼 수 있습니다</div>':'')+
     (t.ok? '<div class="note g">✅ 교수 승인 완료 — 승인 후에는 팀을 바꿀 수 없습니다</div>':'');
   if(teamNameEditable(t, st))
     /* 🔴 [팀명 수정]은 팀원 누구나 — 팀 이름·뜻만 고칩니다.
@@ -3644,7 +3644,7 @@ function stTeamMake(st, editT){
   var pool = teamPickPool(st);
   var busyN = pool.filter(function(s){ return s.teamId && cur.indexOf(s.id)<0; }).length;
 
-  h += '<div class="hr"></div><label class="f">팀원 고르기 <span class="req">*</span> <span class="lim">나 포함 3~4명</span></label>'+
+  h += '<div class="hr"></div><label class="f">팀원 고르기 <span class="req">*</span> <span class="lim">나 포함 2~4명</span></label>'+
     '<input type="text" id="tmQ" placeholder="검색: 이름 또는 학번" autocomplete="off" oninput="teamFilter(this.value)">'+
     '<div class="picklist" id="tmList">'+
     pool.map(function(s){
@@ -3675,7 +3675,7 @@ function stTeamMake(st, editT){
 }
 function teamPickText(n){
   return '→ 지금 <b>'+n+'명</b> (나 + '+(n-1)+'명)'+
-    (n<3? ' <span class="bg red">3명이 되어야 저장됩니다</span>'
+    (n<2? ' <span class="bg red">2명이 되어야 저장됩니다</span>'
         : (n>4? ' <span class="bg red">4명까지입니다</span>' : ' <span class="bg green">저장할 수 있습니다</span>'));
 }
 /* 고른 인원수 — 화면을 다시 그리지 않고 숫자만 바꿉니다 (검색칸 글자가 날아가지 않게) */
@@ -3719,7 +3719,7 @@ function teamSaveEdit(tid){
   var bad=teamNameBad(t.classId, nm, wy, t.id);
   if(bad){ stop(bad); return; }
   var total=ids.length+1;
-  if(total<3||total>4){ stop('나를 포함해 3명 또는 4명이어야 합니다. 지금 '+total+'명입니다.'); return; }
+  if(total<2||total>4){ stop('나를 포함해 2명 이상 4명 이하여야 합니다. 지금 '+total+'명입니다.'); return; }
   for(var i=0;i<ids.length;i++){
     var s=DB.one('students', ids[i]);
     if(!s || s.active===false || s.classId!==t.classId){ stop('같은 강좌 학생만 고를 수 있습니다.'); return; }
@@ -3866,7 +3866,7 @@ function saveTopics(tid){
     if(!t||!s){ toast('가주제 '+i+'의 제목과 설명을 채워 주세요.'); return; }
     rows.push({no:i,title:t,summary:s});
   }
-  if(teamMembers(tid).length<3){ toast('팀원이 3명 이상이어야 가주제를 낼 수 있습니다.'); return; }
+  if(teamMembers(tid).length<2){ toast('팀원이 2명 이상이어야 가주제를 낼 수 있습니다.'); return; }
   rows.forEach(function(r){
     var ex=DB.one('topics', function(x){return x.teamId===tid&&x.kind==='가주제'&&x.no===r.no;});
     if(ex) DB.set('topics', ex.id, {title:r.title, summary:r.summary});
@@ -5277,15 +5277,15 @@ function profTeamSummary(cid){
   var ts=DB.get('teams', function(t){return t.classId===cid;}).sort(function(a,b){return a.no-b.no;});
   var free=DB.get('students', function(s){return s.classId===cid && s.active!==false && !s.teamId;})
              .sort(function(a,b){return a.no<b.no?-1:1;});
-  var done=ts.filter(function(t){ var n=teamMembers(t.id).length; return n>=3 && n<=4; }).length;
+  var done=ts.filter(function(t){ var n=teamMembers(t.id).length; return n>=2 && n<=4; }).length;
   return '<div class="hr"></div><b>'+esc(clsFull(cid))+'</b>'+
     '<div class="note '+(free.length? 'a':'g')+'" style="margin-top:6px">'+
-      '<b>'+teamCap()+'팀 중 '+done+'팀 완성</b> <span class="muted">(3~4명인 팀)</span> · '+
+      '<b>'+teamCap()+'팀 중 '+done+'팀 완성</b> <span class="muted">(2~4명인 팀)</span> · '+
       '<b>팀 없는 학생 '+free.length+'명</b>'+
       (free.length? '<br><span class="muted">'+free.map(function(s){return esc(sn(s));}).join(', ')+
         ' — 기존 팀에 넣어 주세요</span>':'')+'</div>'+
     (ts.length
-      ? ts.map(function(t){ var ms=teamMembers(t.id), bad=(ms.length<3||ms.length>4);
+      ? ts.map(function(t){ var ms=teamMembers(t.id), bad=(ms.length<2||ms.length>4);
           /* 폰(375px)에서 표를 쓰면 팀원 칸이 옆으로 밀려 안 보입니다 — 세로로 쌓습니다 */
           return '<div class="acc" style="padding:8px 10px;margin:0 0 6px">'+
             '<div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap">'+
@@ -7314,14 +7314,14 @@ function admTeamBlock(cid){
   var ts=DB.get('teams', function(t){return t.classId===cid;}).sort(function(a,b){return a.no-b.no;});
   var free=DB.get('students', function(s){return s.classId===cid && s.active!==false && !s.teamId;})
              .sort(function(a,b){return a.no<b.no?-1:1;});
-  var done=ts.filter(function(t){ var n=teamMembers(t.id).length; return n>=3 && n<=4; }).length;
+  var done=ts.filter(function(t){ var n=teamMembers(t.id).length; return n>=2 && n<=4; }).length;
   var ed=canEdit(cid);
 
   var h='<div class="hr"></div><b>'+esc(clsFull(cid))+'</b> '+
     (ed? '<span class="bg green">수정 가능</span>'
        : '<span class="bg gray">🔒 조회만'+(cid===myClass()?' ([내 강좌]로 전환하면 수정)':'')+'</span>')+
     '<div class="note '+(free.length? 'a':'g')+'" style="margin-top:6px">'+
-      '<b>'+teamCap()+'팀 중 '+done+'팀 완성</b> <span class="muted">(3~4명인 팀)</span> · '+
+      '<b>'+teamCap()+'팀 중 '+done+'팀 완성</b> <span class="muted">(2~4명인 팀)</span> · '+
       '만들어진 팀 '+ts.length+'개 · <b>팀 없는 학생 '+free.length+'명</b></div>';
 
   /* 🔴 폰(375px)에서 표를 쓰면 팀원 칸이 옆으로 밀려 안 보입니다.
@@ -7329,7 +7329,7 @@ function admTeamBlock(cid){
   if(!ts.length) h += '<p class="muted">아직 만들어진 팀이 없습니다. 팀은 2주차(9/2)에 학생들이 만듭니다.</p>';
   else h += ts.map(function(t){
     var ms=teamMembers(t.id), mk=teamCreator(t);
-    var badN = (ms.length<3 || ms.length>4);
+    var badN = (ms.length<2 || ms.length>4);
     return '<div class="acc" style="padding:9px 10px;margin:0 0 7px">'+
       '<div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap">'+
         '<b>'+t.no+'팀 「'+esc(t.name)+'」</b>'+
@@ -13157,13 +13157,15 @@ window.__protoCheck = function(){
     ok('🔴 이미 팀 있는 학생은 못 고름 (목록엔 남김)', !deny.ok && listOk,
        (deny.ok? '⛔ 저장이 통과해 버림' : '저장 거부: '+deny.msg)+' · 목록 표시 '+(listOk?'⊘ 흐리게 남김':'✗'));
 
-    /* 7-5. 인원 3~4명 강제 */
+    /* 7-5. 인원 2~4명 강제 (2026-09-04: 최소 3→2로 낮춤 — 1명 거부·2명 허용) */
+    var one  = teamCreate(D, [], '혼자팀', '혼자만 있는 팀입니다');
     var two  = teamCreate(D, [E.id], '두명팀', '두 사람만 모인 팀입니다');
+    if(two.ok) teamDisband(two.team.id);   /* 2명은 이제 정상 통과 — D·E 를 도로 비웁니다 */
     var five = teamCreate(D, [E.id,F.id,byNo('90000033').id,byNo('90000034').id], '다섯팀', '다섯 사람이 모인 팀입니다');
     var four = teamCreate(D, [E.id,F.id,byNo('90000033').id], '흰구름', '가볍게 시작해 멀리 가자는 뜻');
     if(four.ok) made.push(four.team.id);
-    ok('인원 3~4명 강제 (2명 거부 · 5명 거부 · 4명 통과)', !two.ok && !five.ok && !!four.ok,
-       '2명 → '+(two.msg||'통과됨')+' / 5명 → '+(five.msg||'통과됨')+' / 4명 → '+(four.ok?'통과':'거부됨'));
+    ok('인원 2~4명 강제 (1명 거부 · 2명 통과 · 5명 거부 · 4명 통과)', !one.ok && !!two.ok && !five.ok && !!four.ok,
+       '1명 → '+(one.msg||'통과됨')+' / 2명 → '+(two.ok?'통과':two.msg)+' / 5명 → '+(five.msg||'통과됨')+' / 4명 → '+(four.ok?'통과':'거부됨'));
     if(four.ok){ teamDisband(four.team.id); made=made.filter(function(id){return id!==four.team.id;}); }
 
     /* 7-6. 같은 강좌 안에서만 */
@@ -15491,8 +15493,8 @@ function devJump(){
       if(uA && !uA.teamId) teamCreate(uA, [uB.id, uC.id], '초록물결', '우리가 만든 것이 초록 물결처럼 퍼지기를 바라서');
       teamPreset=null; teamErr='';
     }else{
-      teamPreset = (extra==='few') ? [uB.id] : [uB.id, uC.id];
-      teamErr = (extra==='few') ? '나를 포함해 3명 또는 4명이어야 합니다. 지금 2명입니다.' : '';
+      teamPreset = (extra==='few') ? [] : [uB.id, uC.id];
+      teamErr = (extra==='few') ? '나를 포함해 2명 이상 4명 이하여야 합니다. 지금 1명입니다.' : '';
     }
     extra='';
   }
