@@ -3950,6 +3950,8 @@ function stResearch(){
       '<span class="bg '+(c.done>=c.need?'green':(c.done?'amber':'gray'))+'">제출 '+c.done+'/'+c.need+'</span></div>'+
     '<div class="note b" style="margin-top:8px"><b>세 개를 따로 냅니다.</b> 하나라도 빠지면 '+c.need+'/'+c.need+'가 되지 않습니다. '+
       '<b>팀원 누구나</b> 쓰고 고칠 수 있습니다 — 만든 사람만이 아닙니다.</div>'+
+    '<div class="note" style="margin-top:8px">주제(가주제) 자체를 바꾸거나 다듬으려면 2주차에서 고칩니다. '+
+      '<button class="btn sm" onclick="go(\'week\',{n:2})" style="margin-top:6px">✏️ 가주제 고치러 2주차 가기</button></div>'+
     fixNote(3)+
     tps.map(function(tp,i){ return subBox(t, tp, i, ro); }).join('')+
     '</div>';
