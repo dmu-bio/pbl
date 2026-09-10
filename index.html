@@ -12665,8 +12665,12 @@ var DBR = {
       var def=TBL[job.t];
       if(!def){ this.q.shift(); this.saveQ(); this.busy=false; return this.pump(); }
       if(job.op==='insert'){
+        /* 🔴 로그 표(audit·access)는 SELECT 가 슈퍼 전용이라 업서트(ON CONFLICT)의 충돌확인 SELECT 가
+           막혀 비슈퍼 저장이 통째로 403 이 됩니다. 로그는 일반 삽입으로 보냅니다(au_ins/ax_ins check=true 통과).
+           다른 표는 merge-duplicates 유지 — 재전송 idempotency 보존. */
+        var isLog = (job.t==='audit' || job.t==='access');
         p=this.call('/rest/v1/'+def.db, {method:'POST',
-          headers:this.mix(this.hdr(true), {Prefer:'return=minimal,resolution=merge-duplicates'}),
+          headers:this.mix(this.hdr(true), {Prefer: isLog ? 'return=minimal' : 'return=minimal,resolution=merge-duplicates'}),
           body:JSON.stringify(job.row)});
       }else if(job.op==='update'){
         p=this.call('/rest/v1/'+def.db+'?id=eq.'+encodeURIComponent(job.id), {method:'PATCH',
@@ -12710,8 +12714,17 @@ var DBR = {
       });
       return;
     }
+    /* 🔴 로그 표(audit·access)는 비핵심(best-effort)이라, 서버가 거부해도 배너·실패큐에
+       넣지 않고 조용히 버립니다. (핵심 데이터 저장 실패는 아래처럼 사람이 보게 남깁니다.)
+       ⚠️ 위 net(재시도)·auth 401(refresh) 처리는 이미 return 했으므로 여기 오는 것은 서버 거부(403 등)뿐입니다. */
+    var bad0=this.q.shift(); this.saveQ();
+    if(bad0 && (bad0.t==='audit' || bad0.t==='access')){
+      this.showQ();
+      this.pump();
+      return;
+    }
     /* 🔴 조용히 버리지 않습니다 — 화면 위에 남깁니다(설계서 D-2) */
-    var bad=this.q.shift(); this.saveQ();
+    var bad=bad0;
     bad.why=(err.status||'')+' '+String(err.msg||'').slice(0,200);
     this.failed.push(bad);
     this.showQ();
