@@ -5431,7 +5431,7 @@ function profTeamSummary(cid){
   var done=ts.filter(function(t){ var n=teamMembers(t.id).length; return n>=2 && n<=4; }).length;
   return '<div class="hr"></div><b>'+esc(clsFull(cid))+'</b>'+
     '<div class="note '+(free.length? 'a':'g')+'" style="margin-top:6px">'+
-      '<b>'+teamCap()+'팀 중 '+done+'팀 완성</b> <span class="muted">(2~4명인 팀)</span> · '+
+      '<b>완성 '+done+'팀</b> <span class="muted">/ 정원 '+teamCap()+'팀 · (2~4명인 팀)</span> · '+
       '<b>팀 없는 학생 '+free.length+'명</b>'+
       (free.length? '<br><span class="muted">'+free.map(function(s){return esc(sn(s));}).join(', ')+
         ' — 기존 팀에 넣어 주세요</span>':'')+'</div>'+
@@ -7480,7 +7480,7 @@ function admTeamBlock(cid){
     (ed? '<span class="bg green">수정 가능</span>'
        : '<span class="bg gray">🔒 조회만'+(cid===myClass()?' ([내 강좌]로 전환하면 수정)':'')+'</span>')+
     '<div class="note '+(free.length? 'a':'g')+'" style="margin-top:6px">'+
-      '<b>'+teamCap()+'팀 중 '+done+'팀 완성</b> <span class="muted">(2~4명인 팀)</span> · '+
+      '<b>완성 '+done+'팀</b> <span class="muted">/ 정원 '+teamCap()+'팀 · (2~4명인 팀)</span> · '+
       '만들어진 팀 '+ts.length+'개 · <b>팀 없는 학생 '+free.length+'명</b></div>';
 
   /* 🔴 폰(375px)에서 표를 쓰면 팀원 칸이 옆으로 밀려 안 보입니다.
@@ -10932,7 +10932,7 @@ function svOneSheet(kind, cids){
   var wk = (kind==='사전')? 1 : 15;
   var body = rows.map(function(r){
     var c = svAggCells(r);
-    return '<tr><td class="nw">'+esc(c[0])+'</td><td>'+esc(c[1])+'</td>'+
+    return '<tr><td>'+esc(c[0])+'</td><td>'+esc(c[1])+'</td>'+
       '<td class="nw">'+esc(c[2])+'</td><td class="num">'+esc(c[3])+'</td>'+
       '<td class="num">'+esc(c[4])+'</td><td class="nw">'+esc(c[5])+'</td></tr>';
   }).join('');
