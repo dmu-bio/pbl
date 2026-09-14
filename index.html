@@ -4719,9 +4719,18 @@ function rbPick(r, cur, onclickTpl){
    🔒 지켜야 할 것
      · 자기 팀은 목록에 아예 없습니다 (evalTargets 에서 걸러냅니다)
      · 「누가 평가했는지」는 어느 화면에도 그리지 않습니다
-     · 서술 20자 이상 필수 · 제출 후 학생 수정 불가 · 소요 시간을 조용히 기록
+     · 소요 시간을 조용히 기록
+   🔴 2026-09-14 교수님 방침 (4·7·13·14 공통):
+     ① 서술(코멘트) 입력을 완전히 없앱니다 — 점수만 매깁니다.
+        (2026-09-14 추가 지시 — 교수평가 prof_eval 의 「한 줄 총평」도 없앴습니다.
+         이제 세 평가(교수·팀간·팀내) 모두 점수만 매깁니다. 관련 폼은 p7_profpanel.js.)
+     ② 임시저장 — 제출 전에는 점수를 저장해 두고 다시 들어와 이어서·수정할 수 있습니다
+        (evalDraft 를 이 브라우저 localStorage 에 자동 보관 · 명시 [임시저장] 버튼 제공).
+     ③ 제출 = 잠금 — 한 번 제출하면 학생은 더 고칠 수 없습니다.
+        화면에 "제출하면 수정할 수 없습니다" 안내 + 제출 전 확인창(APP.confirm).
+        ⛔ 옛 「제출 후 1회 수정(editCount)」 여지는 폐기했습니다.
    ========================================================================== */
-var evalDraft = {};      /* {teamId 또는 studentId: {rubricId:점수, _t:서술}} */
+var evalDraft = {};      /* {teamId 또는 studentId: {rubricId:점수}} — 서술 폐기(점수만) */
 var evalStart = null;
 
 /* 🔴 평가 대상 팀 — 「교수가 정한 발표 순서 그대로」 · 자기 팀은 절대 들어오지 않습니다
@@ -4747,21 +4756,16 @@ function evalDraftSave(){
 var evalCursor = {};        /* {주차: 지금 보고 있는 순번} — 한 화면에 한 팀만 */
 var evalLoaded = false;
 
-/* 🔁 2026-08-23 — 평가 주차(4·7·13·14) 학생 동료평가는 「제출 후 1회 수정」까지 허용합니다.
-   editCount: 없음(-1)=아직 제출 안 함 · 0=제출됨(1회 수정 가능) · 1=수정까지 마침(잠금).
+/* 🔴 2026-09-14 — 제출 = 잠금. 상태는 두 가지뿐입니다.
+   peerState:  -1 = 아직 제출 안 함(임시저장·수정 가능) · 1 = 제출됨(잠김, 더 못 고침).
+   (옛 0=「제출 후 1회 수정 가능」 중간 상태는 폐기했습니다.)
    ⛔ 교수평가(profEval)에는 이 제한을 두지 않습니다 — 발표 현장에서 점수를 자유로이 고쳐야 하기 때문입니다(기존 설계 유지). */
 function peerRows(col, round, field, key){
   return DB.get(col, function(p){ return p.round===round && p.evaluator===SESS.me.id && p[field]===key; });
 }
-function peerState(rows){ return rows.length ? ((rows[0].editCount||0)>=1 ? 1 : 0) : -1; }
+function peerState(rows){ return rows.length ? 1 : -1; }
 function interState(round, teamId){ return peerState(peerRows('peerTeam', round, 'teamId', teamId)); }
 function intraState(round, sid){ return peerState(peerRows('peerMember', round, 'studentId', sid)); }
-/* 이미 제출한 평가를 다시 열 때, 화면·검증이 쓸 수 있도록 임시입력(evalDraft)을 저장값으로 채웁니다(비어 있을 때만). */
-function seedDraftFrom(target, rows){
-  if(evalDraft[target]) return;
-  if(!rows.length) return;
-  var d={}; rows.forEach(function(z){ d[z.rubricId]=z.score; d._t=z.text; }); evalDraft[target]=d;
-}
 function stEval(n, def){
   var me = SESS.me, t = teamOf(me);
   if(!t) return '<div class="card"><div class="note r">팀이 없어 평가에 참여할 수 없습니다. 담당교수님께 문의하세요.</div></div>';
@@ -4800,18 +4804,16 @@ function stEval(n, def){
     var rbI = DB.get('rubrics', function(r){ return r.round === def.round && r.kind === 'inter'; })
       .sort(function(a, b){ return a.order - b.order; });
     var doneRows = DB.get('peerTeam', function(p){ return p.round === def.round && p.evaluator === me.id; });
-    var stT = {}; list.forEach(function(x){ stT[x.id] = interState(def.round, x.id); });   /* -1/0/1 */
-    var doneT = {}; list.forEach(function(x){ if(stT[x.id] >= 0) doneT[x.id] = 1; });
-    var cnt = list.filter(function(x){ return stT[x.id] >= 0; }).length;      /* 제출한 팀 수 */
-    var lockCnt = list.filter(function(x){ return stT[x.id] === 1; }).length; /* 수정까지 끝난 팀 수 */
+    var stT = {}; list.forEach(function(x){ stT[x.id] = interState(def.round, x.id); });   /* -1 미제출 · 1 제출(잠김) */
+    var cnt = list.filter(function(x){ return stT[x.id] === 1; }).length;      /* 제출(잠김)한 팀 수 */
 
     h += '<div class="card"><h3>[2] 동료평가 — 팀간 <span class="muted">(자기 팀 제외 · ' + list.length + '팀)</span></h3>';
 
     if(!list.length){
       h += '<p class="muted">평가할 팀이 없습니다.</p>';
-    }else if(lockCnt >= list.length){
-      /* 전부 「제출 + 1회 수정」까지 끝나 더는 못 고치는 상태 — 읽기 전용 표 */
-      h += '<div class="note g">✅ ' + list.length + '/' + list.length + '팀 제출·수정 완료 — <b>더는 고칠 수 없습니다.</b> 내가 낸 평가는 아래와 같습니다.</div>' +
+    }else if(cnt >= list.length){
+      /* 전부 제출(잠김) — 읽기 전용 표 */
+      h += '<div class="note g">✅ ' + list.length + '/' + list.length + '팀 제출 완료 — <b>더는 고칠 수 없습니다.</b> 내가 낸 평가는 아래와 같습니다.</div>' +
         '<div class="scroll"><table><tr><th class="c">순서</th><th>대상 팀</th>' +
         rbI.map(function(r){ return '<th class="c">' + esc(r.name) + '</th>'; }).join('') + '<th class="c">계</th></tr>' +
         list.map(function(x, i){
@@ -4825,12 +4827,11 @@ function stEval(n, def){
             }).join('') + '<td class="c"><b>' + sum + '</b></td></tr>';
         }).join('') + '</table></div>';
     }else{
-      /* 🔴 12팀을 한 화면에 늘어놓지 않습니다 — 한 팀씩. 아직 안 낸 팀 우선, 없으면 수정 가능한 팀부터 */
+      /* 🔴 12팀을 한 화면에 늘어놓지 않습니다 — 한 팀씩. 아직 안 낸 팀부터 보여 줍니다. */
       var idx = evalCursor[n];
       if(idx === undefined || idx < 0 || idx >= list.length){
         idx = -1;
         for(var q = 0; q < list.length; q++) if(stT[list[q].id] < 0){ idx = q; break; }
-        if(idx < 0) for(var q2 = 0; q2 < list.length; q2++) if(stT[list[q2].id] === 0){ idx = q2; break; }
         if(idx < 0) idx = 0;
         evalCursor[n] = idx;
       }
@@ -4840,36 +4841,30 @@ function stEval(n, def){
       h += '<div class="btnrow" style="margin-bottom:6px">' +
         '<span class="bg ' + (cnt ? 'green' : 'gray') + '">제출 ' + cnt + '/' + list.length + '팀</span>' +
         '<span class="bg gray">남은 ' + (list.length - cnt) + '팀</span></div>' +
-        '<p class="muted">한 팀씩 평가합니다. <b>제출한 뒤에도 딱 1회까지는 다시 고칠 수 있습니다.</b> 쓰던 것은 자동으로 남습니다.</p>' +
-        /* 순서 목록 — 아무 팀이나 눌러 바로 이동 (✅ 제출 · 🔒 수정까지 끝) */
+        '<div class="note a"><b>⚠️ 제출하면 수정할 수 없습니다.</b> 점수는 <b>임시저장</b>으로 저장해 두었다가(다시 들어와도 남아 있습니다) 확인한 뒤 마지막에 제출하세요.</div>' +
+        /* 순서 목록 — 아무 팀이나 눌러 바로 이동 (🔒 제출 완료) */
         '<div class="btnrow" style="margin-bottom:8px">' + list.map(function(x, i){
-          var mk = stT[x.id]===1 ? ' 🔒' : (stT[x.id]===0 ? ' ✅' : '');
+          var mk = stT[x.id]===1 ? ' 🔒' : '';
           return '<button class="btn sm' + (i === idx ? ' pri' : '') + '" onclick="evalGo(' + n + ',' + i + ')">' +
             (i + 1) + mk + '</button>';
         }).join('') + '</div>';
 
       if(cxState === 1){
-        h += '<div class="note g">🔒 <b>' + esc(cx.classId + '-' + cx.no + ' 「' + cx.name + '」') + '</b>은 제출 후 1회 수정까지 마쳐 <b>더는 고칠 수 없습니다.</b></div>';
+        h += '<div class="note g">🔒 <b>' + esc(cx.classId + '-' + cx.no + ' 「' + cx.name + '」') + '</b>은 이미 제출하여 <b>더는 고칠 수 없습니다.</b></div>';
       }else{
-        if(cxState === 0) seedDraftFrom(cx.id, doneRows.filter(function(z){ return z.teamId === cx.id; }));
         h += '<div class="acc" style="padding:12px">' +
           '<div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap">' +
           '<b style="font-size:17px">' + (idx + 1) + '번 ' + esc(cx.classId + '-' + cx.no + ' 「' + cx.name + '」') + '</b>' +
-          (presJoint(n) ? '<span class="muted">' + esc(classProf(cx.classId)) + ' 교수</span>' : '') +
-          (cxState === 0 ? '<span class="bg amber">제출됨 · 1회 수정 가능</span>' : '') + '</div>' +
+          (presJoint(n) ? '<span class="muted">' + esc(classProf(cx.classId)) + ' 교수</span>' : '') + '</div>' +
           rbI.map(function(r){
             var cur = (evalDraft[cx.id] || {})[r.id];
             return rbPick(r, cur, "setEval(&#39;" + cx.id + "&#39;,&#39;" + r.id + "&#39;,__V__)");
           }).join('') +
-          '<label class="f">' + esc(D.ask || '잘한 점 / 개선점') + ' <span class="req">*</span> <span class="lim">20자 이상</span></label>' +
-          '<textarea id="et_' + cx.id + '" placeholder="' + esc(D.askHint || '') + '" oninput="evalTouch(&#39;' + cx.id + '&#39;)">' +
-          esc((evalDraft[cx.id] || {})._t || '') + '</textarea>' +
-          '<div class="btnrow" style="margin-top:8px">' +
-          '<button class="btn pri full" onclick="submitInter(&#39;' + cx.id + '&#39;,' + def.round + ',' + n + ')">' +
-          (cxState === 0 ? '수정 제출 (마지막 1회)' : '이 팀 평가 제출') + '</button></div>' +
-          '<div class="muted">' + (cxState === 0
-            ? '이번 수정 제출 <b>이후에는 더 고칠 수 없습니다.</b>'
-            : '제출한 뒤에도 <b>1회까지</b> 다시 고칠 수 있습니다.') + '</div></div>';
+          '<div class="btnrow" style="margin-top:10px">' +
+          '<button class="btn" onclick="evalKeep(&#39;' + cx.id + '&#39;)">💾 임시저장</button>' +
+          '<button class="btn pri full" onclick="submitInter(&#39;' + cx.id + '&#39;,' + def.round + ',' + n + ')">이 팀 평가 제출</button></div>' +
+          '<div class="muted">💾 임시저장은 이 기기에 저장되어 다시 들어와도 남아 있습니다(제출 아님). ' +
+          '<b>제출하면 그때부터 수정할 수 없습니다.</b></div></div>';
       }
 
       h += '<div class="pager" style="margin-top:10px">' +
@@ -4887,31 +4882,27 @@ function stEval(n, def){
     var rbM = DB.get('rubrics', function(r){ return r.round === def.round && r.kind === 'intra'; })
       .sort(function(a, b){ return a.order - b.order; });
     var mates = teamMembers(t.id).filter(function(m){ return m.st.id !== me.id; });   /* ★ 나 제외 */
-    var doneM = DB.get('peerMember', function(p){ return p.round === def.round && p.evaluator === me.id; });
-    var stM = {}; mates.forEach(function(m){ stM[m.st.id] = intraState(def.round, m.st.id); });   /* -1/0/1 */
-    var subM = mates.filter(function(m){ return stM[m.st.id] >= 0; }).length;
+    var stM = {}; mates.forEach(function(m){ stM[m.st.id] = intraState(def.round, m.st.id); });   /* -1 미제출 · 1 제출(잠김) */
+    var subM = mates.filter(function(m){ return stM[m.st.id] === 1; }).length;
     h += '<div class="card"><h3>[3] 동료평가 — 팀내 <span class="muted">(나 제외 · 우리 팀원 ' + mates.length + '명)</span></h3>' +
       '<div class="btnrow" style="margin-bottom:6px"><span class="bg ' + (subM === mates.length && mates.length ? 'green' : 'gray') + '">' +
       '제출 ' + subM + '/' + mates.length + '</span></div>' +
-      '<p class="muted">제출한 뒤에도 <b>딱 1회까지는</b> 다시 고칠 수 있습니다.</p>';
+      '<div class="note a"><b>⚠️ 제출하면 수정할 수 없습니다.</b> 점수는 [임시저장]으로 저장해 두었다가 마지막에 제출하세요.</div>';
     mates.forEach(function(m, i){
       if(stM[m.st.id] === 1){
-        h += '<div class="acc"><div class="hd"><span>▸ ' + esc(sn(m.st)) + '</span><span class="sp"></span><span class="bg green">🔒 제출·수정 완료</span></div></div>';
+        h += '<div class="acc"><div class="hd"><span>▸ ' + esc(sn(m.st)) + '</span><span class="sp"></span><span class="bg green">🔒 제출 완료</span></div></div>';
         return;
       }
-      var editable = stM[m.st.id] === 0;
-      if(editable) seedDraftFrom(m.st.id, doneM.filter(function(z){ return z.studentId === m.st.id; }));
-      var body = (editable ? '<div class="note b">이미 제출했습니다 — 이번 <b>1회까지</b> 수정할 수 있습니다.</div>' : '') +
+      var body =
         rbM.map(function(r){
           var cur = (evalDraft[m.st.id] || {})[r.id];
           return rbPick(r, cur, "setEval(&#39;" + m.st.id + "&#39;,&#39;" + r.id + "&#39;,__V__)");
         }).join('') +
-        '<label class="f">한 줄 의견 <span class="req">*</span> <span class="lim">20자 이상</span></label>' +
-        '<textarea id="et_' + m.st.id + '" oninput="evalTouch(&#39;' + m.st.id + '&#39;)">' + esc((evalDraft[m.st.id] || {})._t || '') + '</textarea>' +
-        '<div class="btnrow" style="margin-top:8px"><button class="btn pri" onclick="submitIntra(&#39;' + m.st.id + '&#39;,' + def.round + ')">' +
-        (editable ? '수정 제출 (마지막 1회)' : '이 팀원 평가 제출') + '</button></div>' +
-        '<div class="muted">' + (editable ? '이번 수정 제출 <b>이후에는 더 고칠 수 없습니다.</b>' : '제출한 뒤에도 1회까지 고칠 수 있습니다.') + '</div>';
-      h += acc('▸ ' + esc(sn(m.st)) + (editable ? ' <span class="bg amber">제출됨 · 1회 수정 가능</span>' : ''), i === 0, body, {open:'평가하기', close:'접기'});
+        '<div class="btnrow" style="margin-top:10px">' +
+        '<button class="btn" onclick="evalKeep(&#39;' + m.st.id + '&#39;)">💾 임시저장</button>' +
+        '<button class="btn pri" onclick="submitIntra(&#39;' + m.st.id + '&#39;,' + def.round + ')">이 팀원 평가 제출</button></div>' +
+        '<div class="muted">💾 임시저장은 이 기기에 남습니다(제출 아님). <b>제출하면 그때부터 수정할 수 없습니다.</b></div>';
+      h += acc('▸ ' + esc(sn(m.st)), i === 0, body, {open:'평가하기', close:'접기'});
     });
     h += '</div>';
   }
@@ -4919,70 +4910,68 @@ function stEval(n, def){
 }
 
 function evalGo(n, i){ evalCursor[n] = i; window.scrollTo(0, 0); render(); }
-function evalTouch(target){
-  if(!evalDraft[target]) evalDraft[target] = {};
-  var ta = $('et_' + target); if(ta) evalDraft[target]._t = ta.value;
+/* 💾 임시저장 — 지금 고른 점수를 이 기기에 저장(제출 아님). 다시 들어와도 남습니다. */
+function evalKeep(target){
   evalDraftSave();
+  toast('💾 임시저장했습니다. 다시 들어와도 남아 있습니다. (아직 제출 전 — 마지막에 [제출]하세요)');
 }
 
 function setEval(target, rubricId, v){
   if(!evalDraft[target]) evalDraft[target]={};
-  var ta=$('et_'+target); if(ta) evalDraft[target]._t = ta.value;
   evalDraft[target][rubricId]=v;
   if(!evalStart) evalStart = Date.now();
   evalDraftSave();
   render();
 }
+/* 🔴 서술(코멘트)은 폐기했습니다 — 점수만 봅니다. 점수를 다 골랐는지만 검사합니다. */
 function collect(target, kind, round){
   var rb = DB.get('rubrics', function(r){return r.round===round && r.kind===kind;});
   var d = evalDraft[target]||{};
-  var ta=$('et_'+target); var txt = ta? ta.value.trim() : (d._t||'');
-  for(var i=0;i<rb.length;i++) if(!d[rb[i].id]){ toast('「'+rb[i].name+'」 점수를 골라 주세요.'); return null; }
-  if(txt.replace(/\s/g,'').length < 20){ toast('서술은 20자 이상 적어 주세요. (성의 없는 제출을 막기 위한 규칙입니다)'); return null; }
+  for(var i=0;i<rb.length;i++) if(d[rb[i].id]===undefined){ toast('「'+rb[i].name+'」 점수를 골라 주세요.'); return null; }
   var vals = rb.map(function(r){return d[r.id];});
   var same = vals.every(function(v){return v===vals[0];});
-  return {rb:rb, d:d, txt:txt, same:same, secs: evalStart? Math.round((Date.now()-evalStart)/1000) : 30};
+  return {rb:rb, d:d, same:same, secs: evalStart? Math.round((Date.now()-evalStart)/1000) : 30};
 }
+/* 🔴 제출 = 잠금. 옛 행이 있으면(비정상) 거부합니다 — 화면상 제출 후에는 편집칸이 그려지지 않습니다. */
 function submitInter(teamId, round, n){
   var c = collect(teamId,'inter',round); if(!c) return;
-  /* 이미 낸 것이 있으면 = 수정 제출. editCount 0 → 1(잠금). 이미 1이면 거부. */
   var old = DB.get('peerTeam', function(p){ return p.round===round && p.evaluator===SESS.me.id && p.teamId===teamId; });
-  if(old.length && (old[0].editCount||0) >= 1){ toast('⛔ 제출 후 1회 수정까지 마쳐 더는 고칠 수 없습니다.'); return; }
-  var ec = old.length ? (old[0].editCount||0)+1 : 0;
+  if(old.length){ toast('⛔ 이미 제출하여 더는 고칠 수 없습니다.'); render(); return; }
   var doIt=function(){
-    old.forEach(function(o){ DB.del('peerTeam', o.id); });      /* 옛 점수 덮어쓰기 */
     c.rb.forEach(function(r){
       DB.add('peerTeam',{round:round,evaluator:SESS.me.id,teamId:teamId,rubricId:r.id,
-        score:c.d[r.id],text:c.txt,at:nowStr(),secs:c.secs,editCount:ec});
+        score:c.d[r.id],text:'',at:nowStr(),secs:c.secs,editCount:1});   /* editCount:1 = 제출·잠김(호환용) */
     });
     delete evalDraft[teamId]; evalStart=null; evalDraftSave();
-    /* 🔴 첫 제출이면 「아직 안 낸 다음 팀」으로 저절로 넘어갑니다 — 12팀을 도는 부담을 줄입니다 */
-    if(n && ec===0){
+    /* 🔴 제출하면 「아직 안 낸 다음 팀」으로 저절로 넘어갑니다 — 12팀을 도는 부담을 줄입니다 */
+    if(n){
       var def2=wdef(n), lst=evalTargets(def2), got={};
       DB.get('peerTeam', function(p){return p.round===round && p.evaluator===SESS.me.id;})
         .forEach(function(p){ got[p.teamId]=1; });
       for(var k=0;k<lst.length;k++) if(!got[lst[k].id]){ evalCursor[n]=k; break; }
       window.scrollTo(0,0);
     }
-    toast(ec>=1 ? '수정했습니다. 이제 더는 고칠 수 없습니다.' : '제출했습니다. 1회까지 수정할 수 있습니다.'); render();
+    toast('제출했습니다. 이 평가는 더 이상 수정할 수 없습니다.'); render();
   };
-  if(c.same) APP.confirm('전 항목에 같은 점수를 주셨습니다.\n정말 이대로 제출할까요?', doIt); else doIt();
+  var msg = (c.same ? '전 항목에 같은 점수를 주셨습니다.\n\n' : '') +
+    '제출하면 수정할 수 없습니다.\n정말 이대로 제출할까요?';
+  APP.confirm(msg, doIt);
 }
 function submitIntra(studentId, round){
   var c = collect(studentId,'intra',round); if(!c) return;
   var old = DB.get('peerMember', function(p){ return p.round===round && p.evaluator===SESS.me.id && p.studentId===studentId; });
-  if(old.length && (old[0].editCount||0) >= 1){ toast('⛔ 제출 후 1회 수정까지 마쳐 더는 고칠 수 없습니다.'); return; }
-  var ec = old.length ? (old[0].editCount||0)+1 : 0;
+  if(old.length){ toast('⛔ 이미 제출하여 더는 고칠 수 없습니다.'); render(); return; }
   var doIt=function(){
-    old.forEach(function(o){ DB.del('peerMember', o.id); });
     c.rb.forEach(function(r){
       DB.add('peerMember',{round:round,evaluator:SESS.me.id,studentId:studentId,rubricId:r.id,
-        score:c.d[r.id],text:c.txt,at:nowStr(),secs:c.secs,editCount:ec});
+        score:c.d[r.id],text:'',at:nowStr(),secs:c.secs,editCount:1});
     });
     delete evalDraft[studentId]; evalStart=null; evalDraftSave();
-    toast(ec>=1 ? '수정했습니다. 이제 더는 고칠 수 없습니다.' : '제출했습니다. 1회까지 수정할 수 있습니다.'); render();
+    toast('제출했습니다. 이 평가는 더 이상 수정할 수 없습니다.'); render();
   };
-  if(c.same) APP.confirm('전 항목에 같은 점수를 주셨습니다.\n정말 이대로 제출할까요?', doIt); else doIt();
+  var msg = (c.same ? '전 항목에 같은 점수를 주셨습니다.\n\n' : '') +
+    '제출하면 수정할 수 없습니다.\n정말 이대로 제출할까요?';
+  APP.confirm(msg, doIt);
 }
 /* ⛔ 옛 saveFilm() — 7주차 영상 제출은 18차에 폐기했습니다.
    교수님 지시: "각 주차에 직접 학생이 파일을 제출하는 건 만들 필요 없어. 따로 받을 예정" */
@@ -5302,11 +5291,11 @@ function profScorePanel(n, def){
 
     h += '<div class="tucard">'+head+three;
     if(ed){
+      /* 🔴 2026-09-14 교수님 방침 — 교수평가도 서술(한 줄 총평)을 없앴습니다. 점수만 매깁니다.
+         (팀간·팀내와 동일 · 저장 시 text:'' 로 두어 행 모양·CSV 는 그대로 유지합니다.) */
       h += rb.map(function(r, k){
         return rbPick(r, got[k], "peSet(&#39;"+t.id+"&#39;,&#39;"+r.id+"&#39;,__V__)");
       }).join('')+
-      '<label class="f">한 줄 총평 <span class="lim">선택 · 200자</span></label>'+
-      '<textarea id="pe_t_'+t.id+'" maxlength="200">'+esc(peNote(def.round, t.id, me))+'</textarea>'+
       '<div class="btnrow" style="margin-top:8px">'+
         '<button class="btn pri" onclick="saveProfEval(&#39;'+t.id+'&#39;,'+def.round+','+n+')">저장</button></div>';
     }else{
@@ -5319,15 +5308,13 @@ function profScorePanel(n, def){
 
   return h + '</div>';
 }
+/* peNote — 옛 교수 총평 읽기. 2026-09-14 서술 폐기로 더는 쓰지 않지만, 과거 데이터 조회용으로 남겨 둡니다. */
 function peNote(round, teamId, profId){
   var r = peRows(round, teamId, profId)[0];
   return r && r.text ? r.text : '';
 }
 function peToggle(tid){ peOpen[tid] = !peOpen[tid]; render(); }
-function peWrite(tid){
-  peOpen[tid] = true; render();
-  setTimeout(function(){ var el=$('pe_t_'+tid); if(el){ try{ el.scrollIntoView({block:'center'}); }catch(e){} } }, 0);
-}
+function peWrite(tid){ peOpen[tid] = true; render(); }
 var peDraft = {};
 function peSet(teamId, rubricId, v){
   if(!peDraft[teamId]) peDraft[teamId] = {};
@@ -5352,11 +5339,11 @@ function saveProfEval(teamId, round, n){
   }
   var rb = DB.get('rubrics', function(r){ return r.round===round && r.kind==='prof'; });
   var miss = [];
-  var note = $('pe_t_'+teamId) ? $('pe_t_'+teamId).value.trim() : '';
+  /* 🔴 2026-09-14 — 교수 총평 폐기. 서술은 저장하지 않고 text:'' 로 고정합니다(팀간·팀내와 동일). */
   rb.forEach(function(r){
     var ex = DB.one('profEval', function(x){ return x.round===round && x.teamId===teamId && x.rubricId===r.id && x.profId===SESS.acc.id; });
     if(!ex){ miss.push(r.name); return; }
-    DB.set('profEval', ex.id, {text:note, at:nowStr()});
+    DB.set('profEval', ex.id, {text:'', at:nowStr()});
   });
   if(miss.length){ toast('⛔ 「'+miss[0]+'」 수준을 골라 주세요.'); return; }
   DB.log('교수평가 저장', t.classId+'-'+t.no+' '+round+'회차 · '+SESS.acc.name);
