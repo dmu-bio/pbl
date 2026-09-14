@@ -2290,6 +2290,42 @@ function teamMembers(tid){
 }
 function studentOfAcc(aid){ return DB.one('students', function(s){return s.accountId===aid;}); }
 
+/* ==========================================================================
+   🔴 결석(평가 제외) — 회차별 (2026-09-14 교수님 지시)
+   --------------------------------------------------------------------------
+   ▸ 평가 주차(4·7·13·14) 시작 전에 교수가 오늘 결석한 학생을 체크합니다.
+     체크하면 그 학생은 「그 회차」에서만 빠지고, 되돌리려면 체크만 해제합니다.
+   ▸ 저장은 기존 attend 표를 씁니다(새 표를 만들지 않습니다) — round·studentId 로
+     한 줄, data jsonb 에 absent:true. (round,student_id) 는 유일 색인이라 겹치지 않습니다.
+   ▸ ⛔ 결석생의 「점수」는 여기서 넣지 않습니다 — 추후 교수가 [최종 점수 계산]에서
+     직접 정합니다. 지금 하는 것은 「이 회차 동료평가에서 빼기」뿐입니다.
+   ▸ 무엇이 빠지는가:
+       · 피평가자 — 팀내 동료평가 대상 명단에서 빠집니다(팀원이 평가하지 않음).
+       · 평가자   — 제출 현황·미제출 집계에서 빠집니다(안 냈다고 불이익 없음).
+       · 집계     — 절사·상대비 계산에 결석생 값이 애초에 없어 자연히 빠집니다.
+   ========================================================================== */
+function absentRow(sid, round){ return DB.one('attend', function(x){ return x.studentId===sid && x.round===round; }); }
+function isAbsent(sid, round){ var r=absentRow(sid, round); return !!(r && r.absent===true); }
+/* 이 회차에서 「평가에 넣을」 학생만 — 결석 체크한 학생을 걸러 냅니다(공통 도우미) */
+function evalActiveMates(teamId, meId, round){
+  return teamMembers(teamId).filter(function(m){
+    return m.st.id!==meId && !isAbsent(m.st.id, round);
+  });
+}
+/* 이 교수가 이 강좌 학생의 결석을 「체크」할 수 있는가 — 13·14주차(round 3)는 합동이라 세 교수 공통 */
+function canMarkAbsent(classId, round){ return isProf() && (round===3 || canEdit(classId)); }
+function setAbsent(sid, round, on){
+  var ex=absentRow(sid, round);
+  if(on){
+    if(ex){ if(ex.absent!==true) DB.set('attend', ex.id, {absent:true, at:nowStr()}); }
+    else DB.add('attend', {round:round, studentId:sid, absent:true, at:nowStr()});
+    DB.log('결석(평가 제외) 체크', round+'회차 · '+sid);
+  }else{
+    if(ex) DB.del('attend', ex.id);
+    DB.log('결석(평가 제외) 해제', round+'회차 · '+sid);
+  }
+}
+
 /* 살아 있는 학생만 — 「내보내기(비활성)」한 학생은 기본으로 빼고 봅니다 */
 function liveStudents(cids, withInactive){
   return DB.get('students', function(s){
@@ -4881,12 +4917,15 @@ function stEval(n, def){
   if(wantIntra){
     var rbM = DB.get('rubrics', function(r){ return r.round === def.round && r.kind === 'intra'; })
       .sort(function(a, b){ return a.order - b.order; });
-    var mates = teamMembers(t.id).filter(function(m){ return m.st.id !== me.id; });   /* ★ 나 제외 */
+    var mates = evalActiveMates(t.id, me.id, def.round);   /* ★ 나 제외 + 🔴 결석(평가 제외) 팀원 제외 */
+    var absN = teamMembers(t.id).filter(function(m){ return m.st.id!==me.id && isAbsent(m.st.id, def.round); }).length;
     var stM = {}; mates.forEach(function(m){ stM[m.st.id] = intraState(def.round, m.st.id); });   /* -1 미제출 · 1 제출(잠김) */
     var subM = mates.filter(function(m){ return stM[m.st.id] === 1; }).length;
     h += '<div class="card"><h3>[3] 동료평가 — 팀내 <span class="muted">(나 제외 · 우리 팀원 ' + mates.length + '명)</span></h3>' +
       '<div class="btnrow" style="margin-bottom:6px"><span class="bg ' + (subM === mates.length && mates.length ? 'green' : 'gray') + '">' +
       '제출 ' + subM + '/' + mates.length + '</span></div>' +
+      (absN ? '<div class="note">오늘 결석으로 <b>평가에서 제외된 팀원 ' + absN + '명</b>은 명단에 나오지 않습니다. 나머지만 평가하시면 됩니다.</div>' : '') +
+      (mates.length ? '' : '<div class="note a">지금 평가할 팀원이 없습니다.' + (absN ? ' (결석 제외)' : '') + '</div>') +
       '<div class="note a"><b>⚠️ 제출하면 수정할 수 없습니다.</b> 점수는 [임시저장]으로 저장해 두었다가 마지막에 제출하세요.</div>';
     mates.forEach(function(m, i){
       if(stM[m.st.id] === 1){
@@ -5215,9 +5254,54 @@ function profEvalPanel(n, def, cids){
   /* ③ 교수평가 입력 — 발표 순서대로 */
   h += profScorePanel(n, def);
 
-  /* ④ 동료평가 감독판 */
+  /* ④ 🔴 결석(평가 제외) 체크 — 평가 시작 전 (2026-09-14) */
+  h += profAbsentPanel(n, def, cids);
+
+  /* ⑤ 동료평가 감독판 */
   h += profPeerWatch(n, def, cids);
   return h;
+}
+
+/* ---- ④ 결석(평가 제외) 체크판 -----------------------------------------
+   교수가 팀별·학생별로 결석을 체크하면 그 회차 동료평가에서 학생이 빠집니다.
+   ⛔ 점수는 넣지 않습니다 — 나중에 [최종 점수 계산]에서 교수가 직접 정합니다. */
+function profAbsentPanel(n, def, cids){
+  var round = def.round;
+  var teams = DB.get('teams', function(t){ return cids.indexOf(t.classId)>=0; })
+    .sort(function(a,b){ return a.classId===b.classId ? a.no-b.no : (a.classId<b.classId?-1:1); });
+  var totalAbs = 0;
+  var body = teams.map(function(t){
+    var ms = teamMembers(t.id).slice().sort(function(a,b){ return a.st.no<b.st.no?-1:1; });
+    var ed = canMarkAbsent(t.classId, round);
+    var absN = ms.filter(function(m){ return isAbsent(m.st.id, round); }).length;
+    totalAbs += absN;
+    return '<div class="acc" style="padding:8px 10px;margin:0 0 6px">'+
+      '<div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap">'+
+        '<b>'+esc(t.classId+'-'+t.no+' 「'+t.name+'」')+'</b>'+
+        (absN? '<span class="bg amber">결석 '+absN+'명</span>':'<span class="bg gray">전원 참석</span>')+
+        (SESS.scope==='all'? '<span class="muted">'+esc(classProf(t.classId))+' 교수</span>':'')+'</div>'+
+      '<div style="margin-top:4px;font-size:14px">'+(ms.length? ms.map(function(m){
+        var on = isAbsent(m.st.id, round);
+        return '<label style="display:inline-flex;align-items:center;gap:4px;margin:2px 12px 2px 0">'+
+          '<input type="checkbox" '+(on?'checked ':'')+(ed?'':'disabled ')+
+          'onchange="toggleAbsent(&#39;'+m.st.id+'&#39;,'+round+',this.checked)">'+
+          '<span'+(on?' style="color:var(--red);font-weight:600"':'')+'>'+esc(sn(m.st))+(on?' · 결석':'')+'</span></label>';
+      }).join('') : '<span class="muted">팀원이 없습니다</span>')+'</div>'+
+      (ed? '' : '<div class="muted">다른 강좌라 조회만 됩니다.</div>');
+  }).join('');
+  return '<div class="card"><h3>결석(평가 제외) 체크 <span class="muted">— '+def.round+'회차 · 평가 시작 전에</span></h3>'+
+    '<div class="note a"><b>평가를 시작하기 전</b>에 오늘 결석한 학생을 체크하세요. 체크하면 그 학생은 <b>이 회차 팀내 동료평가에서 빠지고</b>(팀원이 평가하지 않습니다), <b>미제출로 집계되지 않습니다</b>. 되돌리려면 체크만 해제하면 됩니다.<br>'+
+    '⚠️ <b>결석생의 점수는 지금 넣지 않습니다.</b> 나중에 [최종 점수 계산]에서 교수님이 직접 정하십시오.</div>'+
+    '<div class="btnrow" style="margin-bottom:4px"><span class="bg '+(totalAbs?'amber':'gray')+'">전체 결석 '+totalAbs+'명</span></div>'+
+    (teams.length? body : '<p class="muted">아직 만들어진 팀이 없습니다.</p>')+
+    '</div>';
+}
+function toggleAbsent(sid, round, on){
+  var s = DB.one('students', sid); if(!s){ toast('학생을 찾지 못했습니다.'); return; }
+  if(!canMarkAbsent(s.classId, round)){ toast('이 강좌는 결석 체크를 할 수 없습니다.'); render(); return; }
+  setAbsent(sid, round, !!on);
+  toast(on? sn(s)+' — 결석(평가 제외)으로 체크했습니다.' : sn(s)+' — 결석 체크를 해제했습니다.');
+  render();
 }
 
 /* ---- ③ 교수평가 입력 --------------------------------------------------- */
@@ -5354,7 +5438,10 @@ function saveProfEval(teamId, round, n){
 /* ---- ④ 동료평가 감독판 ------------------------------------------------- */
 function profPeerWatch(n, def, cids){
   var watch = presJoint(n) ? CIDS.slice() : cids;      /* 합동 주차는 3개 강좌 전부 */
-  var ss = DB.get('students', function(s){ return watch.indexOf(s.classId)>=0 && s.active!==false; });
+  var all = DB.get('students', function(s){ return watch.indexOf(s.classId)>=0 && s.active!==false; });
+  /* 🔴 결석(평가 제외) 체크한 학생은 「낼 사람」에서 빼고 셉니다 — 안 냈다고 미제출로 보이면 안 됩니다 */
+  var absAll = all.filter(function(s){ return isAbsent(s.id, def.round); });
+  var ss  = all.filter(function(s){ return !isAbsent(s.id, def.round); });
   function interDone(s){
     if(!s.teamId) return null;
     var need = evalTargets(def, s).length;
@@ -5364,7 +5451,8 @@ function profPeerWatch(n, def, cids){
   }
   function intraDone(s){
     if(!s.teamId) return null;
-    var need = teamMembers(s.teamId).filter(function(m){ return m.st.id!==s.id; }).length;
+    /* 결석 팀원은 평가 대상이 아니므로 낼 개수(need)에서 뺍니다 */
+    var need = evalActiveMates(s.teamId, s.id, def.round).length;
     var got = {};
     DB.get('peerMember', function(p){ return p.round===def.round && p.evaluator===s.id; }).forEach(function(p){ got[p.studentId]=1; });
     return {need:need, got:Object.keys(got).length};
@@ -5375,8 +5463,10 @@ function profPeerWatch(n, def, cids){
 
   var h = '<div class="card"><h3>동료평가 제출 현황 <span class="muted">('+def.round+'회차)</span></h3>'+
     '<div class="btnrow"><span class="bg '+(subI.length===ss.length&&ss.length?'green':'gray')+'">팀간 '+subI.length+'/'+ss.length+'</span>'+
-    '<span class="bg '+(subM.length===ss.length&&ss.length?'green':'gray')+'">팀내 '+subM.length+'/'+ss.length+'</span></div>'+
-    '<div class="note">🔒 여기서 보이는 것은 <b>「누가 안 냈나」</b>뿐입니다. <b>「누가 누구에게 몇 점을 줬나」는 교수님께도 익명</b>입니다.</div>'+
+    '<span class="bg '+(subM.length===ss.length&&ss.length?'green':'gray')+'">팀내 '+subM.length+'/'+ss.length+'</span>'+
+    (absAll.length? '<span class="bg amber">결석 제외 '+absAll.length+'명</span>':'')+'</div>'+
+    '<div class="note">🔒 여기서 보이는 것은 <b>「누가 안 냈나」</b>뿐입니다. <b>「누가 누구에게 몇 점을 줬나」는 교수님께도 익명</b>입니다.'+
+    (absAll.length? ' <b>결석 제외 '+absAll.length+'명</b>('+absAll.map(function(s){return esc(sn(s));}).join(', ')+')은 제출 대상에서 빠졌습니다.':'')+'</div>'+
     '<b>미제출자 명단</b>'+
     (noI.length? '<p>'+noI.map(function(s){ var d=interDone(s);
         return esc(sn(s))+' <span class="muted">('+esc(classProf(s.classId))+')</span>'+
@@ -15215,6 +15305,45 @@ window.__protoCheck = function(){
       ok('🧮 회차 점수 = 교수 × 40% + 동료 × 60% (손검산 일치)',
          Math.abs(rY.score-hand)<1e-9 && rY.score<=100.001 && rY.score>=0,
          '교수 '+Math.round((rY.prof?rY.prof.mean:0)*10)/10+' × 40% + 동료 '+Math.round((rY.peer.n?rY.peer.mean:0)*10)/10+' × 60% = '+Math.round(rY.score*10)/10);
+    })();
+
+    /* 15-9b. 🔴 결석(평가 제외) — 체크하면 팀내 평가 대상·미제출 집계에서 빠지고, 해제하면 되돌아옴 */
+    (function(){
+      var tA=DB.get('teams', function(t){return t.classId==='F2';}).filter(function(t){return teamMembers(t.id).length>=2;})[0];
+      if(!tA){ ok('🔴 결석(평가 제외) — 체크 시 팀내 평가 대상에서 빠짐', true, '2명 이상 팀이 없어 건너뜀'); return; }
+      var ms=teamMembers(tA.id), A=ms[0].st, B=ms[1].st;   /* A 가 평가자, B 를 결석 처리 */
+      var beforeMates=evalActiveMates(tA.id, A.id, 1).map(function(m){return m.st.id;});
+      var hadB = beforeMates.indexOf(B.id)>=0;
+      var wasAbsent=isAbsent(B.id,1);
+      setAbsent(B.id, 1, true);
+      var afterMates=evalActiveMates(tA.id, A.id, 1).map(function(m){return m.st.id;});
+      var checkedOk = isAbsent(B.id,1)===true;
+      var excludedB = afterMates.indexOf(B.id)<0;                 /* B 는 빠지고 */
+      var keptOthers = beforeMates.filter(function(x){return x!==B.id;})
+                        .every(function(x){return afterMates.indexOf(x)>=0;});  /* 나머지는 그대로 */
+      var needDropped = afterMates.length===beforeMates.length-1;
+      setAbsent(B.id, 1, false);                                  /* 되돌리기 */
+      var restored = isAbsent(B.id,1)===false &&
+                     evalActiveMates(tA.id, A.id, 1).map(function(m){return m.st.id;}).indexOf(B.id)>=0;
+      /* 점검이 바꾼 것이 없게: 원래 결석이 아니었다면 attend 줄을 남기지 않습니다 */
+      if(wasAbsent) setAbsent(B.id,1,true);
+      ok('🔴 결석(평가 제외) — 체크 시 팀내 평가 대상·집계에서 빠지고, 해제 시 되돌아옴',
+         hadB && checkedOk && excludedB && keptOthers && needDropped && restored,
+         '팀 '+tA.classId+'-'+tA.no+' · '+sn(B)+' 결석 체크 → '+A.name+'의 평가 대상 '+beforeMates.length+'→'+afterMates.length+'명 (B 빠짐, 나머지 유지) → 해제하니 복귀');
+    })();
+
+    /* 15-9c. 🔴 결석 저장은 새 표가 아니라 attend(round,studentId,absent) 한 줄 — 회차가 다르면 별개 */
+    (function(){
+      var tA=DB.get('teams', function(t){return t.classId==='F2';}).filter(function(t){return teamMembers(t.id).length>=1;})[0];
+      if(!tA){ ok('🔴 결석 저장은 회차별로 따로', true, '팀이 없어 건너뜀'); return; }
+      var B=teamMembers(tA.id)[0].st, wasR1=isAbsent(B.id,1), wasR2=isAbsent(B.id,2);
+      setAbsent(B.id,1,true);
+      var r1on_r2off = isAbsent(B.id,1)===true && isAbsent(B.id,2)===false;   /* 1회차만 결석, 2회차는 아님 */
+      setAbsent(B.id,1,false);
+      if(wasR1) setAbsent(B.id,1,true);
+      if(wasR2) setAbsent(B.id,2,true);
+      ok('🔴 결석은 회차별로 따로 — 1회차 체크가 2회차에 번지지 않음',
+         r1on_r2off, sn(B)+' 를 1회차만 결석 처리 → 1회차 결석·2회차 참석으로 구분됨');
     })();
 
     /* 15-10. 학생 총점 = 항목 합 · 배점 합을 넘지 않음 */
