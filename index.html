@@ -5313,7 +5313,8 @@ function profAbsentPanel(n, def, cids){
         }
         return s + '</span>';
       }).join('') : '<span class="muted">팀원이 없습니다</span>')+'</div>'+
-      (ed? '' : '<div class="muted">다른 강좌라 조회만 됩니다.</div>');
+      (ed? '' : '<div class="muted">다른 강좌라 조회만 됩니다.</div>')+
+    '</div>';
   }).join('');
   return '<div class="card"><h3>결석(평가 제외) 체크 <span class="muted">— '+def.round+'회차 · 평가 시작 전에</span></h3>'+
     '<div class="note a"><b>평가를 시작하기 전</b>에 오늘 결석한 학생을 체크하세요. 체크하면 그 학생은 <b>이 회차 팀내 동료평가에서 빠지고</b>(팀원이 평가하지 않습니다), <b>미제출로 집계되지 않습니다</b>. 되돌리려면 체크만 해제하면 됩니다.<br>'+
