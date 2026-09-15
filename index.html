@@ -4537,7 +4537,12 @@ function accToggle(id){
 
 var PRES_WEEKS = [4, 7, 13, 14];
 function presJoint(n){ return n===13 || n===14; }            /* 3개 강좌 합동 주차 */
-function presNeed(n){ return presJoint(n) ? 12 : 8; }        /* 그 주에 발표하는 팀 수 */
+/* 그 주에 발표하는 팀 수
+   · 13·14주차(합동) — 24팀을 12+12로 나눕니다 (그대로)
+   · 4·7주차 — 그 강좌에 「실제로 있는 팀 수」입니다. 정원(8)에 고정하지 않습니다.
+     반마다 팀 수가 다릅니다(예: F2 7팀). 7팀 반은 7팀으로 순서를 정할 수 있어야 합니다.
+     (2026-09-16 · 7팀 반에서 「8팀이어야」로 막히던 버그 수정) */
+function presNeed(n, cid){ return presJoint(n) ? 12 : presPool(n, cid).length; }
 
 /* 그 주차 배정 후보 — 합동 주차는 24팀 전부, 그 밖은 그 강좌 8팀 */
 function presPool(n, cid){
