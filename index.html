@@ -2319,6 +2319,7 @@ function setAbsent(sid, round, on){
   if(on){
     if(ex){ if(ex.absent!==true) DB.set('attend', ex.id, {absent:true, at:nowStr()}); }
     else DB.add('attend', {round:round, studentId:sid, absent:true, at:nowStr()});
+    if(window.missClearConfirm) missClearConfirm(sid, round);   /* 결석이면 「평가 미완료」와 겹치지 않게 정리 */
     DB.log('결석(평가 제외) 체크', round+'회차 · '+sid);
   }else{
     if(ex) DB.del('attend', ex.id);
@@ -8664,6 +8665,88 @@ function absClearConfirm(sid, round){
   DB.log('결석생 점수 확정 취소', (st? st.name+'('+st.no+') ':'')+round+'회차');
 }
 
+/* ==========================================================================
+   🟠 평가 미완료 학생 점수 — 결석은 아니지만 동료평가를 끝까지 내지 않은 학생
+   (2026-09-17 교수님 지시)
+   --------------------------------------------------------------------------
+   ▸ 교수님 지시(요지): "평가를 끝까지(그 회차) 미완료한 학생(결석은 아니지만 팀간/팀내
+     평가를 안 냈거나 미완인 학생)도, 결석생 무단과 동일하게 팀 점수 × 50%만 적용할 수
+     있게" — 결석생 무단(50%)과 같은 메커니즘을 재사용합니다.
+   ▸ 판정 기준(기본): 그 회차에 「팀간 또는 팀내」 동료평가를 하나라도 끝까지 내지 않으면
+     (got < need · 부분 제출 포함) 미완료 후보로 봅니다. 결석 체크된 학생은 여기서 제외합니다
+     (결석은 위 4-3 ① 결석생 경로가 따로 처리 — 이중 집계 방지).
+   ▸ 저장은 결석생과 똑같이 marks 의 data(jsonb)에 얹습니다(교수 전용 RLS). 새 표·컬럼 없음.
+       marks.miss = { "1":{ok,ratio,score,over,by,at}, ... } (회차별)
+   ▸ 비율은 결석 무단 비율(settings.absRate.unexcused, 기본 50%)을 함께 씁니다(교수님 "동일하게").
+   ▸ ⛔ 앱이 자동 확정하지 않습니다. 후보를 「추천」만 하고, 교수가 값을 확인·수정 후 [확정].
+     확정 전에는 정상 경로로 팀 점수를 그대로 줍니다(추측으로 깎지 않습니다).
+   ========================================================================== */
+/* 회차 → 그 회차 발표가 열리는 주차들 (r3 은 13·14주차에 걸쳐 있습니다) */
+function roundWeeks(round){ return round===1?[4]:(round===2?[7]:(round===3?[13,14]:[])); }
+/* 이 학생이 이 회차에 「팀간 평가로 내야 할」 팀 수 — 제출현황 패널과 같은 기준(evalTargets) */
+function peerInterNeed(sid, round){
+  var st=DB.one('students', sid); if(!st || !st.teamId) return 0;
+  var seen={};
+  roundWeeks(round).forEach(function(n){
+    var def=wdef(n); if(!def) return;
+    evalTargets(def, st).forEach(function(t){ if(t) seen[t.id]=1; });
+  });
+  return Object.keys(seen).length;
+}
+function peerInterGot(sid, round){
+  var got={}; DB.get('peerTeam', function(p){ return p.round===round && p.evaluator===sid; })
+    .forEach(function(p){ got[p.teamId]=1; });
+  return Object.keys(got).length;
+}
+/* 팀내 평가로 내야 할 팀원 수 — 결석 팀원은 대상에서 빠집니다(evalActiveMates) */
+function peerIntraNeed(sid, round){
+  var st=DB.one('students', sid); if(!st || !st.teamId) return 0;
+  return evalActiveMates(st.teamId, sid, round).length;
+}
+function peerIntraGot(sid, round){
+  var got={}; DB.get('peerMember', function(p){ return p.round===round && p.evaluator===sid; })
+    .forEach(function(p){ got[p.studentId]=1; });
+  return Object.keys(got).length;
+}
+/* 이 학생·회차의 미완료 판정 재료 — 결석생·팀없는 학생은 applies:false */
+function peerMissStatus(sid, round){
+  if(isAbsent(sid, round)) return {applies:false};
+  var st=DB.one('students', sid);
+  if(!st || !st.teamId) return {applies:false};
+  var inNeed=peerInterNeed(sid,round), inGot=peerInterGot(sid,round);
+  var imNeed=peerIntraNeed(sid,round), imGot=peerIntraGot(sid,round);
+  var interShort = inNeed>0 && inGot<inNeed;
+  var intraShort = imNeed>0 && imGot<imNeed;
+  return { applies:true, interNeed:inNeed, interGot:inGot, intraNeed:imNeed, intraGot:imGot,
+           interShort:interShort, intraShort:intraShort,
+           incomplete: (interShort || intraShort) };   /* 기준(b): 하나라도 미완이면 미완료 */
+}
+/* 미완료 확정 정보(marks.miss) */
+function missInfoRow(sid){ var r=markRow(sid); return (r && r.miss && typeof r.miss==='object') ? r.miss : null; }
+function missInfo(sid, round){
+  var rk=String(round); var all=missInfoRow(sid), d=(all&&all[rk])?all[rk]:null;
+  return { ok:!!(d&&d.ok), ratio: d?Number(d.ratio):absRatePct(false),
+           score:(d&&d.score!=null)?Number(d.score):null, over:!!(d&&d.over),
+           by:d?d.by:'', at:d?d.at:'' };
+}
+function missSetConfirm(sid, round, score, ratio, over){
+  var st=DB.one('students', sid); if(!st) return;
+  var r=markRow(sid);
+  var miss=(r&&r.miss)?JSON.parse(JSON.stringify(r.miss)):{};
+  miss[String(round)]={ ok:true, ratio:Number(ratio), score:r1d(Number(score)), over:!!over,
+                        by:(SESS.acc?SESS.acc.name:'-'), at:nowStr() };
+  if(r) DB.set('marks', r.id, {miss:miss});
+  else  DB.add('marks', {studentId:sid, att:null, mid:null, fin:null, miss:miss});
+  DB.log('평가 미완료 점수 확정', st.name+'('+st.no+') '+round+'회차 '+r1d(score)+'점 (팀점수 대비 '+ratio+'%'+(over?' · 직접 수정':'')+')');
+}
+function missClearConfirm(sid, round){
+  var r=markRow(sid); if(!r||!r.miss||!r.miss[String(round)]) return;
+  var miss=JSON.parse(JSON.stringify(r.miss)); delete miss[String(round)];
+  DB.set('marks', r.id, {miss:miss});
+  var st=DB.one('students', sid);
+  DB.log('평가 미완료 점수 확정 취소', (st? st.name+'('+st.no+') ':'')+round+'회차');
+}
+
 /* ---- 학생 한 명의 최종 점수 ---- */
 function studentScore(st){
   var mk=MK(), t=teamOf(st), items=[];
@@ -8697,6 +8780,18 @@ function studentScore(st){
                       kind:'auto', round:it.round, detail:r, pen:0,
                       absent:true, excused:ai.excused, absPending:true, teamDone:teamDone});
         }
+        return;
+      }
+      /* 🟠 평가 미완료(결석 아님) — 교수가 팀점수×비율을 [확정]한 학생만 반영합니다.
+         확정 전에는 아래 정상 경로로 팀 점수를 그대로 줍니다(추측으로 깎지 않습니다).
+         결석생과 마찬가지로 팀내 감점(pen)은 겹쳐 적용하지 않습니다(회차 전체를 비율로 대체). */
+      var mi = missInfo(st.id, it.round);
+      if(mi.ok && mi.score!=null){
+        var gm = mi.score/100*full;
+        items.push({k:it.k, label:it.label, where:it.where, full:full,
+                    got:gm, raw:gm, cut:0, typed:true,
+                    kind:'auto', round:it.round, detail:r, pen:0,
+                    miss:true, missRatio:mi.ratio, missScore:mi.score, missOver:mi.over});
         return;
       }
       var raw = (r&&r.done)? r.score/100*full : 0;
@@ -8855,6 +8950,9 @@ function mkGaps(cid){
   /* 🟢 결석생 점수 미확정 — 아래 「4-3. 결석생 점수」에서 [확정]을 눌러야 총점에 들어갑니다 */
   var absPend = absEntries(cid).filter(function(e){ return e.teamDone && !e.info.ok; }).length;
   if(absPend) gaps.push('결석생 점수 확정 대기 '+absPend+'건 (아래 4-3에서 확정)');
+  /* 🟠 평가 미완료(결석 아님) 후보 — 아직 확정 안 함. 교수가 4-3 ②에서 확인·확정 */
+  var missPend = missEntries(cid).filter(function(e){ return e.teamDone && !e.info.ok && e.stat.incomplete; }).length;
+  if(missPend) gaps.push('평가 미완료 학생 확인 대기 '+missPend+'건 (아래 4-3 ②에서 확인)');
   [[1,'4주차'],[2,'7주차'],[3,'13·14주차']].forEach(function(r){
     var sub = ss.filter(function(s){ return DB.one('peerTeam', function(p){return p.round===r[0]&&p.evaluator===s.id;}); }).length;
     if(ss.length && sub<ss.length) gaps.push(r[1]+' 동료평가 제출률 '+Math.round(sub/ss.length*100)+'% ('+sub+'/'+ss.length+'명)');
@@ -9047,15 +9145,16 @@ function mkAbsentPanel(cid){
   var confN = entries.filter(function(e){ return e.info.ok; }).length;
   var pendN = entries.length - confN;
 
-  var h = '<div class="card"><h3>4-3. 결석생 점수 <span class="muted">— 팀 점수 × 비율(추천) → 교수 확정</span></h3>'+
-    '<div class="note">🟢 결석 체크된 학생의 발표평가 점수는 <b>소속 팀의 그 회차 점수 × 비율</b>로 <b>추천</b>됩니다. '+
+  var h = '<div class="card"><h3>4-3. 결석·평가 미완료 점수 <span class="muted">— 팀 점수 × 비율(추천) → 교수 확정</span></h3>'+
+    '<div class="note">🟢 아래 두 경우의 발표평가 점수는 <b>소속 팀의 그 회차 점수 × 비율</b>로 <b>추천</b>됩니다. '+
       '앱이 자동으로 확정하지 않습니다 — <b>교수님이 값을 확인·수정하고 [확정]</b>을 누르셔야 총점에 들어갑니다.<br>'+
-      '⚠️ 확정 전에는 그 회차가 위 <b>5. 총점</b>에서 「덜 찬 것」으로 표시됩니다(0점으로 세지 않게 하려는 장치입니다).</div>';
+      '① <b>결석</b>(발표평가 화면에서 결석 체크) · ② <b>평가 미완료</b>(결석은 아니나 동료평가를 끝까지 내지 않은 학생 — 무단 결석과 같은 비율).<br>'+
+      '⚠️ ①은 확정 전 그 회차가 위 <b>5. 총점</b>에서 「덜 찬 것」으로 표시됩니다. ②는 확정 전에는 <b>팀 점수를 그대로</b> 받습니다(교수가 확정해야 비율이 적용됩니다).</div>';
 
   /* 비율 설정 — 모든 강좌 공통(settings) */
-  h += '<div class="tucard" style="margin-top:8px"><b>결석 점수 비율</b> <span class="muted">— 모든 강좌 공통 · 기본 무단 50% · 공결 100%</span>'+
+  h += '<div class="tucard" style="margin-top:8px"><b>결석·미완료 점수 비율</b> <span class="muted">— 모든 강좌 공통 · 기본 무단 50% · 공결 100%</span>'+
     '<div class="scroll" style="margin-top:6px"><table><tr><th>구분</th><th class="num">비율</th>'+(ed?'<th class="c">조정</th>':'')+'</tr>'+
-    '<tr><td class="nw">무단(공결 아님) 결석</td><td class="num"><b>'+r1d(a.unexcused)+'%</b></td>'+
+    '<tr><td class="nw">무단(공결 아님) 결석 · <b>평가 미완료</b></td><td class="num"><b>'+r1d(a.unexcused)+'%</b></td>'+
       (ed? '<td class="c nw"><button class="btn sm" onclick="absTweakRate(\'unexcused\',-5)">−5</button> '+
            '<button class="btn sm" onclick="absTweakRate(\'unexcused\',5)">+5</button></td>':'')+'</tr>'+
     '<tr><td class="nw">공결(출석 인정)</td><td class="num"><b>'+r1d(a.excused)+'%</b></td>'+
@@ -9063,25 +9162,101 @@ function mkAbsentPanel(cid){
            '<button class="btn sm" onclick="absTweakRate(\'excused\',5)">+5</button></td>':'')+'</tr>'+
     '</table></div>'+
     (ed? '<div class="btnrow" style="margin-top:6px"><button class="btn sm" onclick="absResetRate()">기본값(50 / 100)으로</button></div>':'')+
-    '<div class="note">비율을 바꾸면 <b>아직 확정하지 않은</b> 결석생의 추천값이 새 비율로 다시 계산됩니다. 이미 [확정]한 점수는 그대로 남습니다(다시 확정하면 새 비율이 적용됩니다).</div></div>';
+    '<div class="note">🔴 <b>「무단 결석」과 「평가 미완료」는 같은 비율(기본 50%)을 씁니다</b>(교수님 지시 — 동일 적용). 비율을 바꾸면 <b>아직 확정하지 않은</b> 추천값이 새 비율로 다시 계산됩니다. 이미 [확정]한 점수는 그대로 남습니다.</div></div>';
 
+  /* ── ① 결석생 ─────────────────────────────────────────────── */
+  h += '<div class="hr" style="margin-top:10px"></div><b>① 결석생</b> <span class="muted">— 발표평가 화면에서 결석 체크한 학생</span>';
   if(!entries.length){
-    return h + '<div class="note g" style="margin-top:8px">✅ 이 강좌에는 결석(평가 제외)으로 체크된 학생이 없습니다. 결석 체크는 발표평가 화면(4·7·13·14주차)에서 합니다.</div></div>';
+    h += '<div class="note g" style="margin-top:6px">✅ 이 강좌에는 결석(평가 제외)으로 체크된 학생이 없습니다. 결석 체크는 발표평가 화면(4·7·13·14주차)에서 합니다.</div>';
+  }else{
+    h += '<div class="btnrow" style="margin:6px 0 4px"><span class="bg '+(pendN?'red':'green')+'">확정 대기 '+pendN+'명</span>'+
+         '<span class="bg gray">확정됨 '+confN+'명</span></div>';
+    h += '<div class="scroll"><table><tr><th>학생 (학번)</th><th>회차</th><th>팀</th><th class="num">팀 회차점수<br><span class="muted">/100</span></th>'+
+         '<th class="c">구분</th><th class="num">비율</th><th class="num">추천<br><span class="muted">/100</span></th>'+
+         '<th class="c" style="min-width:150px">확정 점수</th><th class="c">상태</th></tr>';
+    entries.forEach(function(e){
+      var it = absItemFor(e.round), full = it? mkFullOf(it.k):0, label = it? it.label:('R'+e.round);
+      var rec = absRecommend(e);
+      var info = e.info;
+      var kindBadge = info.excused ? '<span class="bg green">공결</span>' : '<span class="bg amber">무단</span>';
+      var teamCell = e.teamDone ? r1d(e.teamScore) : '<span class="bg red">아직</span>';
+      var ratioCell = r1d(info.ok? info.ratio : absRatePct(info.excused))+'%';
+      var recCell, ctrlCell, stateCell;
+
+      if(!e.teamDone){
+        recCell  = '<span class="muted">—</span>';
+        ctrlCell = '<span class="muted">팀 채점 먼저</span>';
+        stateCell= '<span class="bg red">팀 점수 없음</span>';
+      }else if(info.ok){
+        recCell  = r1d(rec.score)+(info.over?' <span class="muted">(추천)</span>':'');
+        var curScore = info.score;
+        ctrlCell = '<b>'+r1d(curScore)+'</b> <span class="muted">('+r1d(curScore/100*full)+' / '+full+')</span>'+
+          (ed? ' <button class="btn sm" onclick="absCancelUI(\''+e.st.id+'\','+e.round+')">취소</button>':'');
+        stateCell= '<span class="bg green">✅ 확정</span>'+(info.over?'<br><span class="muted">직접 수정</span>':'')+
+          (info.by?'<br><span class="muted">'+esc(info.by)+'</span>':'');
+      }else{
+        recCell  = '<b>'+r1d(rec.score)+'</b> <span class="muted">('+r1d(rec.score/100*full)+' / '+full+')</span>';
+        if(ed){
+          ctrlCell = '<input type="text" inputmode="decimal" id="absin_'+e.st.id+'_'+e.round+'" value="'+r1d(rec.score)+'" '+
+            'style="width:64px;text-align:center;padding:6px"> <span class="muted">/100</span><br>'+
+            '<button class="btn sm pri" style="margin-top:4px" onclick="absConfirmUI(\''+e.st.id+'\','+e.round+','+full+','+rec.score+')">확정</button>';
+        }else{
+          ctrlCell = '<span class="muted">다른 강좌</span>';
+        }
+        stateCell= '<span class="bg red">확정 대기</span>';
+      }
+      h += '<tr><td class="nw">'+esc(e.st.name)+' <span class="muted">('+esc(e.st.no)+')</span></td>'+
+        '<td class="nw">'+esc(label)+'</td>'+
+        '<td class="nw muted">'+(e.team? esc(e.team.no+'팀 '+e.team.name):'팀 없음')+'</td>'+
+        '<td class="num">'+teamCell+'</td>'+
+        '<td class="c">'+kindBadge+'</td>'+
+        '<td class="num">'+ratioCell+'</td>'+
+        '<td class="num">'+recCell+'</td>'+
+        '<td class="c">'+ctrlCell+'</td>'+
+        '<td class="c nw">'+stateCell+'</td></tr>';
+    });
+    h += '</table></div>'+
+      '<div class="note">추천값(=팀 회차점수 × 비율)이 칸에 미리 채워져 있습니다. 그대로 두고 [확정]을 누르거나, 칸의 숫자를 고친 뒤 [확정]하시면 고친 값이 들어갑니다(0~100). '+
+        '「공결」은 발표평가 화면의 결석 옆 [공결] 체크로 지정합니다.</div>';
   }
 
-  h += '<div class="btnrow" style="margin:8px 0 4px"><span class="bg '+(pendN?'red':'green')+'">확정 대기 '+pendN+'명</span>'+
-       '<span class="bg gray">확정됨 '+confN+'명</span></div>';
+  /* ── ② 평가 미완료(결석 아님) ────────────────────────────── */
+  h += mkMissSection(cid, ed);
+  h += '</div>';
+  return h;
+}
 
+/* ---- 4-3 ② 평가 미완료 표 ---- */
+function mkMissSection(cid, ed){
+  var entries = missEntries(cid);
+  var h = '<div class="hr" style="margin-top:12px"></div><b>② 평가 미완료 (결석 아님)</b> '+
+    '<span class="muted">— 동료평가(팀간/팀내)를 끝까지 내지 않은 학생 · 무단 결석과 같은 비율</span>';
+  if(!entries.length){
+    return h + '<div class="note g" style="margin-top:6px">✅ 채점이 끝난 회차에서 <b>동료평가를 끝까지 내지 않은(결석 아님) 학생이 없습니다.</b> '+
+      '(판정 기준: 그 회차 팀간 또는 팀내 평가를 하나라도 끝까지 내지 않은 경우. 결석 체크된 학생은 위 ①에서 다룹니다.)</div>';
+  }
+  var confN = entries.filter(function(e){ return e.info.ok; }).length;
+  var pendN = entries.filter(function(e){ return !e.info.ok && e.stat.incomplete; }).length;
+  h += '<div class="btnrow" style="margin:6px 0 4px"><span class="bg '+(pendN?'red':'green')+'">확인 대기 '+pendN+'명</span>'+
+       '<span class="bg gray">확정됨 '+confN+'명</span></div>'+
+    '<div class="note">🟠 아래 학생은 그 회차 동료평가를 끝까지 내지 않았습니다. <b>확정하기 전에는 팀 점수를 그대로 받습니다.</b> '+
+      '[확정]을 누르면 <b>팀 점수 × '+r1d(absRatePct(false))+'%</b>가 적용됩니다(무단 결석과 동일). 값은 칸에서 고칠 수 있습니다.</div>';
   h += '<div class="scroll"><table><tr><th>학생 (학번)</th><th>회차</th><th>팀</th><th class="num">팀 회차점수<br><span class="muted">/100</span></th>'+
-       '<th class="c">구분</th><th class="num">비율</th><th class="num">추천<br><span class="muted">/100</span></th>'+
+       '<th class="c">미제출 현황</th><th class="num">비율</th><th class="num">추천<br><span class="muted">/100</span></th>'+
        '<th class="c" style="min-width:150px">확정 점수</th><th class="c">상태</th></tr>';
   entries.forEach(function(e){
     var it = absItemFor(e.round), full = it? mkFullOf(it.k):0, label = it? it.label:('R'+e.round);
-    var rec = absRecommend(e);
-    var info = e.info;
-    var kindBadge = info.excused ? '<span class="bg green">공결</span>' : '<span class="bg amber">무단</span>';
+    var rec = missRecommend(e);
+    var info = e.info, s = e.stat;
+    var shortBadge = '';
+    if(s.applies){
+      shortBadge = (s.interShort? '<span class="bg amber">팀간 '+s.interGot+'/'+s.interNeed+'</span> ':'<span class="bg gray">팀간 ✓</span> ')+
+                   (s.intraShort? '<span class="bg amber">팀내 '+s.intraGot+'/'+s.intraNeed+'</span>':'<span class="bg gray">팀내 ✓</span>');
+    }else{
+      shortBadge = '<span class="muted">—</span>';
+    }
     var teamCell = e.teamDone ? r1d(e.teamScore) : '<span class="bg red">아직</span>';
-    var ratioCell = r1d(info.ok? info.ratio : absRatePct(info.excused))+'%';
+    var ratioCell = r1d(info.ok? info.ratio : absRatePct(false))+'%';
     var recCell, ctrlCell, stateCell;
 
     if(!e.teamDone){
@@ -9092,34 +9267,34 @@ function mkAbsentPanel(cid){
       recCell  = r1d(rec.score)+(info.over?' <span class="muted">(추천)</span>':'');
       var curScore = info.score;
       ctrlCell = '<b>'+r1d(curScore)+'</b> <span class="muted">('+r1d(curScore/100*full)+' / '+full+')</span>'+
-        (ed? ' <button class="btn sm" onclick="absCancelUI(\''+e.st.id+'\','+e.round+')">취소</button>':'');
+        (ed? ' <button class="btn sm" onclick="missCancelUI(\''+e.st.id+'\','+e.round+')">취소</button>':'');
       stateCell= '<span class="bg green">✅ 확정</span>'+(info.over?'<br><span class="muted">직접 수정</span>':'')+
-        (info.by?'<br><span class="muted">'+esc(info.by)+'</span>':'');
+        (info.by?'<br><span class="muted">'+esc(info.by)+'</span>':'')+
+        (e.nowComplete? '<br><span class="bg amber">이후 제출 완료</span>':'');
     }else{
       recCell  = '<b>'+r1d(rec.score)+'</b> <span class="muted">('+r1d(rec.score/100*full)+' / '+full+')</span>';
       if(ed){
-        ctrlCell = '<input type="text" inputmode="decimal" id="absin_'+e.st.id+'_'+e.round+'" value="'+r1d(rec.score)+'" '+
+        ctrlCell = '<input type="text" inputmode="decimal" id="missin_'+e.st.id+'_'+e.round+'" value="'+r1d(rec.score)+'" '+
           'style="width:64px;text-align:center;padding:6px"> <span class="muted">/100</span><br>'+
-          '<button class="btn sm pri" style="margin-top:4px" onclick="absConfirmUI(\''+e.st.id+'\','+e.round+','+full+','+rec.score+')">확정</button>';
+          '<button class="btn sm pri" style="margin-top:4px" onclick="missConfirmUI(\''+e.st.id+'\','+e.round+','+full+','+rec.score+')">확정(50%)</button>';
       }else{
         ctrlCell = '<span class="muted">다른 강좌</span>';
       }
-      stateCell= '<span class="bg red">확정 대기</span>';
+      stateCell= '<span class="bg red">확인 대기</span>';
     }
     h += '<tr><td class="nw">'+esc(e.st.name)+' <span class="muted">('+esc(e.st.no)+')</span></td>'+
       '<td class="nw">'+esc(label)+'</td>'+
       '<td class="nw muted">'+(e.team? esc(e.team.no+'팀 '+e.team.name):'팀 없음')+'</td>'+
       '<td class="num">'+teamCell+'</td>'+
-      '<td class="c">'+kindBadge+'</td>'+
+      '<td class="c nw">'+shortBadge+'</td>'+
       '<td class="num">'+ratioCell+'</td>'+
       '<td class="num">'+recCell+'</td>'+
       '<td class="c">'+ctrlCell+'</td>'+
       '<td class="c nw">'+stateCell+'</td></tr>';
   });
   h += '</table></div>'+
-    '<div class="note">추천값(=팀 회차점수 × 비율)이 칸에 미리 채워져 있습니다. 그대로 두고 [확정]을 누르거나, 칸의 숫자를 고친 뒤 [확정]하시면 고친 값이 들어갑니다(0~100). '+
-      '「공결」은 발표평가 화면의 결석 옆 [공결] 체크로 지정합니다.</div>'+
-    '</div>';
+    '<div class="note">🔴 이 표는 <b>자동으로 점수를 깎지 않습니다.</b> 교수님이 각 학생을 확인하고 [확정]을 누른 학생만 팀 점수 × '+r1d(absRatePct(false))+'%가 됩니다. '+
+      '학생이 나중에 마저 제출하면 <b>확정 전 후보는 목록에서 빠지고</b>, 이미 [확정]한 경우 「이후 제출 완료」로 표시되니 필요하면 [취소]하십시오.</div>';
   return h;
 }
 function absTweakRate(kind, delta){
@@ -9156,6 +9331,63 @@ function absCancelUI(sid, round){
   if(!canEdit(st.classId)){ toast('다른 강좌라 취소할 수 없습니다.'); return; }
   APP.confirm(sn(st)+' 학생의 '+round+'회차 결석 점수 확정을 취소합니다.\n(다시 추천값으로 되돌아갑니다) 진행할까요?', function(){
     absClearConfirm(sid, round);
+    toast('확정을 취소했습니다.'); render();
+  });
+}
+
+/* ==========================================================================
+   🟠 4-3 ② 평가 미완료 — 후보 수집 · 추천 · 확정/취소 UI
+   ▸ 후보: (지금 미완료로 감지 + 팀 채점 끝남) 또는 (이미 확정됨). 결석생은 제외.
+   ▸ 확정 후 학생이 마저 제출하면 nowComplete 로 표시하고, 확정 전 후보는 자동으로 빠집니다.
+   ========================================================================== */
+function missEntries(cid){
+  var ss = liveStudents([cid]);
+  var out=[];
+  [1,2,3].forEach(function(round){
+    ss.forEach(function(s){
+      var stt = peerMissStatus(s.id, round);
+      var info = missInfo(s.id, round);
+      var t = teamOf(s);
+      var rs = t ? roundScore100(t.id, round) : null;
+      var teamDone = !!(rs && rs.done);
+      /* 확정된 것은 항상 보여 주고(취소할 수 있게), 확정 전 후보는 「지금 미완료 + 팀 채점 끝남」일 때만 */
+      if(!info.ok){
+        if(!(stt.applies && stt.incomplete)) return;
+        if(!teamDone) return;
+      }
+      out.push({ st:s, round:round, team:t, rs:rs, teamDone:teamDone,
+                 teamScore: teamDone ? rs.score : null,
+                 stat: stt, info: info,
+                 nowComplete: stt.applies && !stt.incomplete });
+    });
+  });
+  return out;
+}
+function missRecommend(entry){
+  if(!entry.teamDone) return null;
+  var ratio = absRatePct(false);                 /* 미완료 = 무단 결석과 같은 비율(기본 50%) */
+  return { ratio:ratio, score: r1d(entry.teamScore*ratio/100) };
+}
+function missConfirmUI(sid, round, full, rec){
+  var st=DB.one('students', sid); if(!st){ toast('학생을 찾지 못했습니다.'); return; }
+  if(!canEdit(st.classId)){ toast('다른 강좌라 확정할 수 없습니다.'); return; }
+  if(isAbsent(sid, round)){ toast('이 학생은 결석 처리되어 있습니다 — 위 ① 결석생에서 확정하세요.'); render(); return; }
+  var el = document.getElementById('missin_'+sid+'_'+round);
+  var raw = el ? String(el.value).trim() : String(rec);
+  var v = Number(raw);
+  if(raw==='' || isNaN(v)){ toast('점수는 숫자로 넣어 주세요 (0~100).'); return; }
+  if(v<0 || v>100){ toast('점수는 0~100 사이여야 합니다 (팀 점수 기준, 100점 만점).'); return; }
+  var ratio = absRatePct(false);
+  var over = Math.abs(v - Number(rec)) > 0.05;
+  missSetConfirm(sid, round, v, ratio, over);
+  toast(sn(st)+' — '+round+'회차 평가 미완료 점수 '+r1d(v)+'점으로 확정했습니다.');
+  render();
+}
+function missCancelUI(sid, round){
+  var st=DB.one('students', sid); if(!st) return;
+  if(!canEdit(st.classId)){ toast('다른 강좌라 취소할 수 없습니다.'); return; }
+  APP.confirm(sn(st)+' 학생의 '+round+'회차 평가 미완료 점수 확정을 취소합니다.\n(다시 팀 점수를 그대로 받습니다) 진행할까요?', function(){
+    missClearConfirm(sid, round);
     toast('확정을 취소했습니다.'); render();
   });
 }
@@ -9250,6 +9482,16 @@ function scOneSheet(cid, sid){
     var how;
     if(it.kind==='input'){
       how = it.typed? '담당교수가 직접 넣은 점수입니다.' : '<span class="dim">아직 입력되지 않았습니다</span>';
+    }else if(it.absent){
+      var td=it.detail? r1d(it.detail.score):0;
+      how = '결석('+(it.excused?'공결':'무단')+') — 팀 회차점수 '+td+'점 × '+r1d(it.absRatio)+'% → '+
+        r1d(it.absScore)+'점(100점 기준) × '+it.full+' ÷ 100 = <b>'+r1d(it.got)+'점</b>'+
+        (it.absOver? ' <span class="dim">(교수가 값을 직접 조정)</span>':'');
+    }else if(it.miss){
+      var tm=it.detail? r1d(it.detail.score):0;
+      how = '평가 미완료(동료평가 미제출) — 팀 회차점수 '+tm+'점 × '+r1d(it.missRatio)+'% → '+
+        r1d(it.missScore)+'점(100점 기준) × '+it.full+' ÷ 100 = <b>'+r1d(it.got)+'점</b>'+
+        (it.missOver? ' <span class="dim">(교수가 값을 직접 조정)</span>':'');
     }else{
       var d=it.detail;
       if(!d || !d.done){ how = '<span class="dim">아직 점수가 없습니다'+((d&&d.lack)? ' — '+esc(d.lack):'')+'</span>'; }
