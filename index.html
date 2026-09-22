@@ -228,6 +228,11 @@ textarea{min-height:110px;resize:vertical;line-height:1.65;font-size:17px}
 input:disabled,textarea:disabled,select:disabled{background:#f0f2f5;color:#8a939d}
 .chk{display:flex;gap:9px;align-items:flex-start;font-size:15px;margin:9px 0}
 .chk input{margin-top:3px;width:22px;height:22px;flex:0 0 auto}
+/* 🔎 교수 「주차별 학생화면 보기」 (2026-09-22) — 주차/팀 선택 단추 줄 + 읽기전용 미리보기 */
+.wpick{display:flex;flex-wrap:wrap;gap:6px}
+/* 미리보기 안에서는 입력·버튼 상호작용을 통째로 막습니다(읽기 전용) — 실제 저장은 pA_boot 의 DB 가드가 이중으로 막습니다 */
+.roprev,.roprev *{pointer-events:none !important}
+.roprev{opacity:.98}
 .rolepick{display:flex;gap:8px;margin:6px 0 4px}
 .rolepick button{
   flex:1;padding:16px 6px;border:2px solid var(--line);background:var(--card);border-radius:10px;
@@ -3133,6 +3138,7 @@ function viewHome(){
     '<button class="btn" onclick="alGo(\'all\')">학생의 주차별 활동기록</button>'+
     '<button class="btn" onclick="tlOpen(1)">교수 튜터링 일지</button>'+
     '<button class="btn" onclick="svrGo(myClass())">설문 결과 (엑셀·그래프)</button>'+
+    '<button class="btn" onclick="go(\'stupreview\',{n:curWeek()})">🔎 주차별 학생화면 보기</button>'+
     mbtn('학생 명단','students')+
     '</div></div>';
   h += '<div class="card"><h3>관리 <span class="muted">— 교수 3명 공통</span></h3><div class="menu">'+
@@ -3199,6 +3205,62 @@ function pager(n){
     '</div>';
 }
 
+/* ==========================================================================
+   교수 전용 · 주차별 학생화면 미리보기 (2026-09-22 대표님 지시)
+   --------------------------------------------------------------------------
+   교수가 「이번 주 학생들은 무엇을 보고 무엇을 하는가」를 학생 화면 그대로 미리 봅니다.
+   ▸ 학생 화면 렌더(weekStudent)를 그대로 재사용합니다 — 새로 짜지 않습니다.
+   ▸ 교수는 팀이 없으므로, 내 강좌의 대표 팀(첫 팀, 또는 고른 팀)의 학생 한 명을 잠깐 빌려
+     (SESS.me·role 임시 교체) 그 팀 기준 학생 화면을 그리고, 즉시 되돌립니다(이 함수 안에서만).
+   ▸ 🔴 읽기 전용 — 이중 잠금:
+       (1) 미리보기 본문을 .roprev 로 감싸 입력·버튼 상호작용을 통째로 막습니다.
+       (2) VIEW.name==='stupreview' 인 동안 pA_boot 의 DB 가드가 add/set/del 을 막습니다.
+     → 교수가 학생 데이터에 실수로 쓰는 일이 절대 일어나지 않습니다.
+   ▸ 반 스코프: 기존 [내 강좌](myClass) 규칙을 따릅니다. 새로 추가한 5주차 콘티도 함께 보입니다. */
+function viewStuPreview(){
+  if(!isProf()) return topbar()+'<div class="card"><div class="note">교수만 볼 수 있는 화면입니다.</div></div>';
+  var n=(VIEW.p&&VIEW.p.n)||curWeek(), def=wdef(n);
+  var h=topbar('학생화면 미리보기');
+  h+='<div class="note a"><b>🔎 학생 화면 미리보기</b> — 학생이 <b>'+n+'주차</b>에 보는 화면 그대로입니다. '+
+     '<b>여기서는 저장·제출·삭제가 되지 않습니다(읽기 전용).</b></div>';
+  h+='<div class="card"><h3>주차 선택 <span class="muted">— 눌러서 그 주차 학생 화면을 봅니다</span></h3>'+
+     '<div class="wpick">'+ WEEKDEF.map(function(d){
+        return '<button class="btn sm '+(d.n===n?'pri':'')+'" onclick="go(\'stupreview\',{n:'+d.n+'})">'+d.n+'주차</button>';
+     }).join('')+'</div></div>';
+  if(!def) return h+'<div class="card">없는 주차입니다.</div>';
+  var cid=myClass();
+  var teams=DB.get('teams', function(t){return t.classId===cid;}).sort(function(a,b){return (a.no||0)-(b.no||0);});
+  var repTeam=null, rep=null;
+  if(teams.length){
+    var pick=(VIEW.p&&VIEW.p.team) ? DB.one('teams', VIEW.p.team) : null;
+    repTeam = (pick && pick.classId===cid) ? pick : teams[0];
+    var mem=teamMembers(repTeam.id)[0];
+    rep = mem? mem.st : null;
+  }
+  if(!rep){ rep = DB.one('students', function(s){return s.classId===cid && s.active!==false;}); }
+  if(teams.length>1){
+    h+='<div class="card"><h3>어느 팀 기준으로 볼까요 <span class="muted">— 팀 활동 칸은 그 팀이 낸 내용으로 채워집니다</span></h3><div class="wpick">'+
+       teams.map(function(t){ return '<button class="btn sm '+(repTeam&&t.id===repTeam.id?'pri':'')+
+         '" onclick="go(\'stupreview\',{n:'+n+',team:\''+t.id+'\'})">'+esc(t.no+'팀 「'+t.name+'」')+'</button>'; }).join('')+
+       '</div></div>';
+  }
+  if(!rep){
+    return h+'<div class="card"><div class="note a">이 강좌에 아직 <b>학생·팀</b>이 없어 학생 화면을 그릴 수 없습니다. 팀이 구성되면 이 자리에 학생 화면이 그대로 보입니다.</div></div>'+
+      '<div class="pager"><button class="btn" onclick="go(\'home\')">홈</button></div>';
+  }
+  h+='<div class="note b">기준: <b>'+esc(clsFull(cid))+'</b>'+(repTeam? ' · <b>'+esc(repTeam.no+'팀 「'+repTeam.name+'」')+'</b>':' · <span class="muted">팀 없음(개인 화면 기준)</span>')+' 학생 화면</div>';
+  var realMe=SESS.me, realRole=SESS.role, body='';
+  try{
+    window.__spvSilent=true;                 /* 렌더 중 우연한 쓰기는 가드가 조용히 막습니다(토스트 없이) */
+    SESS.me=rep; SESS.role='student';
+    body=weekStudent(n, def);
+  }catch(e){ body='<div class="card"><div class="note">이 주차 학생 화면을 그리다 문제가 생겼습니다: '+esc(e.message)+'</div></div>'; }
+  finally{ SESS.me=realMe; SESS.role=realRole; window.__spvSilent=false; }
+  h+='<div class="roprev">'+ (body||'<div class="card"><div class="note">이 주차에는 학생 화면 내용이 없습니다.</div></div>') +'</div>';
+  h+='<div class="pager"><button class="btn" onclick="go(\'home\')">홈</button></div>';
+  return h;
+}
+
 /* ===== 학생 · 주차별 ===== */
 function weekStudent(n, def){
   switch(def.kind){
@@ -3217,7 +3279,7 @@ function weekStudent(n, def){
           학생의 3주차는 「조사 자료 제출함 3개」만 있으면 됩니다. */
     case 'research':  return stResearch(n);
     /* 5주차 — 최종주제 화면 아래에 「1회차(4주차) 발표평가 결과」를 공개 시 붙입니다 (R9) */
-    case 'finaltopic':return stFinalTopic(n) + stRoundResultCard(1,'r1');
+    case 'finaltopic':return stFinalTopic(n) + stStoryboard() + stRoundResultCard(1,'r1');
     case 'video':     return stVideo(n);
     /* 9주차 — 본인 중간고사 점수를 공개 시 붙입니다 (R9) */
     case 'activity':  return stActivity(n, def) + (n===9? stExamCard('mid','중간고사',9) : '');
@@ -4328,6 +4390,57 @@ function saveFinal(tid){
   render();
 }
 
+/* ===== 5주차 [2] — 1분 광고 콘티 (2026-09-22 신설 · 같은 날 대폭 단순화) ==========
+   ▸ 이 과목 전반부 결과물이 KOSAc 출품용 「1분 광고 영상」이라, 최종 주제 확정 직후(5주차)
+     팀이 함께 광고의 전체 줄거리를 적는 단계입니다.
+   ▸ 🔴 대표님 지시로 대폭 단순화: 입력은 「전체 스토리라인」 한 칸(줄글)만.
+      (옛 로그라인·장면별 표·시간 합계·행 추가삭제·관련 헬퍼는 전부 없앴습니다.)
+   ▸ 저장·공유·권한은 「최종주제 선정」과 동형입니다 — 최종주제가 topics 표에 kind='최종'
+     한 줄로 살듯, 콘티는 activity 표(기존 범용 팀-주차 표)에 week:5·kind:'storyboard'
+     한 줄로 삽니다(data 에는 이제 storyline 하나만). 새 표를 만들지 않고, activity 의
+     라이브 RLS(app_is_member SELECT/INSERT/UPDATE + 쓰기엔 app_week_writable(week))와
+     TBL·loadAll 등록을 그대로 물려받습니다. 팀마다 자기 한 줄이라 단일 행 갱신(마지막 저장이 이김).
+   ▸ 쓰기 게이트: 5주차가 마감이 아니면(canFix(5)) 편집, 마감이면 읽기 전용 — 서버 app_week_writable(5)와 짝. */
+function sbRow(tid){
+  return DB.one('activity', function(x){ return x.teamId===tid && x.week===5 && x.kind==='storyboard'; });
+}
+function stStoryboard(){
+  var t=teamOf(SESS.me); if(!t) return '';        /* 팀이 없으면 (최종주제 카드와 동일하게) 표시하지 않습니다 */
+  var sb=sbRow(t.id);
+  var savedLine = sb? '<div class="muted" style="margin:2px 0 8px">마지막 저장: '+esc(sb.at||'-')+(sb.editor?' · '+esc(sb.editor):'')+'</div>' : '';
+  var h='<div class="card"><h3>[2] 1분 광고 콘티</h3>'+
+    '<p class="muted">우리 팀 <b>1분 광고</b>의 <b>전체 스토리라인</b>을 적어 주세요. <b>팀원 누구나</b> 쓰고 고칠 수 있으며 <b>팀 전체에 공유</b>됩니다.</p>'+
+    savedLine;
+  if(!canFix(5)){
+    /* 읽기 전용 — 5주차 마감 뒤 (서버 app_week_writable(5) 와 짝) */
+    if(!sb || !(sb.storyline||'').trim()){ return h+'<div class="note">아직 스토리라인을 작성하지 않았습니다.</div><div class="note">⬛ <b>'+FIX_LOCKED+'</b></div></div>'; }
+    return h+'<div class="note" style="margin-top:8px">'+esc(sb.storyline).replace(/\n/g,'<br>')+'</div>'+
+      '<div class="note">⬛ <b>'+FIX_LOCKED+'</b></div></div>';
+  }
+  h+='<label class="f">전체 스토리라인 <span class="req">*</span> <span class="lim">1000자 · 기·승·전·결의 흐름을 줄글로</span></label>'+
+     '<textarea id="sbStory" maxlength="1000" placeholder="예) 기: 우리 주변의 문제 상황을 보여 준다. 승: 우리 주제를 소개한다. 전: 어떻게 도움이 되는지 보여 준다. 결: 한 줄 메시지와 학과 로고로 마무리한다.">'+esc(sb?(sb.storyline||''):'')+'</textarea>'+
+     '<div class="btnrow"><button class="btn pri" onclick="saveStoryboard(\''+t.id+'\')">'+(sb?'수정 저장하기':'저장하기')+'</button></div>'+
+     '<div class="muted">낸 뒤에도 마감('+esc(dueLabel(5))+') 전까지 <b>언제든</b> 고칠 수 있습니다.</div>';
+  return h+'</div>';
+}
+function saveStoryboard(tid){
+  if(!canFix(5)){ toast('⛔ '+FIX_LOCKED); return; }
+  var sl=val('sbStory');
+  if(!sl){ toast('전체 스토리라인을 적어 주세요.'); return; }
+  var ex=sbRow(tid);
+  var who=(SESS.acc?SESS.acc.name:(SESS.me?SESS.me.name:'-'));
+  if(ex){
+    DB.set('activity', ex.id, {kind:'storyboard', storyline:sl, at:nowStr(), editor:who});
+    DB.log('광고 콘티 수정', tid);
+    toast('스토리라인을 저장했습니다.');
+  }else{
+    DB.add('activity', {teamId:tid, week:5, kind:'storyboard', storyline:sl, at:nowStr(), editor:who});
+    DB.log('광고 콘티 작성', tid);
+    toast('스토리라인을 저장했습니다.');
+  }
+  render();
+}
+
 /* ===== 11주차 — 현장견학 「나의 현장견학 일지」 (2026-08-26 개인별로 전환) =====
    교수님 지시: "개인적으로 입력해야 하는 현장견학 일지는 개인별로 작성하도록."
    ▸ 학생마다 자기 일지 하나입니다 — 있으면 그 위에서 고치고(수정), 없으면 새로 씁니다.
@@ -5220,6 +5333,12 @@ function teamWorkPeek(teamId, n){
     var f=DB.one('topics', function(x){return x.teamId===teamId&&x.kind==='최종';});
     h = f? '<b>최종 주제</b> '+esc(f.title)+'<br><span class="muted">'+esc((f.summary||'').slice(0,110))+'</span>'
          : '<span class="muted">아직 최종 주제를 내지 않았습니다.</span>';
+    /* 🎬 2026-09-22 — 같은 자리에서 「1분 광고 콘티」 스토리라인 요약 한 줄도 읽습니다(읽기 전용). */
+    var sb5=DB.one('activity', function(x){return x.teamId===teamId&&x.week===5&&x.kind==='storyboard';});
+    if(sb5 && (sb5.storyline||'').trim()){
+      h += '<div class="hr"></div><b>🎬 광고 콘티</b> <span class="bg green">✅ 작성</span>'+
+           '<br><span class="muted">'+esc(sb5.storyline.slice(0,110))+(sb5.storyline.length>110?'…':'')+'</span>';
+    }
   }else{
     var a=DB.one('activity', function(x){return x.teamId===teamId&&x.week===n;});
     h = a? '<b>이 팀이 낸 것</b><br><span class="muted">'+esc(((a.did||a.plan||'')+' '+(a.stage||'')).slice(0,120))+'</span>'
@@ -7414,6 +7533,25 @@ var DEMO = {
               : '세 가주제를 비교한 결과, 재료를 학교 주변에서 바로 구할 수 있고 예비 실험으로 성과를 보여 주기 쉬워 「'+fp.title+'」을(를) 최종 주제로 골랐습니다.',
             from: pickNew ? '' : fp.id, ok:(ti<=2), okAt:(ti<=2?'2026-09-23 11:0'+ti:''),
             back:'', need:'', how:'', comment:''});
+        });
+      });
+      /* 🎬 5주차 「1분 광고 콘티」 — 최종 주제를 정한 앞 3팀에 예시 스토리라인을 채웁니다 (2026-09-22).
+         교수님이 예시(?demo=1)·PC 테스트 파일에서 빈 칸이 아닌 「채워진 스토리라인」을 바로 보시게 합니다.
+         🔴 대폭 단순화 뒤: activity(week:5·kind:'storyboard') 한 줄, data 는 storyline 하나만. */
+      CIDS.forEach(function(cid){
+        DB.get('teams', function(t){return t.classId===cid;})
+          .sort(function(a,b){return a.no-b.no;}).forEach(function(t, ti){
+          if(ti>2) return;                                    /* 앞 3팀만 콘티 예시 */
+          var fin=DB.one('topics', function(x){return x.teamId===t.id && x.kind==='최종';});
+          if(!fin) return;                                    /* 최종 주제가 있는 팀만 */
+          if(DB.one('activity', function(x){return x.teamId===t.id && x.week===5 && x.kind==='storyboard';})) return;
+          var subj=fin.title;
+          var ms=DB.get('members', function(m){return m.teamId===t.id;});
+          var ed=ms.length? ((DB.one('students', ms[0].studentId)||{}).name || '') : '';
+          DB.add('activity',{teamId:t.id, week:5, kind:'storyboard',
+            storyline:'기: 우리 주변의 문제 상황을 짧게 보여 준다. 승: 우리 주제 「'+subj+'」를 소개한다. '+
+                      '전: 그것이 실제로 어떻게 도움이 되는지 보여 준다. 결: 한 줄 메시지와 바이오융합공학과 로고로 마무리한다.',
+            at:'2026-09-23 11:2'+ti, editor:ed});
         });
       });
       /* 🚌 11주차 견학 의견 — 강좌마다 앞 4팀만 (교수님이 「참여/미참여 팀」을 눌러 보시게) */
@@ -13741,6 +13879,7 @@ function render(){
       case 'about':   h=viewAbout(); break;   /* ℹ️ 앱 소개 (2026-08-30) — 로그인/DB 없이 그려짐 */
       case 'home':    h=viewHome(); break;
       case 'week':    h=viewWeek(); break;
+      case 'stupreview': h=viewStuPreview(); break;  /* 🔎 교수 전용 · 주차별 학생화면 미리보기(읽기전용) (2026-09-22) */
       case 'admin':   h=viewAdmin(); break;
       case 'tulog':   h=viewTuLog(); break;   /* 🖨 교수 튜터링 일지 (12차) */
       case 'svreport': h=viewSvReport(); break; /* 📊 설문 결과 (14차) */
@@ -13781,6 +13920,26 @@ function render(){
   document.body.className = (VIEW.name==='tulog'||VIEW.name==='svprint'||VIEW.name==='score'||VIEW.name==='actlog'||VIEW.name==='reports'||VIEW.name==='svone'||VIEW.name==='exlog'||VIEW.name==='wplan') ? 'printsheet' : '';
   $('app').innerHTML = h;
 }
+
+/* ==========================================================================
+   🔎 읽기전용 가드 — 교수 「주차별 학생화면 미리보기」 (2026-09-22 대표님 지시)
+   --------------------------------------------------------------------------
+   교수가 학생 화면을 미리 보는 동안(VIEW.name==='stupreview')에는 어떤 저장도 실제로
+   일어나면 안 됩니다. 화면 쪽 .roprev(pointer-events 차단)에 더해, 여기서 데이터 쓰기의
+   길목(DB.add/set/del) 자체를 막습니다 — 버튼 핸들러가 어떤 경로로 불려도 서버·로컬 어디에도
+   쓰이지 않습니다. p2b_dbremote 의 래퍼보다 「나중에」(pA_boot 는 마지막 조각) 감싸므로
+   이 가드가 가장 바깥이고, 원격 전송(push)까지 함께 막습니다.
+   ⚠️ 일반 학생·교수 관리 화면(VIEW.name 이 week/home/admin…)에서는 그대로 저장됩니다 — 회귀 없음. */
+(function(){
+  if(typeof DB==='undefined' || DB.__spvGuard) return;
+  DB.__spvGuard=true;
+  function blocked(){ return (typeof VIEW!=='undefined' && VIEW && VIEW.name==='stupreview'); }
+  function nag(){ if(!window.__spvSilent && typeof toast==='function') toast('🔎 미리보기 — 저장되지 않습니다(읽기 전용)'); }
+  var _a=DB.add, _s=DB.set, _d=DB.del;
+  DB.add=function(t,row){ if(blocked()){ nag(); return row; } return _a.call(DB,t,row); };
+  DB.set=function(t,id,patch){ if(blocked()){ nag(); return null; } return _s.call(DB,t,id,patch); };
+  DB.del=function(t,id){ if(blocked()){ nag(); return; } return _d.call(DB,t,id); };
+})();
 
 /* ==========================================================================
    15. 자체 점검 — 브라우저 개발자도구에서 __protoCheck() 로 돌립니다
