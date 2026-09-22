@@ -4306,6 +4306,41 @@ function subFormHtml(t, tp, canWrite){
      셋 다 교수·슈퍼 관리자만 봅니다(다른 강좌 교수는 읽기만).
    ================================================================== */
 
+/* ===== 5주차 임시저장(초안) — 작성 중 유실 방지 (2026-09-22 대표님 지시) =====
+   ▸ 4주차 평가의 임시저장(evalDraft · bio_evdraft_)과 같은 성격의 「이 기기 localStorage 초안」입니다.
+     텍스트 입력이라 글자 칠 때마다 화면을 다시 그리면 커서가 튀므로, 입력 중에는 render 없이
+     localStorage 에만 디바운스(0.6초)로 저장하고, 화면에 다시 들어올 때 입력칸에 복원합니다.
+   ▸ 키는 팀+학생+항목별: bio_fin_draft_<teamId>_<meId> · bio_sb_draft_<teamId>_<meId>.
+     새 DB 컬럼/표 없음(초안은 localStorage 뿐). 서버 [저장]이 성공하면 그 초안을 지웁니다(제출본이 정본).
+   ▸ 복원 규칙: 초안이 있으면 초안 값을 보여 줍니다(저장 성공 시 초안이 지워지므로, 남은 초안 = 미저장 최신본).
+   ▸ ⚠️ 초안은 이 기기 한정입니다(폰을 바꾸거나 캐시를 지우면 미저장 초안은 사라짐 — 저장본은 서버라 안전).
+   ▸ 🔎 교수 미리보기(VIEW.name==='stupreview')에서는 초안을 쓰지도 복원하지도 않습니다(읽기 전용). */
+var _d5TimerFin=null, _d5TimerSb=null;   /* 🔴 항목별 타이머 — 두 카드를 동시에 고쳐도 서로의 디바운스를 취소하지 않게 */
+function d5Preview(){ return (typeof VIEW!=='undefined' && VIEW && VIEW.name==='stupreview'); }
+function d5Key(kind, tid){ var me=(SESS&&SESS.me)?SESS.me.id:'-'; return 'bio_'+kind+'_draft_'+tid+'_'+me; }
+function d5Load(kind, tid){ if(d5Preview()) return null; try{ var v=localStorage.getItem(d5Key(kind,tid)); return v?(JSON.parse(v)||null):null; }catch(e){ return null; } }
+function d5Save(kind, tid, obj){ if(d5Preview()) return; try{ obj.at=nowStr(); localStorage.setItem(d5Key(kind,tid), JSON.stringify(obj)); }catch(e){} }
+function d5Clear(kind, tid){ try{ localStorage.removeItem(d5Key(kind,tid)); }catch(e){} }
+function d5Mark(id, at){ var el=$(id); if(el) el.innerHTML='💾 <b>임시저장됨</b> '+esc(at||nowStr())+' <span class="muted">(아직 제출 전 · 이 기기에만)</span>'; }
+
+/* 최종주제 초안 — 입력 중 자동(디바운스 0.6초) · [임시저장] 버튼 */
+function finDraftAuto(tid){ if(_d5TimerFin) clearTimeout(_d5TimerFin); _d5TimerFin=setTimeout(function(){ finDraftKeep(tid, true); }, 600); }
+function finDraftKeep(tid, silent){
+  if(d5Preview()) return;
+  var pick=document.querySelector('input[name=fin]:checked');
+  d5Save('fin', tid, {title:val('fnTitle'), why:val('fnWhy'), from:(pick?pick.value:'')});
+  var d=d5Load('fin',tid); d5Mark('finDraftMark', d&&d.at);
+  if(!silent) toast('💾 임시저장했습니다. 새로고침·앱 재시작에도 남습니다(아직 제출 전 — 마지막에 [저장]하세요).');
+}
+/* 콘티(스토리라인) 초안 */
+function sbDraftAuto(tid){ if(_d5TimerSb) clearTimeout(_d5TimerSb); _d5TimerSb=setTimeout(function(){ sbDraftKeep(tid, true); }, 600); }
+function sbDraftKeep(tid, silent){
+  if(d5Preview()) return;
+  d5Save('sb', tid, {storyline:val('sbStory')});
+  var d=d5Load('sb',tid); d5Mark('sbDraftMark', d&&d.at);
+  if(!silent) toast('💾 임시저장했습니다. 새로고침·앱 재시작에도 남습니다(아직 제출 전 — 마지막에 [저장]하세요).');
+}
+
 /* ===== 5주차 — 최종 주제 ===== */
 function stFinalTopic(){
   var t=teamOf(SESS.me); if(!t) return '';
@@ -4316,7 +4351,12 @@ function stFinalTopic(){
      (교수님 지시) 옛 「승인 완료 = 읽기 전용」 잠금을 없애고, 승인 상태에서도 편집 폼을 그대로 띄웁니다.
      승인 뒤 수정하면 교수 승인 화면에 「✏️ 승인 후 수정됨」 배지가 떠서 교수가 다시 확인합니다. */
   /* fin.from 이 있으면 = 가주제에서 고른 것 · 비어 있는데 fin 이 있으면 = 새 주제 직접 작성 */
-  var isNew = !!(fin && !fin.from);
+  /* 💾 임시저장 초안(이 기기) — 있으면 초안 값을 보여 줍니다(미저장 최신본). 미리보기에선 null. */
+  var dft=d5Load('fin', t.id);
+  var vTitle = (dft && dft.title!=null) ? dft.title : (fin? fin.title : '');
+  var vWhy   = (dft && dft.why!=null)   ? dft.why   : (fin? fin.summary : '');
+  var selFrom = dft ? (dft.from||'') : (fin ? (fin.from? fin.from : '__new__') : '');
+  var isNew = (selFrom==='__new__');
   var okBanner = (fin && fin.ok) ?
     '<div class="note" style="border-color:#2e7d32">✅ <b>교수 승인 완료</b>'+
       (fin.okAt? ' <span class="muted">('+esc(fin.okAt)+')</span>':'')+
@@ -4326,25 +4366,27 @@ function stFinalTopic(){
     okBanner+
     '<p class="muted">가주제 3개 중 하나를 고르거나, <b>새 주제를 직접 작성</b>할 수 있습니다. 어느 쪽이든 <b>최종 주제 1개 + 사유</b>를 남기면 됩니다.</p>'+
     tps.map(function(tp){
-      return '<div class="chk"><input type="radio" name="fin" value="'+tp.id+'" '+(fin&&fin.from===tp.id?'checked':'')+
-      ' onclick="finPick(\''+esc(tp.title).replace(/'/g,"\\'")+'\')"><span>가주제 '+tp.no+' 「'+esc(tp.title)+'」</span></div>'; }).join('')+
+      return '<div class="chk"><input type="radio" name="fin" value="'+tp.id+'" '+(selFrom===tp.id?'checked':'')+
+      ' onclick="finPick(\''+esc(tp.title).replace(/'/g,"\\'")+'\');finDraftAuto(\''+t.id+'\')"><span>가주제 '+tp.no+' 「'+esc(tp.title)+'」</span></div>'; }).join('')+
     '<div class="chk"><input type="radio" name="fin" value="__new__" '+(isNew?'checked':'')+
-      ' onclick="finPick(\'\')"><span>✏️ 새 주제 직접 작성 (가주제에 없던 주제로 정하기)</span></div>'+
+      ' onclick="finPick(\'\');finDraftAuto(\''+t.id+'\')"><span>✏️ 새 주제 직접 작성 (가주제에 없던 주제로 정하기)</span></div>'+
     /* ✅ 최종 주제를 확정해 적는 곳을 하나의 도드라진 카드(.igroup)로 묶어, 위의 가주제 후보
        고르기와 시각적으로 분리합니다 (2026-08-24). 라디오·input id·finPick·saveFinal 동작은 그대로. */
     '<div class="igroup" style="margin-top:14px"><div class="ghd"><span class="gn">✓</span>'+
       '<span class="gt">최종 주제 작성 — 여기에 확정해 적습니다</span></div>'+
     '<label class="f">최종 주제명 <span class="req">*</span> <span class="lim">40자 · 가주제를 고르면 자동으로 채워집니다. 다듬거나 새로 적어도 됩니다</span></label>'+
-    '<input type="text" id="fnTitle" maxlength="40" value="'+esc(fin?fin.title:'')+'">'+
+    '<input type="text" id="fnTitle" maxlength="40" value="'+esc(vTitle)+'" oninput="finDraftAuto(\''+t.id+'\')">'+
     '<label class="f">선정/작성 사유 <span class="req">*</span> <span class="lim">500자 · 왜 이 주제를 최종으로 정했는지</span></label>'+
-    '<textarea id="fnWhy">'+esc(fin?fin.summary:'')+'</textarea>'+
+    '<textarea id="fnWhy" oninput="finDraftAuto(\''+t.id+'\')">'+esc(vWhy)+'</textarea>'+
     /* 🔴 R12 (2026-08-23) — 최종주제는 승인 전이든 후든 「언제든 제한 없이」 수정할 수 있습니다.
        평가(4·7·13·14주차)의 「1회 수정」 잠금과 다릅니다 — 여기는 횟수·마감 잠금이 없습니다. */
-    '<div class="btnrow">'+(fin? fixBtn("saveFinal('"+t.id+"')", '수정 저장하기')
+    '<div class="btnrow"><button class="btn" onclick="finDraftKeep(\''+t.id+'\')">💾 임시저장</button>'+
+                        (fin? fixBtn("saveFinal('"+t.id+"')", '수정 저장하기')
                                 : '<button class="btn pri" onclick="saveFinal(\''+t.id+'\')">제출하기</button>')+'</div>'+
+    '<div class="muted" id="finDraftMark">'+(dft? '💾 <b>임시저장됨</b> '+esc(dft.at||'')+' <span class="muted">(아직 제출 전 · 이 기기에만)</span>':'')+'</div>'+
     '<div class="muted">'+(fin? (fin.ok? '승인 후에도 <b>언제든</b> 수정할 수 있습니다. 수정하면 교수님이 다시 확인합니다.'
                                        : '<b>언제든 제한 없이</b> 수정할 수 있습니다 (마감·횟수 제한 없음).')
-                              : '낸 뒤에도 <b>언제든</b> 수정할 수 있습니다.')+'</div>'+
+                              : '낸 뒤에도 <b>언제든</b> 수정할 수 있습니다.')+' 💾 임시저장은 이 기기에만 남습니다.</div>'+
     '</div>'+
     (fin && !fin.ok? '<div class="note b" style="margin-top:8px">제출됨'+
           (fin.edited? ' · <b>수정됨</b> ('+esc(fin.editedAt||'')+')':'')+
@@ -4387,6 +4429,7 @@ function saveFinal(tid){
     DB.log('최종 주제 제출', tid+' 「'+ti+'」');
     toast('최종 주제를 제출했습니다.');
   }
+  d5Clear('fin', tid);                 /* 저장 성공 = 제출본이 정본 → 이 기기 초안 정리 */
   render();
 }
 
@@ -4417,10 +4460,14 @@ function stStoryboard(){
     return h+'<div class="note" style="margin-top:8px">'+esc(sb.storyline).replace(/\n/g,'<br>')+'</div>'+
       '<div class="note">⬛ <b>'+FIX_LOCKED+'</b></div></div>';
   }
+  var dft=d5Load('sb', t.id);                                   /* 💾 임시저장 초안(이 기기) */
+  var vStory = (dft && dft.storyline!=null) ? dft.storyline : (sb?(sb.storyline||''):'');
   h+='<label class="f">전체 스토리라인 <span class="req">*</span> <span class="lim">1000자 · 기·승·전·결의 흐름을 줄글로</span></label>'+
-     '<textarea id="sbStory" maxlength="1000" placeholder="예) 기: 우리 주변의 문제 상황을 보여 준다. 승: 우리 주제를 소개한다. 전: 어떻게 도움이 되는지 보여 준다. 결: 한 줄 메시지와 학과 로고로 마무리한다.">'+esc(sb?(sb.storyline||''):'')+'</textarea>'+
-     '<div class="btnrow"><button class="btn pri" onclick="saveStoryboard(\''+t.id+'\')">'+(sb?'수정 저장하기':'저장하기')+'</button></div>'+
-     '<div class="muted">낸 뒤에도 마감('+esc(dueLabel(5))+') 전까지 <b>언제든</b> 고칠 수 있습니다.</div>';
+     '<textarea id="sbStory" maxlength="1000" oninput="sbDraftAuto(\''+t.id+'\')" placeholder="예) 기: 우리 주변의 문제 상황을 보여 준다. 승: 우리 주제를 소개한다. 전: 어떻게 도움이 되는지 보여 준다. 결: 한 줄 메시지와 학과 로고로 마무리한다.">'+esc(vStory)+'</textarea>'+
+     '<div class="btnrow"><button class="btn" onclick="sbDraftKeep(\''+t.id+'\')">💾 임시저장</button>'+
+        '<button class="btn pri" onclick="saveStoryboard(\''+t.id+'\')">'+(sb?'수정 저장하기':'저장하기')+'</button></div>'+
+     '<div class="muted" id="sbDraftMark">'+(dft? '💾 <b>임시저장됨</b> '+esc(dft.at||'')+' <span class="muted">(아직 제출 전 · 이 기기에만)</span>':'')+'</div>'+
+     '<div class="muted">낸 뒤에도 마감('+esc(dueLabel(5))+') 전까지 <b>언제든</b> 고칠 수 있습니다. 💾 임시저장은 이 기기에만 남습니다.</div>';
   return h+'</div>';
 }
 function saveStoryboard(tid){
@@ -4438,6 +4485,7 @@ function saveStoryboard(tid){
     DB.log('광고 콘티 작성', tid);
     toast('스토리라인을 저장했습니다.');
   }
+  d5Clear('sb', tid);                  /* 저장 성공 = 정본 → 이 기기 초안 정리 */
   render();
 }
 
