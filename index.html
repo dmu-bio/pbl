@@ -1864,7 +1864,7 @@ var SURVEYDEF = {
       "raw": [],
       "req": true,
       "pair": "",
-      "warn": "⚠️ 원문 그대로입니다. 운영표의 교수 튜터링은 3·5·6·9·10·12주차 6회이고 11주차는 현장견학입니다 — 교수님 확인이 필요합니다. (학생 화면에는 이 표시가 보이지 않습니다)"
+      "warn": "⚠️ 원문 그대로입니다. 운영표의 교수 튜터링은 3·5·9·10·12주차 5회이고 11주차는 현장견학입니다 — 교수님 확인이 필요합니다. (학생 화면에는 이 표시가 보이지 않습니다)"
      },
      {
       "no": 22,
@@ -2012,13 +2012,13 @@ var WEEKDEF = [
   {n:3, title:'팀활동1',     full:'팀 활동 1 · 조사 자료 제출', win:'마감일까지', kind:'research', tutor:1},
   {n:4, title:'중간발표1',   full:'중간발표1 — 가주제 정리 발표', win:'수업시간', kind:'eval', round:1},
   {n:5, title:'팀활동2',     full:'팀 활동 2 · 최종 주제 선정', win:'마감일까지', kind:'finaltopic', tutor:2},
-  {n:6, title:'팀활동3',     full:'팀 활동 3 · 광고 영상 제작', win:'수업시간', kind:'video', tutor:3},
+  {n:6, title:'팀활동3',     full:'팀 활동 3 · 광고 영상 제작 · 7주차 발표 평가 기준 안내', win:'수업시간', kind:'video'},
   {n:7, title:'중간발표2',   full:'중간발표2 — 1분 광고영상 · KOSAc 제출', win:'수업시간', kind:'eval', round:2, film:true},
   {n:8, title:'중간고사',    full:'중간고사 (서면 평가)', kind:'notice'},
-  {n:9, title:'팀활동4',     full:'팀 활동 4', win:'수업시간', kind:'activity', tutor:4, boost:true},
-  {n:10,title:'팀활동5',     full:'팀 활동 5', win:'수업시간', kind:'activity', tutor:5},
+  {n:9, title:'팀활동4',     full:'팀 활동 4', win:'수업시간', kind:'activity', tutor:3, boost:true},
+  {n:10,title:'팀활동5',     full:'팀 활동 5', win:'수업시간', kind:'activity', tutor:4},
   {n:11,title:'현장견학',    full:'현장견학', kind:'notice'},
-  {n:12,title:'팀활동6',     full:'팀 활동 6', win:'수업시간', kind:'prep', tutor:6},
+  {n:12,title:'팀활동6',     full:'팀 활동 6', win:'수업시간', kind:'prep', tutor:5},
   {n:13,title:'최종발표1',   full:'최종발표1 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true},
   {n:14,title:'최종발표2',   full:'최종발표2 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true, intra:true},
   {n:15,title:'기말·설문',   full:'기말고사 · 최종설문조사', win:'수업+당일', kind:'final'},
@@ -4566,10 +4566,20 @@ function stTitleOnly(n, title, sub){
     topicLine+
     '<div class="note">ℹ️ 이 주차는 앱에 <b>따로 낼 것이 없습니다.</b> 수업에서 진행합니다.</div></div>';
 }
-/* ===== 6주차 — 광고 영상 제작 (타이틀만) ===== */
+/* ===== 6주차 — 광고 영상 제작 + 7주차 발표 평가 기준 안내 =====
+   🔴 2026-09-23 대표님 지시: 6주차 교수 튜터링을 없애고, 대신 다음 주(7주차) 「중간발표2 ·
+      1분 광고영상」 발표에 쓸 평가 기준을 학생이 미리 보게 합니다.
+   ▸ 「읽기 안내」입니다 — 입력·제출·저장이 없습니다.
+   ▸ 루브릭은 지어내지 않고, 7주차 발표에 실제 쓰는 2회차 루브릭(rubricTable(2))을 그대로 씁니다
+     (round 2 = 7주차 중간발표2 · 1분 광고영상 — WEEKDEF week7 의 round:2 와 같은 것). */
 function stVideo(){
-  return stTitleOnly(6, '광고 영상 제작',
+  var h = stTitleOnly(6, '광고 영상 제작',
     '최종 주제로 1분 광고영상을 제작합니다. 영상은 KOSAc 또는 학교 드라이브 링크로 따로 제출합니다(앱 업로드 없음).');
+  h += '<div class="card"><h3>📋 7주차 발표 평가 기준 미리보기 <span class="muted">— 중간발표2 · 1분 광고영상</span></h3>'+
+    '<p class="muted">다음 주 <b>7주차 발표(중간발표2)</b>는 아래 기준으로 평가합니다. <b>발표 전에 미리 읽어 두면</b> 무엇을 준비해야 하는지 알 수 있습니다. '+
+    '(여기는 <b>읽기 안내</b>입니다 — 따로 입력·제출할 것은 없습니다.)</p>'+
+    rubricTable(2) +'</div>';
+  return h;
 }
 function saveWeek6(tid){
   if(!canFix(6)){ toast('⛔ '+FIX_LOCKED); return; }
@@ -5290,13 +5300,14 @@ function weekProf(n, def){
       '학생은 9주차에서 본인 중간고사 점수만 봅니다. 점수 입력은 8주차(또는 [최종 점수 계산])에서 합니다.');
   }
   if(n===11){ h += profExcursionPanel(cids); }   /* 🚌 11주차 — 팀별 견학 의견 모아 보기 */
-  if(n===12){ h += '<div class="card"><h3>튜터링 6회 완주 확인</h3><div class="scroll"><table><tr><th>팀</th>'+
-      [1,2,3,4,5,6].map(function(r){return '<th class="c">'+r+'회</th>';}).join('')+'<th class="c">계</th></tr>'+
+  if(n===12){ var TR=tlRounds();       /* 🔴 튜터링 회차는 WEEKDEF 의 tutor 표시에서 자동으로 옵니다(6주차 제거 시 자동 반영) */
+    h += '<div class="card"><h3>튜터링 '+TR.length+'회 완주 확인</h3><div class="scroll"><table><tr><th>팀</th>'+
+      TR.map(function(r){return '<th class="c">'+r.round+'회<br><span class="muted" style="font-weight:400">'+r.week+'주</span></th>';}).join('')+'<th class="c">계</th></tr>'+
       DB.get('teams', function(t){return cids.indexOf(t.classId)>=0;}).map(function(t){
-        var c=0; var tds=[1,2,3,4,5,6].map(function(r){
-          var ok=DB.one('tutoring', function(x){return x.teamId===t.id&&x.round===r;}); if(ok)c++;
-          return '<td class="c">'+(ok?'✅':'⬜')+'</td>'; }).join('');
-        return '<tr><td>'+esc(t.classId+'-'+t.no+' '+t.name)+'</td>'+tds+'<td class="c"><b>'+c+'/6</b></td></tr>'; }).join('')+
+        var c=0; var tds=TR.map(function(r){
+          var okk=DB.one('tutoring', function(x){return x.teamId===t.id&&x.round===r.round;}); if(okk)c++;
+          return '<td class="c">'+(okk?'✅':'⬜')+'</td>'; }).join('');
+        return '<tr><td>'+esc(t.classId+'-'+t.no+' '+t.name)+'</td>'+tds+'<td class="c"><b>'+c+'/'+TR.length+'</b></td></tr>'; }).join('')+
       '</table></div><p class="muted">PBL 교과목 운영 규칙 제9조의 「교수 튜터링 수행 일지」가 여기서 완성됩니다.</p>'+
       '<button class="btn" onclick="go(\'admin\',{p:\'rubric\'})">13·14주 루브릭 만들기 / 공개</button></div>'; }
   if(n===15){
@@ -8551,9 +8562,13 @@ var CSVDEF = {
   surveyPost:{ name:'survey_post_raw.csv', title:'최종설문 원자료', build:function(cids){ return surveyCSV('최종', cids); }},
   tutor:{ name:'tutoring_all.csv', title:'튜터링 일지 전체 (규칙 제9조)', build:function(cids){
     /* 🔒 교번 칸 없음 — 담당교수는 이름만.
-       🔴 17차 — 「학생확인수·학생확인시각」 두 칸을 없앴습니다(학생은 튜터링을 보지 않습니다). */
+       🔴 17차 — 「학생확인수·학생확인시각」 두 칸을 없앴습니다(학생은 튜터링을 보지 않습니다).
+       🔴 2026-09-23 — 현재 운영 중인 튜터링 회차(WEEKDEF 의 tutor)만 내보냅니다. 6주차 튜터링(3회차)을
+          없앴으므로 그 회차 행이 남아 있어도 이 표에는 나오지 않습니다(데이터 자체는 두고 출력만 제외). */
     var r=[['담당교수','강좌','팀번호','팀명','회차','일자','튜터링내용','지적사항','다음까지 할 일']];
+    var validRounds={}; tlRounds().forEach(function(x){ validRounds[x.round]=1; });
     DB.get('tutoring', function(x){return x.done!==false;}).forEach(function(tu){
+      if(!validRounds[tu.round]) return;
       var t=team(tu.teamId); if(!t||cids.indexOf(t.classId)<0) return;
       r.push([classProf(t.classId), t.classId, t.no, t.name, tu.round+'회차', tu.date,
         tu.talk, tu.fix||'', tu.next]);
@@ -11966,7 +11981,7 @@ function wpCells(def){
   else if(K==='team'){ act.push('팀 구성(팀명·의미)'); act.push('가주제 3개 선정'); act.push('KOSAc 소개'); res.push('팀 편성표'); res.push('가주제 3개'); }
   else if(K==='research'){ act.push('가주제 조사 · 자료 제출'); res.push('조사 자료 제출물'); }
   else if(K==='finaltopic'){ act.push('최종 주제 1개 선정 · 1분 광고 콘티(스토리라인) 작성'); res.push('최종 주제 · 광고 콘티(스토리라인)'); }
-  else if(K==='video'){ act.push('광고 영상 제작'); res.push('광고 영상 가편집본'); }
+  else if(K==='video'){ act.push('광고 영상 제작'); act.push('7주차 발표 평가 기준 안내(읽기)'); res.push('광고 영상 가편집본'); }
   else if(K==='activity'){ act.push('팀 활동'); res.push('팀 활동 기록'); if(def.boost) act.push('영상 보강(필요 팀)'); }
   else if(K==='prep'){ act.push('팀 활동'); act.push('최종발표 평가기준 공개'); res.push('발표 준비 상황'); res.push('평가기준 공개'); }
   else if(K==='eval'){
@@ -12142,8 +12157,8 @@ function viewOutputs(){
     '<button class="btn" onclick="go(\'reports\',{t:\'r3\',cid:\''+cid+'\'})">최종발표평가</button>');
 
   h += card('④ 교수 튜터링 일지',
-    '1차부터 6차까지 <b>한 파일에 이어서</b>(회차마다 A4 1장). 낱장이 필요하면 화면에서 회차를 고르십시오.',
-    '<button class="btn pri" onclick="tlOpen(\'all\')">통합본 — 1~6차 한 파일</button>'+
+    '튜터링 <b>전체 회차를 한 파일에 이어서</b>(회차마다 A4 1장). 낱장이 필요하면 화면에서 회차를 고르십시오.',
+    '<button class="btn pri" onclick="tlOpen(\'all\')">통합본 — 전체 '+tlTotal()+'회 한 파일</button>'+
     '<button class="btn" onclick="tlOpen(1)">회차별 낱장</button>');
 
   h += card('⑤ 학생의 주차별 활동기록',
@@ -14843,7 +14858,7 @@ window.__protoCheck = function(){
            있던 기록은 원문을 기억해 두었다가 검사가 끝나면 그대로 되돌립니다 —
            표식이 없으면 「안 보인 것」인지 「원래 없던 것」인지 구분이 안 됩니다. */
         var made=[], kept=[];
-        [[3,1],[5,2],[6,3],[9,4],[10,5],[12,6]].forEach(function(x){
+        tlRounds().map(function(rr){return [rr.week, rr.round];}).forEach(function(x){
           var r5=tuRow(wrTeam.id, x[1]);
           if(r5){
             kept.push({id:r5.id, talk:r5.talk, fix:r5.fix, next:r5.next, done:r5.done});
@@ -14886,7 +14901,8 @@ window.__protoCheck = function(){
     /* 10-7. 🟡 6회가 화면 하나로 재사용되는가 (3주차만 확정 · 나머지는 틀만) */
     var bad6=[];
     tuOpen[ts[0].id]=true;        /* 접힌 카드에 입력칸이 없는 것은 정상 — 펼쳐 놓고 봅니다 */
-    [[3,1],[5,2],[6,3],[9,4],[10,5],[12,6]].forEach(function(x){
+    /* 🔴 회차·주차 목록은 WEEKDEF 의 tutor 표시에서 자동으로 옵니다(6주차 튜터링 제거 시 자동 반영) */
+    tlRounds().map(function(rr){return [rr.week, rr.round];}).forEach(function(x){
       previewOpen[x[0]]=true;
       try{
         var one=profTutorPanel(x[0], wdef(x[0]), ['F2']);
@@ -14895,8 +14911,8 @@ window.__protoCheck = function(){
         if(one.indexOf(esc(sn(teamMembers(ts[0].id)[0].st)))<0) bad6.push(x[0]+'주차 팀원');
       }catch(e){ bad6.push(x[0]+'주차('+e.message+')'); }
     });
-    ok('🟡 6회차가 화면 하나로 재사용됨 (3·5·6·9·10·12주차) — 팀원·입력칸은 회차와 무관', bad6.length===0,
-       bad6.length? '문제: '+bad6.join(',') : '6개 회차 전부 같은 판으로 그려짐 (⚠️ 3주차만 확정 · 나머지 표시 내용은 교수님 확인 대기)');
+    ok('🟡 튜터링 회차가 화면 하나로 재사용됨 — 팀원·입력칸은 회차와 무관', bad6.length===0,
+       bad6.length? '문제: '+bad6.join(',') : '튜터링 '+tlRounds().length+'개 회차 전부 같은 판으로 그려짐 ('+tlRounds().map(function(r){return r.week+'주';}).join('·')+')');
 
     /* 10-8. 🟡 「그 시점에 그 팀이 가진 것」 — 최종 주제가 정해지면 그것으로 바뀌는가
        ⚠️ 주차별 규칙을 박아 넣지 않았음을 확인하는 검사입니다 */
@@ -15301,10 +15317,10 @@ window.__protoCheck = function(){
      '표 안(6주 → 7주 사이)에 🚫 줄 + 표 아래 안내 — 「왜 10/7이 없지」 하고 되돌리는 것을 막습니다');
   SESS.acc=keepW.a; SESS.role=keepW.r; SESS.me=keepW.m; SESS.scope=keepW.sc; VIEW=keepW.v;
 
-  /* 10-B-8. 튜터링 6회 날짜가 새 값으로 따라왔는가 */
-  var tuWant = {1:'2026-09-09',2:'2026-09-23',3:'2026-09-30',4:'2026-10-28',5:'2026-11-04',6:'2026-11-18'};
+  /* 10-B-8. 튜터링 회차 날짜가 새 값으로 따라왔는가 (회차·주차는 WEEKDEF 에서 자동으로 — 6주차/3회차 제거 반영) */
+  var tuWant = {1:'2026-09-09',2:'2026-09-23',3:'2026-10-28',4:'2026-11-04',5:'2026-11-18'};
   var tuBad = tlRounds().filter(function(r){ return wrow(r.week).date !== tuWant[r.round]; });
-  ok('튜터링 6회 날짜가 새 주차표를 따라옴', tuBad.length===0,
+  ok('튜터링 회차 날짜가 새 주차표를 따라옴', tuBad.length===0,
      tlRounds().map(function(r){ return r.round+'차='+mdw(wrow(r.week).date); }).join(' · '));
 
   /* ==========================================================================
@@ -15313,11 +15329,12 @@ window.__protoCheck = function(){
   var keepT={a:SESS.acc,r:SESS.role,m:SESS.me,sc:SESS.scope,v:VIEW};
   SESS.acc=DB.one('accounts','p2'); SESS.role='super'; SESS.me=null; SESS.scope='mine';
 
-  /* 11-1. 회차가 1~6차이고 주차가 3·5·6·9·10·12주차인가 (WEEKDEF 에서 자동으로) */
+  /* 11-1. 튜터링 회차·주차 대응이 WEEKDEF 의 tutor 정의와 맞는가 (하드코딩 없이 자동으로).
+     🔴 6주차 튜터링(3회차) 제거로 회차는 1·2·4·5·6 (3회차 없음) · 주차는 3·5·9·10·12 가 됩니다. */
   var RS=tlRounds();
-  var wantW=[3,5,6,9,10,12];
-  ok('튜터링 회차 6회 · 주차 대응이 맞음',
-     RS.length===6 && RS.every(function(r,i){ return r.round===i+1 && r.week===wantW[i]; }),
+  var expT = WEEKDEF.filter(function(w){return w.tutor;}).sort(function(a,b){return a.tutor-b.tutor;});
+  ok('튜터링 회차·주차 대응이 WEEKDEF 와 맞음',
+     RS.length===expT.length && RS.every(function(r,i){ return r.round===expT[i].tutor && r.week===expT[i].n; }),
      RS.map(function(r){return r.round+'차=' + r.week+'주';}).join(' · '));
 
   /* 11-2. 🔴 날짜를 코드에 박지 않았는가 — 주차설정을 고치면 일지가 따라오는가 */
@@ -15334,8 +15351,8 @@ window.__protoCheck = function(){
   var sh1=tlSheet(1,'F2');
   ok('제목 「교수 튜터링 일지 (1차)」 · 주차 · 요일이 모두 있음',
      sh1.indexOf('교수 튜터링 일지 (1차)')>=0 && sh1.indexOf('3주차')>=0 &&
-     sh1.indexOf('2026년 9월 9일 (수)')>=0 && sh1.indexOf('1차 / 총 6회')>=0,
-     '제목 ○ · 3주차 ○ · (수) ○ · 「1차 / 총 6회」 ○');
+     sh1.indexOf('2026년 9월 9일 (수)')>=0 && sh1.indexOf('1차 / 총 '+tlTotal()+'회')>=0,
+     '제목 ○ · 3주차 ○ · (수) ○ · 「1차 / 총 '+tlTotal()+'회」 ○');
 
   /* 11-4. 8팀이 다 나오는가 · 팀명·구성원·주제·튜터링이 다 있는가 */
   var teamsF2=DB.get('teams', function(t){return t.classId==='F2';}).sort(function(a,b){return a.no-b.no;});
@@ -15380,20 +15397,21 @@ window.__protoCheck = function(){
      (!plainSt || sh1.indexOf(plainSt.name+'('+plainSt.no+')')<0),
      (dupSt? dupNm+' → 학번 병기 ○ · ':'')+(plainSt? plainSt.name+' → 이름만 ○':''));
 
-  /* 11-10. 회차를 바꾸면 제목·주차·날짜가 같이 바뀌는가 */
-  var sh6=tlSheet(6,'F2');
+  /* 11-10. 회차를 바꾸면 제목·주차·날짜가 같이 바뀌는가 (마지막 회차 = 12주차 · 하드코딩 없이) */
+  var lastR=RS[RS.length-1];
+  var sh6=tlSheet(lastR.round,'F2');
   ok('회차를 바꾸면 제목·주차·날짜가 같이 바뀜',
-     sh6.indexOf('교수 튜터링 일지 (6차)')>=0 && sh6.indexOf('12주차')>=0 &&
-     sh6.indexOf(tlLongDate(wrow(12).date))>=0 && sh6.indexOf('(1차)')<0,
-     '6차 → 12주차 → '+tlLongDate(wrow(12).date));
+     sh6.indexOf('교수 튜터링 일지 ('+lastR.round+'차)')>=0 && sh6.indexOf(lastR.week+'주차')>=0 &&
+     sh6.indexOf(tlLongDate(wrow(lastR.week).date))>=0 && sh6.indexOf('(1차)')<0,
+     lastR.round+'차 → '+lastR.week+'주차 → '+tlLongDate(wrow(lastR.week).date));
 
-  /* 11-11. 6회 한 번에 인쇄 — 종이 6장이 나오는가 */
+  /* 11-11. 전체 회차 한 번에 인쇄 — 종이가 회차 수만큼 나오는가 (하드코딩 없이 tlTotal 로) */
   VIEW={name:'tulog',p:{r:'all',cid:'F2'}};
   var allH=viewTuLog();
   var sheets=(allH.match(/class="a4sheet"/g)||[]).length;
   var titles=RS.every(function(r){ return allH.indexOf('교수 튜터링 일지 ('+r.round+'차)')>=0; });
-  ok('[전체 6회] 한 번에 인쇄하면 6장이 1차→6차 순서로 나옴',
-     sheets===6 && titles && allH.indexOf('(6장)')>=0, '종이 '+sheets+'장 · 제목 1~6차 모두 ○');
+  ok('[전체 회차] 한 번에 인쇄하면 회차 수만큼 종이가 나옴',
+     sheets===RS.length && titles && allH.indexOf('('+RS.length+'장)')>=0, '종이 '+sheets+'장 · 제목 전체 회차 ○');
 
   /* 11-12. 3개 강좌를 골라 뽑을 수 있는가 (슈퍼 관리자) */
   SESS.scope='all';
