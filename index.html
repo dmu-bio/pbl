@@ -5378,15 +5378,21 @@ function teamWorkPeek(teamId, n){
             : '<div class="muted" style="font-size:13px">아직 낸 것이 없습니다.</div>')+'</div>';
       }).join('')+'</div>';
   }else if(n===5){
+    /* 🔴 2026-09-23 — 교수가 튜터링하며 봐야 하므로 「전문」을 보여 줍니다(잘림 금지).
+       긴 글은 스크롤 상자에 담고, 줄바꿈은 white-space:pre-wrap 으로 그대로 살립니다. */
+    var box5='max-height:240px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5';
     var f=DB.one('topics', function(x){return x.teamId===teamId&&x.kind==='최종';});
-    h = f? '<b>최종 주제</b> '+esc(f.title)+'<br><span class="muted">'+esc((f.summary||'').slice(0,110))+'</span>'
+    h = f? '<b>최종 주제</b> '+esc(f.title)+(f.ok?' <span class="bg green">✅ 승인</span>':' <span class="bg amber">승인 대기</span>')+
+           '<div class="muted" style="margin-top:6px">선정/작성 사유 (전문)</div>'+
+           '<div style="'+box5+'">'+(f.summary? esc(f.summary):'<span class="muted">사유가 비어 있습니다.</span>')+'</div>'
          : '<span class="muted">아직 최종 주제를 내지 않았습니다.</span>';
-    /* 🎬 2026-09-22 — 같은 자리에서 「1분 광고 콘티」 스토리라인 요약 한 줄도 읽습니다(읽기 전용). */
+    /* 🎬 1분 광고 콘티 — 스토리라인 전문 (2026-09-23 요약→전문). */
     var sb5=DB.one('activity', function(x){return x.teamId===teamId&&x.week===5&&x.kind==='storyboard';});
-    if(sb5 && (sb5.storyline||'').trim()){
-      h += '<div class="hr"></div><b>🎬 광고 콘티</b> <span class="bg green">✅ 작성</span>'+
-           '<br><span class="muted">'+esc(sb5.storyline.slice(0,110))+(sb5.storyline.length>110?'…':'')+'</span>';
-    }
+    h += '<div class="hr"></div><b>🎬 1분 광고 콘티 (스토리라인 전문)</b> '+
+         ((sb5 && (sb5.storyline||'').trim())
+           ? '<span class="bg green">✅ 작성</span>'+(sb5.editor? ' <span class="muted">'+esc(sb5.editor)+(sb5.at?' · '+esc(sb5.at):'')+'</span>':'')+
+             '<div style="'+box5+'">'+esc(sb5.storyline)+'</div>'
+           : '<span class="bg gray">⬛ 미작성</span>');
   }else{
     var a=DB.one('activity', function(x){return x.teamId===teamId&&x.week===n;});
     h = a? '<b>이 팀이 낸 것</b><br><span class="muted">'+esc(((a.did||a.plan||'')+' '+(a.stage||'')).slice(0,120))+'</span>'
@@ -6025,7 +6031,7 @@ function tuTopicBlock(t, n, def){
     var a=DB.one('activity', function(x){return x.teamId===t.id && x.week===n;});
     return '<b>최종 주제</b> '+esc(fin.title)+' '+
       (fin.ok? '<span class="bg green">✅ 승인</span>':'<span class="bg amber">승인 대기</span>')+
-      (fin.summary? '<div class="muted">'+esc(String(fin.summary).slice(0,80))+'</div>':'')+
+      (fin.summary? '<div class="muted" style="max-height:130px;overflow-y:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5">'+esc(String(fin.summary))+'</div>':'')+
       '<div class="muted">이 주차 제출 '+(a? '<span class="bg green">✅ 냈음</span>':'<span class="bg gray">⬛ 아직</span>')+'</div>';
   }
   /* 🔴 2026-09-09 — 조사 대상(3개)을 보여 줍니다. 4개↑ 미선택이면 「선택 전」으로 안내 */
@@ -8525,6 +8531,20 @@ var CSVDEF = {
         });
       });
     return r; }},
+  /* 🎬 5주차 팀 산출물 — 최종주제(제목·사유) + 1분 광고 콘티(스토리라인). 한 팀이 한 줄 (2026-09-23 신설).
+     긴 사유·스토리라인에 줄바꿈·쉼표가 섞여도 csvEsc()가 따옴표로 감싸 칸이 밀리지 않습니다. 🔒 교번 칸 없음. */
+  finaltopic:{ name:'week5_topic_storyboard.csv', title:'5주차 최종주제·광고콘티', build:function(cids){
+    var r=[['강좌','담당교수','팀번호','팀명','최종 주제','선정/작성 사유','교수 승인','광고 콘티 스토리라인','콘티 작성자','콘티 작성시각']];
+    DB.get('teams', function(t){return cids.indexOf(t.classId)>=0;})
+      .sort(function(a,b){ return a.classId===b.classId? a.no-b.no : (a.classId<b.classId?-1:1); })
+      .forEach(function(t){
+        var f=DB.one('topics', function(x){return x.teamId===t.id && x.kind==='최종';});
+        var sb=DB.one('activity', function(x){return x.teamId===t.id && x.week===5 && x.kind==='storyboard';});
+        r.push([t.classId, classProf(t.classId), t.no, t.name,
+          f?f.title:'', f?(f.summary||''):'', f?(f.ok?'승인':'대기'):'미제출',
+          sb?(sb.storyline||''):'', sb?(sb.editor||''):'', sb?(sb.at||''):'']);
+      });
+    return r; }},
   /* 🔴 설문 원자료 — 5점 척도는 「숫자로」 나갑니다 (집계해야 하므로).
      최종설문의 두 줄 응답은 Q1_현재 · Q1_수강전 처럼 칸을 나눕니다. 🔒 교번 칸 없음. */
   survey:{ name:'survey_pre_raw.csv', title:'사전설문 원자료', build:function(cids){ return surveyCSV('사전', cids); }},
@@ -10960,12 +10980,20 @@ function alBlocks(n, cid){
       rows: rows.length? rows : [['—','','아직 제출된 내용이 없습니다']]});
   }
 
-  /* 5. 5주차 최종 주제 선정 (앱 저장 데이터) */
+  /* 5. 5주차 최종 주제 선정 + 1분 광고 콘티 (앱 저장 데이터) */
   if(def.kind==='finaltopic'){
     out.push({t:'최종 주제 선정', type:'table', head:['팀','최종 주제','선정 사유','교수 승인'], w:[1800,2400,4238,1200],
       rows: teams.map(function(t){
         var f=DB.one('topics', function(x){ return x.teamId===t.id && x.kind==='최종'; });
         return [alTeamLabel(t), f? f.title:'—', f? alDash(f.summary):'아직 내지 않았습니다', (f&&f.ok)?'승인':'—'];
+      })});
+    /* 🎬 2026-09-23 — 1분 광고 콘티(스토리라인)를 최종주제와 나란히 활동기록에 넣습니다.
+       저장 위치는 activity(week:5·kind:'storyboard')·data.storyline. 줄바꿈은 화면·워드 모두 보존됩니다. */
+    out.push({t:'1분 광고 콘티 (스토리라인)', type:'table', head:['팀','스토리라인','작성자','작성시각'], w:[1800,5638,1200,1200],
+      rows: teams.map(function(t){
+        var sb=DB.one('activity', function(x){ return x.teamId===t.id && x.week===5 && x.kind==='storyboard'; });
+        return [alTeamLabel(t), (sb && (sb.storyline||'').trim())? sb.storyline : '아직 작성하지 않았습니다',
+                sb? alDash(sb.editor) : '—', sb? alDash(sb.at) : '—'];
       })});
   }
   /* 🔴 2026-08-23 20차 — 6·9·10·12주차는 「타이틀만」 주차입니다(학생 앱 입력 삭제, p5_weekstu.js).
@@ -11937,7 +11965,7 @@ function wpCells(def){
   if(K==='survey'){ act.push('오리엔테이션 · 평가방식 안내'); act.push('사전설문조사'); res.push('사전설문 응답'); }
   else if(K==='team'){ act.push('팀 구성(팀명·의미)'); act.push('가주제 3개 선정'); act.push('KOSAc 소개'); res.push('팀 편성표'); res.push('가주제 3개'); }
   else if(K==='research'){ act.push('가주제 조사 · 자료 제출'); res.push('조사 자료 제출물'); }
-  else if(K==='finaltopic'){ act.push('최종 주제 1개 선정'); res.push('최종 주제'); }
+  else if(K==='finaltopic'){ act.push('최종 주제 1개 선정 · 1분 광고 콘티(스토리라인) 작성'); res.push('최종 주제 · 광고 콘티(스토리라인)'); }
   else if(K==='video'){ act.push('광고 영상 제작'); res.push('광고 영상 가편집본'); }
   else if(K==='activity'){ act.push('팀 활동'); res.push('팀 활동 기록'); if(def.boost) act.push('영상 보강(필요 팀)'); }
   else if(K==='prep'){ act.push('팀 활동'); act.push('최종발표 평가기준 공개'); res.push('발표 준비 상황'); res.push('평가기준 공개'); }
