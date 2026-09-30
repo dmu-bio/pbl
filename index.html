@@ -630,7 +630,7 @@ if(PREVIEW){
 }
 
 /* ==========================================================================
-   📋 루브릭 초안 — 4·7·13·14주차 평가서 (2026-08-22 · 18차 신설)
+   📋 루브릭 초안 — 4·8·13·14주차 평가서 (2026-08-22 · 18차 신설)
    --------------------------------------------------------------------------
    🔴 교수님 지시(원문): "모든 평가서는 루브릭 기반으로 설계되면 좋겠어.
       단순히 점수가 아닌 각 점수의 의미, 수준이 설명되어 있어서 학생들이
@@ -747,7 +747,7 @@ var RUBRIC_DRAFT = {
   },
 
   /* ══════════════════════════════════════════════════════════════════
-     2회차 — 7주차 중간발표2 「광고영상」
+     2회차 — 8주차 중간발표2 「광고영상」 (2026-10-01 O-0122: 옛 7주차)
      🔴 성격: **영상**입니다. 글 발표와 보는 곳이 다릅니다 —
         메시지 · 내용의 정확성 · 영상 완성도 · 창의성 · 영상 시간(러닝타임)의 활용.
      🔴 2026-09-23 대표님 지시: 영상 길이가 1분·2분으로 팀마다 달라, 특정 시간(1분/60초)을
@@ -1853,7 +1853,7 @@ var SURVEYDEF = {
      {
       "no": 21,
       "type": "5점",
-      "text": "21. 교수와의 팀 상담(3·6·11주차)이 도움이 되었다",
+      "text": "21. 교수와의 팀 상담(3·5·7·10·11주차)이 도움이 되었다",
       "labels": [
        "전혀 아니다",
        "아니다",
@@ -1865,8 +1865,7 @@ var SURVEYDEF = {
       "fills": [],
       "raw": [],
       "req": true,
-      "pair": "",
-      "warn": "⚠️ 원문 그대로입니다. 운영표의 교수 튜터링은 3·5·9·10·12주차 5회이고 11주차는 현장견학입니다 — 교수님 확인이 필요합니다. (학생 화면에는 이 표시가 보이지 않습니다)"
+      "pair": ""
      },
      {
       "no": 22,
@@ -1942,7 +1941,9 @@ var STORE = 'bio_basic_design_proto_v1';
    5 = 2026-08-20 (8차) 3주차 제출함 신설 (submits 표 · 가주제 하나에 제출함 하나)
    6 = 2026-08-21 (11차) 교수님의 실제 설문지 반영 (문항 구조 전면 교체 · sdraft 표 신설)
    7 = 2026-08-21 (13차) 🔴 10/7 보강 제외 — 7~15주차 날짜가 한 주씩 밀림
-   8 = 2026-08-21 (14차) 설문 해석문 저장표(svNote) 신설 */
+   8 = 2026-08-21 (14차) 설문 해석문 저장표(svNote) 신설
+   ⚠️ 2026-10-01 (O-0122) 주차 재편(10/7 수업 · 11/18 휴강)은 DATA_V 를 올리지 않았습니다 —
+      날짜는 코드 계산값이고, 서버 app_meta.data_v 와 어긋나면 안 되기 때문입니다. */
 var DATA_V = 14;  /* 14 = 2026-08-23 (20차) ⚖️ 팀내 평가 감점(intraPenalty·settings.intra) 신설 +
                           ⛔ 등급 정원(aP/a/b) 폐기 — 앱은 점수 합산까지만 */  /* 11 = 2026-08-22 등급 정원 A+3/A3/B2 정정
                      12 = 2026-08-23 (19차) 🧮 성적 산출 — marks 표(출석·중간·기말) 신설 ·
@@ -1984,8 +1985,14 @@ var CIDS = ['F1','F2','F3'];
 /* ==========================================================================
    📅 주차 날짜 — 🔴 15개를 손으로 적지 않습니다 (2026-08-21 · 13차)
    --------------------------------------------------------------------------
-   🔴 교수님 지시(원문): *"10/7(수)이 다른 요일 보강이라서 수업이 없어.
-      10/7은 제외하고 주차를 설정해야할 것 같아"*
+   🔴 (옛) 2026-08-21 교수님 지시: 10/7(수)은 다른 요일 보강으로 수업 없음 → 10/7 제외.
+   🔴 (현행) 2026-10-01 대표님 확정 (지시대장 O-0122):
+      · 10/7(수)은 이제 수업합니다 → 새 7주차 「팀활동4」
+      · 11/18(수)은 2학년 현장견학으로 휴강 → 주차에서 뺍니다
+      · 날짜별 내용은 그대로, 7~12주차 번호와 팀활동 번호만 한 칸씩 바뀝니다
+        (6 9/30 팀활동3 · 7 10/7 팀활동4 · 8 10/14 중간발표2 · 9 10/21 중간고사 ·
+         10 10/28 팀활동5 · 11 11/4 팀활동6 · 12 11/11 현장견학 · 13 11/25 최종발표1 …)
+      ⛔ 코드 곳곳에서 「몇 주차」를 숫자로 박지 말고 아래 WK_* 상수를 씁니다.
 
    ▸ 1주차 수업일에서 ７일씩 나아가되, 「수업 없는 날」은 건너뜁니다.
      그래서 휴강이 또 생기면 ↓ WEEK_SKIP 에 １줄만 더하면 15줄이 저절로 밀립니다.
@@ -1995,7 +2002,7 @@ var CIDS = ['F1','F2','F3'];
    ========================================================================== */
 var WEEK_START = '2026-08-26';                 /* 1주차 수업일 (수) */
 var WEEK_SKIP = [                              /* 🚫 수업이 없어 주차에서 뺀 날 */
-  { date:'2026-10-07', why:'다른 요일 보강으로 수업 없음' }
+  { date:'2026-11-18', why:'2학년 현장견학으로 휴강' }
 ];
 function weekSkipOf(iso){
   for(var i=0;i<WEEK_SKIP.length;i++) if(WEEK_SKIP[i].date===iso) return WEEK_SKIP[i];
@@ -2014,13 +2021,15 @@ var WEEKDEF = [
   {n:3, title:'팀활동1',     full:'팀 활동 1 · 조사 자료 제출', win:'마감일까지', kind:'research', tutor:1},
   {n:4, title:'중간발표1',   full:'중간발표1 — 가주제 정리 발표', win:'수업시간', kind:'eval', round:1},
   {n:5, title:'팀활동2',     full:'팀 활동 2 · 최종 주제 선정', win:'마감일까지', kind:'finaltopic', tutor:2},
-  {n:6, title:'팀활동3',     full:'팀 활동 3 · 광고 영상 제작 · 7주차 발표 평가 기준 안내', win:'수업시간', kind:'video'},
-  {n:7, title:'중간발표2',   full:'중간발표2 — 1~2분 광고영상 · KOSAC 제출', win:'수업시간', kind:'eval', round:2, film:true},
-  {n:8, title:'중간고사',    full:'중간고사 (서면 평가)', kind:'notice'},
-  {n:9, title:'팀활동4',     full:'팀 활동 4', win:'수업시간', kind:'activity', tutor:3, boost:true},
-  {n:10,title:'팀활동5',     full:'팀 활동 5', win:'수업시간', kind:'activity', tutor:4},
-  {n:11,title:'현장견학',    full:'현장견학', kind:'notice'},
-  {n:12,title:'팀활동6',     full:'팀 활동 6', win:'수업시간', kind:'prep', tutor:5},
+  /* 🔴 2026-10-01 (O-0122) — 6·7·10·11주차는 「학생 입력 없음」 주차입니다(수업 시간 팀 활동 · 교수 튜터링).
+        그래서 win(제출 창)을 두지 않습니다 → 마감(due)도 생기지 않습니다. 판정은 noInputWeek(). */
+  {n:6, title:'팀활동3',     full:'팀 활동 3 · 광고 영상 제작 · 8주차 발표 평가 기준 안내', kind:'video'},
+  {n:7, title:'팀활동4',     full:'팀 활동 4 · 교수 튜터링', kind:'activity', tutor:3, boost:true},
+  {n:8, title:'중간발표2',   full:'중간발표2 — 1~2분 광고영상 · KOSAC 제출', win:'수업시간', kind:'eval', round:2, film:true},
+  {n:9, title:'중간고사',    full:'중간고사 (서면 평가)', kind:'notice', key:'mid'},
+  {n:10,title:'팀활동5',     full:'팀 활동 5 · 교수 튜터링', kind:'activity', tutor:4},
+  {n:11,title:'팀활동6',     full:'팀 활동 6 · 교수 튜터링', kind:'prep', tutor:5},
+  {n:12,title:'현장견학',    full:'현장견학', kind:'notice', key:'trip'},
   {n:13,title:'최종발표1',   full:'최종발표1 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true},
   {n:14,title:'최종발표2',   full:'최종발표2 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true, intra:true},
   {n:15,title:'기말·설문',   full:'기말고사 · 최종설문조사', win:'수업+당일', kind:'final'},
@@ -2041,6 +2050,19 @@ var WEEKDEF = [
 })();
 
 function wdef(n){ for(var i=0;i<WEEKDEF.length;i++) if(WEEKDEF[i].n===n) return WEEKDEF[i]; return null; }
+
+/* 🔢 역할별 주차 번호 (2026-10-01 · O-0122) — 번호를 코드에 박지 않고 WEEKDEF 에서 찾습니다.
+   주차가 또 밀려도 WEEKDEF 만 고치면 화면·출력물·자체점검이 따라옵니다. */
+function wkOf(fn){ for(var i=0;i<WEEKDEF.length;i++) if(fn(WEEKDEF[i])) return WEEKDEF[i].n; return null; }
+var WK_R1   = wkOf(function(d){ return d.round===1; });          /* 중간발표1        (4)  */
+var WK_R2   = wkOf(function(d){ return d.round===2; });          /* 중간발표2        (8)  */
+var WK_MID  = wkOf(function(d){ return d.key==='mid'; });        /* 중간고사         (9)  */
+var WK_TRIP = wkOf(function(d){ return d.key==='trip'; });       /* 현장견학         (12) */
+var WK_PREP = wkOf(function(d){ return d.kind==='prep'; });      /* 최종발표 앞 마무리 (11) */
+var WK_R3   = WEEKDEF.filter(function(d){ return d.round===3; }).map(function(d){ return d.n; });  /* [13,14] */
+var PRES_WEEKS_ALL = WEEKDEF.filter(function(d){ return d.kind==='eval'; }).map(function(d){ return d.n; }); /* [4,8,13,14] */
+/* 🙅 학생이 앱에 낼 것이 없는 「수업 시간 팀 활동」 주차 (6·7·10·11) — 진행률·미제출 집계에서 뺍니다 */
+function noInputWeek(def){ return !!def && (def.kind==='video' || def.kind==='activity' || def.kind==='prep'); }
 
 /* --------------------------------------------------------------------------
    1. DB 계층  ★ 나중에 진짜 데이터베이스를 붙일 때 고칠 곳은 여기뿐입니다
@@ -2116,7 +2138,7 @@ var SEED = {
     var d = { __v:DATA_V, __seq:0, __demo:false,
       accounts:[], classes:[], students:[], weeks:[], weekExc:[], weekNotice:[],
       teams:[], members:[], topics:[], submits:[], activity:[],
-      excursion:[],          /* 🚌 11주차 현장견학 — 팀별 견학 의견 (팀원이 한 줄씩 쌓는 목록형) */
+      excursion:[],          /* 🚌 12주차(WK_TRIP) 현장견학 — 팀별 견학 의견 (팀원이 한 줄씩 쌓는 목록형) */
       tutoring:[],           /* ⛔ 옛 tutorAck(학생 확인 기록)은 17차에 폐기 */
       surveys:[], questions:[], answers:[], consents:[], sdraft:[], svNote:[],
       rubrics:[], profEval:[], peerTeam:[], peerMember:[],
@@ -2196,13 +2218,14 @@ var SEED = {
       });
     });
 
-    /* 8·11·15주 안내문 — 장소는 강좌마다 다릅니다 */
+    /* 중간고사(9)·현장견학(12)·15주 안내문 — 장소는 강좌마다 다릅니다 */
     CIDS.forEach(function(cid){
       var room = (CLASSINFO[cid]||{}).room || '';
       /* 🔴 안내문의 날짜도 주차표에서 가져옵니다 — 손으로 적으면 주차가 밀릴 때 안 따라옵니다 */
-      [[8,'시험 안내','일시: '+mdw(wdef(8).date)+' 2교시 · 장소: '+room+' · 범위: 1~7주차 강의 내용 · 준비물: 필기구, 학생증'],
-       [11,'견학 안내','집합: '+mdw(wdef(11).date)+' 09:00 학교 정문 · 교통: 전세버스 · 준비물: 학생증, 편한 신발'],
-       [15,'기말고사 안내','일시: '+mdw(wdef(15).date)+' 2교시 · 장소: '+room+' · 범위: 8~14주차 · 준비물: 필기구, 학생증']]
+      /* ⚠️ 순서를 바꾸지 않습니다 — id(nt_N)가 순번이라, 순서가 바뀌면 서버 시드(seedContent)가 중복을 올립니다 */
+      [[WK_MID,'시험 안내','일시: '+mdw(wdef(WK_MID).date)+' 2교시 · 장소: '+room+' · 범위: 1~'+(WK_MID-1)+'주차 강의 내용 · 준비물: 필기구, 학생증'],
+       [WK_TRIP,'견학 안내','집합: '+mdw(wdef(WK_TRIP).date)+' 09:00 학교 정문 · 교통: 전세버스 · 준비물: 학생증, 편한 신발'],
+       [15,'기말고사 안내','일시: '+mdw(wdef(15).date)+' 2교시 · 장소: '+room+' · 범위: '+WK_MID+'~14주차 · 준비물: 필기구, 학생증']]
       .forEach(function(x){
         d.weekNotice.push({id:nid('nt'),classId:cid,n:x[0],title:x[1],body:x[2],file:'안내문.pdf'});
       });
@@ -2300,7 +2323,7 @@ function studentOfAcc(aid){ return DB.one('students', function(s){return s.accou
 /* ==========================================================================
    🔴 결석(평가 제외) — 회차별 (2026-09-14 교수님 지시)
    --------------------------------------------------------------------------
-   ▸ 평가 주차(4·7·13·14) 시작 전에 교수가 오늘 결석한 학생을 체크합니다.
+   ▸ 평가 주차(4·8·13·14) 시작 전에 교수가 오늘 결석한 학생을 체크합니다.
      체크하면 그 학생은 「그 회차」에서만 빠지고, 되돌리려면 체크만 해제합니다.
    ▸ 저장은 기존 attend 표를 씁니다(새 표를 만들지 않습니다) — round·studentId 로
      한 줄, data jsonb 에 absent:true. (round,student_id) 는 유일 색인이라 겹치지 않습니다.
@@ -2724,7 +2747,7 @@ function fixLine(n){
 function fixBtn(onclick, label, small){
   return '<button class="btn fix'+(small?' sm':'')+'" onclick="'+onclick+'">✏️ '+(label||'수정하기')+'</button>';
 }
-/* 주차 화면 아래쪽 「제출/수정」 한 줄 — 6·7·9·10·12주차가 전부 이것을 씁니다 */
+/* 주차 화면 아래쪽 「제출/수정」 한 줄 (지금은 입력 있는 주차만 씁니다 — 6·7·10·11주차는 입력 없음) */
 function submitBar(n, has, onclick){
   if(!canFix(n)) return '<div class="note" style="margin-top:10px">⬛ <b>'+FIX_LOCKED+'</b></div>';
   return '<div class="btnrow" style="margin-top:10px">'+
@@ -2736,6 +2759,8 @@ function submitBar(n, has, onclick){
 function studentBadge(n){
   var def=wdef(n), w=wrow(n)||{};   /* 🛡️ 16주차(kind:'result')는 주차행이 없을 수 있어 null 방지 */
   if(def.kind==='notice') return {t:'▫️ 안내만', c:'gray'};
+  /* 🙅 2026-10-01 (O-0122) — 6·7·10·11주차는 앱에 낼 것이 없습니다. 「해야 함·오늘까지」로 재촉하지 않습니다 */
+  if(noInputWeek(def)) return w.state==='닫힘' ? {t:'🔒 잠김', c:'gray'} : {t:'▫️ 입력 없음', c:'gray'};
   /* 🔴 16주차 「최종결과」 — 낼 것이 없는 결과 확인 주차. 공개 여부로 뱃지를 나눕니다 */
   if(def.kind==='result'){
     if(w.state==='닫힘') return {t:'🔒 잠김', c:'gray'};
@@ -2760,6 +2785,9 @@ function profBadge(n){
   var def=wdef(n), w=wrow(n)||{};   /* 🛡️ 16주차(kind:'result')는 주차행이 없을 수 있어 null 방지 */
   if(def.kind==='notice') return {t:'▫️ 안내만',c:'gray'};
   if(def.kind==='result') return {t:'▫️ 결과 공개',c:'gray'};
+  /* 🙅 학생 입력 없는 주차(6·7·10·11) — 「미제출 N명」을 세지 않습니다. 튜터링 주차는 튜터링 표시 */
+  if(noInputWeek(def)){ if(w.state==='닫힘') return {t:'🔒 닫힘',c:'gray'};
+    return def.tutor? {t:'📌 튜터링 '+def.tutor+'회차',c:'gray'} : {t:'▫️ 학생 입력 없음',c:'gray'}; }
   if(w.state==='닫힘') return {t:'🔒 닫힘',c:'gray'};
   var cids = visibleClasses();
   /* 🔴 3주차는 「학생 몇 명」이 아니라 「몇 팀이 3개를 다 냈나」로 셉니다 — 제출물이 팀 것이므로 */
@@ -2787,6 +2815,7 @@ function hasSubmitted(st, n){
   var def=wdef(n);
   if(def.kind==='notice') return true;
   if(def.kind==='result') return true;   /* 낼 것이 없는 결과 확인 주차 — 「미제출」로 세지 않습니다 */
+  if(noInputWeek(def)) return true;      /* 🙅 6·7·10·11주차 — 낼 것이 없습니다(O-0122) */
   if(def.kind==='survey'){
     var sv=DB.one('surveys',function(s){return s.kind==='사전';});
     return !!DB.one('answers', function(a){return a.surveyId===sv.id && a.studentId===st.id;});
@@ -3073,7 +3102,7 @@ function weekGrid(){
 function todoBand(){
   var cur=curWeek();
   if(SESS.role==='student'){
-    var open = WEEKDEF.filter(function(d){ return wState(d.n)==='열림' && d.kind!=='notice' && d.kind!=='result' && !hasSubmitted(SESS.me,d.n); });
+    var open = WEEKDEF.filter(function(d){ return wState(d.n)==='열림' && d.kind!=='notice' && d.kind!=='result' && !noInputWeek(d) && !hasSubmitted(SESS.me,d.n); });
     if(!open.length){
       var nx = WEEKDEF.filter(function(d){return d.n>cur;})[0];
       return '<div class="note g"><b>📌 이번 주 할 일</b><br>이번 주는 낼 것이 없습니다'+
@@ -3083,7 +3112,8 @@ function todoBand(){
     var w0 = wrow(d0.n);
     var dd = d0.due? dayDiff(protoToday(), d0.due.split(' ')[0]) : null;
     return '<div class="note r"><b>📌 이번 주 할 일</b><br>'+d0.n+'주차 '+esc(d0.title)+' — 미제출'+
-      (dd!==null? ' ('+(dd===0?'오늘 마감':'D-'+dd)+')':'')+
+      /* 🔴 2026-10-01 (O-0122) — 마감이 지났는데 주차가 아직 열려 있으면 「D--1」로 찍히던 것을 「마감 지남」으로 */
+      (dd!==null? ' ('+(dd===0?'오늘 마감':(dd<0?'마감 지남 · 아직 낼 수 있음':'D-'+dd))+')':'')+
       ' <button class="btn sm pri" style="float:right" onclick="go(\'week\',{n:'+d0.n+'})">바로 가기 →</button></div>';
   }
   /* 교수 — 내 강좌 기준 */
@@ -3190,7 +3220,8 @@ function viewWeek(){
     return head;
   }
   if(w.state==='닫힘') head += '<div class="note a">🔎 <b>미리 보기</b> — 실제로는 아직 닫혀 있는 주차입니다.</div>';
-  if(w.state==='마감') head += '<div class="note">⬛ 이 주차는 마감되었습니다 ('+esc(w.due)+'). 낸 것은 읽기 전용으로 남습니다.</div>';
+  if(w.state==='마감') head += noInputWeek(def) ? '<div class="note">⬛ 지난 주차입니다.</div>'
+                                              : '<div class="note">⬛ 이 주차는 마감되었습니다 ('+esc(w.due)+'). 낸 것은 읽기 전용으로 남습니다.</div>';
 
   if(!isProf() && !SESS.me) return head + '<div class="card"><div class="note a">학생 정보가 없습니다. 다시 로그인해 주세요.</div>'+
     '<button class="btn pri" onclick="APP.logout()">로그인으로</button></div>' + pager(n);
@@ -3266,10 +3297,10 @@ function viewStuPreview(){
 /* ===== 학생 · 주차별 ===== */
 function weekStudent(n, def){
   switch(def.kind){
-    /* 🚌 11주차(현장견학)만 견학 의견 기록을 안내문 아래에 붙입니다 (8주차 중간고사는 안내만)
-       📢 8주차에는 「2회차(7주차) 발표평가 결과」를 공개 시 아래에 붙입니다 (R9) */
-    case 'notice':    return stNotice(n) + (n===11? stExcursion(n) : '') +
-                             (n===8? stRoundResultCard(2,'r2') : '');
+    /* 🚌 12주차(WK_TRIP 현장견학)만 견학 의견 기록을 안내문 아래에 붙입니다 (9주차 중간고사는 안내만)
+       📢 9주차(WK_MID)에는 「2회차(8주차) 발표평가 결과」를 공개 시 아래에 붙입니다 (R9) */
+    case 'notice':    return stNotice(n) + (n===WK_TRIP? stExcursion(n) : '') +
+                             (n===WK_MID? stRoundResultCard(2,'r2') : '');
     case 'survey':    return stSurvey(n, '사전');
     /* 15주차 — 최종설문 아래에 「3회차 발표평가 결과」 + 「본인 기말고사」를 공개 시 붙입니다 (R9) */
     case 'final':     return stNotice(n) + stRoundResultCard(3,'r3') +
@@ -3283,8 +3314,8 @@ function weekStudent(n, def){
     /* 5주차 — 최종주제 화면 아래에 「1회차(4주차) 발표평가 결과」를 공개 시 붙입니다 (R9) */
     case 'finaltopic':return stFinalTopic(n) + stStoryboard() + stRoundResultCard(1,'r1');
     case 'video':     return stVideo(n);
-    /* 9주차 — 본인 중간고사 점수를 공개 시 붙입니다 (R9) */
-    case 'activity':  return stActivity(n, def) + (n===9? stExamCard('mid','중간고사',9) : '');
+    /* 10주차(중간고사 다음 주) — 본인 중간고사 점수를 공개 시 붙입니다 (R9) */
+    case 'activity':  return stActivity(n, def) + (n===WK_MID+1? stExamCard('mid','중간고사',WK_MID+1) : '');
     case 'prep':      return stPrep(n);
     case 'eval':      return stEval(n, def);
     /* 16주차 — 최종결과(본인 6분야+총합) (R9) */
@@ -3293,7 +3324,7 @@ function weekStudent(n, def){
   return '';
 }
 
-/* 8·11·15주 — 안내문만 */
+/* 9·12·15주 — 안내문만 */
 function stNotice(n){
   var cid = SESS.role==='student'? SESS.me.classId : myClass();
   var nt = DB.one('weekNotice', function(x){return x.classId===cid && x.n===n;});
@@ -4381,7 +4412,7 @@ function stFinalTopic(){
     '<label class="f">선정/작성 사유 <span class="req">*</span> <span class="lim">500자 · 왜 이 주제를 최종으로 정했는지</span></label>'+
     '<textarea id="fnWhy" oninput="finDraftAuto(\''+t.id+'\')">'+esc(vWhy)+'</textarea>'+
     /* 🔴 R12 (2026-08-23) — 최종주제는 승인 전이든 후든 「언제든 제한 없이」 수정할 수 있습니다.
-       평가(4·7·13·14주차)의 「1회 수정」 잠금과 다릅니다 — 여기는 횟수·마감 잠금이 없습니다. */
+       평가(4·8·13·14주차)의 「1회 수정」 잠금과 다릅니다 — 여기는 횟수·마감 잠금이 없습니다. */
     '<div class="btnrow"><button class="btn" onclick="finDraftKeep(\''+t.id+'\')">💾 임시저장</button>'+
                         (fin? fixBtn("saveFinal('"+t.id+"')", '수정 저장하기')
                                 : '<button class="btn pri" onclick="saveFinal(\''+t.id+'\')">제출하기</button>')+'</div>'+
@@ -4491,7 +4522,7 @@ function saveStoryboard(tid){
   render();
 }
 
-/* ===== 11주차 — 현장견학 「나의 현장견학 일지」 (2026-08-26 개인별로 전환) =====
+/* ===== 12주차(WK_TRIP) — 현장견학 「나의 현장견학 일지」 (2026-08-26 개인별로 전환) =====
    교수님 지시: "개인적으로 입력해야 하는 현장견학 일지는 개인별로 작성하도록."
    ▸ 학생마다 자기 일지 하나입니다 — 있으면 그 위에서 고치고(수정), 없으면 새로 씁니다.
      남의 일지는 보이지 않습니다(예전의 팀 전체 목록형에서 바뀌었습니다).
@@ -4502,7 +4533,7 @@ function saveStoryboard(tid){
 function myExcursion(){
   if(!SESS.me) return null;
   return DB.one('excursion', function(x){
-    return x.authorId===SESS.me.id && (x.week===11 || x.week===undefined); });
+    return x.authorId===SESS.me.id && (x.week===WK_TRIP || x.week===undefined); });
 }
 function stExcursion(){
   var mine=myExcursion();
@@ -4512,7 +4543,7 @@ function stExcursion(){
     h += '<div class="muted" style="margin:2px 0 6px">마지막 저장: '+esc(mine.at||'-')+
          (mine.edited?' · 수정함':'')+'</div>';
   }
-  if(canFix(11)){
+  if(canFix(WK_TRIP)){
     h += '<label class="f">현장견학 일지 <span class="req">*</span> <span class="lim">500자</span></label>'+
       '<textarea id="excText" placeholder="예) ○○기업의 배양 공정을 직접 보니 수업에서 배운 스케일업이 이해되었다.">'+
         esc(mine? (mine.text||'') : '')+'</textarea>'+
@@ -4528,7 +4559,7 @@ function stExcursion(){
   return h+'</div>';
 }
 function saveExcursion(){
-  if(!canFix(11)){ toast('⛔ '+FIX_LOCKED); return; }
+  if(!canFix(WK_TRIP)){ toast('⛔ '+FIX_LOCKED); return; }
   var tx=val('excText');
   if(!tx || tx.length<5){ toast('일지를 5자 이상 적어 주세요.'); return; }
   var mine=myExcursion(), t=teamOf(SESS.me);
@@ -4537,7 +4568,7 @@ function saveExcursion(){
       teamId:(t? t.id : (mine.teamId||null))});
     toast('현장견학 일지를 저장했습니다.');
   }else{
-    DB.add('excursion', {teamId:(t? t.id : null), classId:(SESS.me?SESS.me.classId:myClass()), week:11,
+    DB.add('excursion', {teamId:(t? t.id : null), classId:(SESS.me?SESS.me.classId:myClass()), week:WK_TRIP,
       author:(SESS.acc?SESS.acc.name:(SESS.me?SESS.me.name:'-')), authorId:(SESS.me?SESS.me.id:''),
       text:tx, at:nowStr()});
     toast('현장견학 일지를 남겼습니다.');
@@ -4547,16 +4578,21 @@ function saveExcursion(){
 function delExcursion(id){
   var x=DB.one('excursion', id); if(!x) return;
   if(!(SESS.me && x.authorId===SESS.me.id)){ toast('내 일지만 지울 수 있습니다.'); return; }
-  if(!canFix(11)){ toast('⛔ '+FIX_LOCKED); return; }
+  if(!canFix(WK_TRIP)){ toast('⛔ '+FIX_LOCKED); return; }
   DB.del('excursion', id); toast('내 현장견학 일지를 지웠습니다.'); render();
 }
 
-/* ===== 타이틀 전용 주차 (6·9·10·12) — 학생 입력 없음 (2026-08-23 교수님 지시) =====
+/* ===== 타이틀 전용 주차 (6·7·10·11 — 2026-10-01 O-0122 재번호. 옛 6·9·10·12) — 학생 입력 없음 (2026-08-23 교수님 지시) =====
    교수님: "6주차 광고 영상 제작 / 9·10·12주차 최종 앱 개발 — 제목만 남기고 학생 입력은 삭제.
            수업에서 진행하고, 앱에 따로 낼 것은 없다."
    ▸ 학생 화면의 입력 요소만 걷어냈습니다. 교수 튜터링(tutor:N)은 그대로 유지됩니다(교수 화면).
-   ▸ 「5주차 이후 팀 주제는 최종 1개만」 원칙에 맞춰 우리 팀 최종 주제를 함께 보여 줍니다(표시만).  */
+   ▸ 「5주차 이후 팀 주제는 최종 1개만」 원칙에 맞춰 우리 팀 최종 주제를 함께 보여 줍니다(표시만).
+   🔴 2026-10-01 (O-0122) 대표님: "6주차에는 학생이 직접 입력할 것이 없었는데 학생 화면에 헷갈리게 하는 문구가 있다"
+      → 「입력할 것 없음」을 맨 위 초록 띠로 먼저 알립니다. 마감·제출 창·미제출 표시는 이 주차들에서 모두 없앴습니다
+        (WEEKDEF 에서 win 제거 · studentBadge/profBadge/hasSubmitted 가 noInputWeek() 로 걸러 냄).
+      → 튜터링 주차(tutor:N)는 「교수 튜터링이 있는 날」이라는 것만 알립니다(학생은 튜터링 기록을 보지 않습니다 — 17차). */
 function stTitleOnly(n, title, sub){
+  var def=wdef(n)||{};
   var t=teamOf(SESS.me);
   var fin = t? DB.one('topics', function(x){return x.teamId===t.id && x.kind==='최종';}) : null;
   var topicLine = !t ? '' :
@@ -4564,22 +4600,27 @@ function stTitleOnly(n, title, sub){
              (fin.ok? ' <span class="bg green">✅ 승인</span>' : ' <span class="bg amber">승인 대기</span>')+'</div>'
          : '<div class="note a" style="margin-top:8px">아직 <b>최종 주제 미선정</b>입니다 — 5주차에서 최종 주제를 먼저 정해 주세요.</div>');
   return '<div class="card"><h3>'+esc(title)+'</h3>'+
+    '<div class="note g">✅ <b>이 주차는 앱에 입력하거나 제출할 것이 없습니다.</b><br>'+
+      '수업 시간('+mdw(def.date||'')+' 10:00~13:00)에 팀별로 활동합니다'+
+      (def.tutor? ' · 담당교수님이 <b>팀별 튜터링</b>을 진행합니다' : '')+'.</div>'+
     (sub? '<p class="muted">'+esc(sub)+'</p>' : '')+
-    topicLine+
-    '<div class="note">ℹ️ 이 주차는 앱에 <b>따로 낼 것이 없습니다.</b> 수업에서 진행합니다.</div></div>';
+    topicLine+'</div>';
 }
-/* ===== 6주차 — 광고 영상 제작 + 7주차 발표 평가 기준 안내 =====
-   🔴 2026-09-23 대표님 지시: 6주차 교수 튜터링을 없애고, 대신 다음 주(7주차) 「중간발표2 ·
-      1~2분 광고영상」 발표에 쓸 평가 기준을 학생이 미리 보게 합니다.
+/* ===== 6주차 — 광고 영상 제작 + 8주차(WK_R2) 발표 평가 기준 안내 =====
+   🔴 2026-09-23 대표님 지시: 6주차 교수 튜터링을 없애고, 대신 「중간발표2 · 1~2분 광고영상」
+      발표에 쓸 평가 기준을 학생이 미리 보게 합니다.
+   🔴 2026-10-01 (O-0122): 10/7 이 7주차(팀활동4)가 되어 중간발표2 는 8주차(10/14)로 밀렸습니다.
+      「다음 주 7주차」 → 「8주차(10/14)」. 「영상은 따로 제출합니다」처럼 이번 주에 낼 것이 있는 듯한 말을 뺐습니다.
    ▸ 「읽기 안내」입니다 — 입력·제출·저장이 없습니다.
-   ▸ 루브릭은 지어내지 않고, 7주차 발표에 실제 쓰는 2회차 루브릭(rubricTable(2))을 그대로 씁니다
-     (round 2 = 7주차 중간발표2 · 광고영상 — WEEKDEF week7 의 round:2 와 같은 것). */
+   ▸ 루브릭은 지어내지 않고, 중간발표2 에 실제 쓰는 2회차 루브릭(rubricTable(2))을 그대로 씁니다
+     (round 2 = WEEKDEF 의 round:2 주차 = WK_R2). */
 function stVideo(){
+  var r2 = wdef(WK_R2)||{};
   var h = stTitleOnly(6, '광고 영상 제작',
-    '최종 주제로 1~2분 광고영상을 제작합니다. 영상은 KOSAC 또는 학교 드라이브 링크로 따로 제출합니다(앱 업로드 없음).');
-  h += '<div class="card"><h3>📋 7주차 발표 평가 기준 미리보기 <span class="muted">— 중간발표2 · 1~2분 광고영상</span></h3>'+
-    '<p class="muted">다음 주 <b>7주차 발표(중간발표2)</b>는 아래 기준으로 평가합니다. <b>발표 전에 미리 읽어 두면</b> 무엇을 준비해야 하는지 알 수 있습니다. '+
-    '(여기는 <b>읽기 안내</b>입니다 — 따로 입력·제출할 것은 없습니다.)</p>'+
+    '수업 시간에 팀별로 최종 주제의 1~2분 광고영상을 만듭니다. 완성한 영상은 '+WK_R2+'주차('+mdw(r2.date||'')+') 중간발표2에서 발표합니다. 이 앱에는 영상을 올리지 않습니다.');
+  h += '<div class="card"><h3>📋 '+WK_R2+'주차 발표 평가 기준 미리보기 <span class="muted">— 중간발표2 · 1~2분 광고영상</span></h3>'+
+    '<p class="muted"><b>'+WK_R2+'주차('+mdw(r2.date||'')+') 발표(중간발표2)</b>는 아래 기준으로 평가합니다. <b>영상을 만들기 전에 미리 읽어 두면</b> 무엇을 준비해야 하는지 알 수 있습니다. '+
+    '(읽기만 하면 됩니다 — 입력할 것은 없습니다.)</p>'+
     rubricTable(2) +'</div>';
   return h;
 }
@@ -4595,10 +4636,11 @@ function saveWeek6(tid){
   toast('6주차 진행 상황을 제출했습니다.'); render();
 }
 
-/* ===== 9·10주차 — 팀 활동 4·5 (타이틀만) ===== */
+/* ===== 7·10주차 — 팀 활동 4·5 (타이틀만 · 교수 튜터링) — 제목은 WEEKDEF 에서 옵니다(O-0122) ===== */
 function stActivity(n, def){
-  return stTitleOnly(n, (n===9?'팀 활동 4':'팀 활동 5'),
-    '팀별로 최종 주제 활동을 이어가는 시간입니다. 수업 시간에 진행하며 앱에 따로 낼 것은 없습니다.');
+  def = def || wdef(n) || {};
+  return stTitleOnly(n, String(def.title||'').replace(/^팀활동/, '팀 활동 '),
+    '팀별로 최종 주제 활동을 이어가는 시간입니다.');
 }
 function saveActivity(tid,n){
   if(!canFix(n)){ toast('⛔ '+FIX_LOCKED); return; }
@@ -4610,12 +4652,12 @@ function saveActivity(tid,n){
   toast(n+'주차 활동 기록을 제출했습니다.'); render();
 }
 
-/* ===== 12주차 — 팀 활동 6 (타이틀만, 학생 입력 없음) =====
+/* ===== 11주차(WK_PREP) — 팀 활동 6 (타이틀만, 학생 입력 없음 · 교수 튜터링) =====
    ▸ 학생 입력(준비도·발표자·남은 과제)은 삭제했습니다.
    ▸ 다만 「최종발표 평가 기준(3회차 루브릭)」 공개는 입력이 아니라 학생이 봐야 할 정보라 그대로 둡니다. */
 function stPrep(){
-  var h = stTitleOnly(12, '팀 활동 6',
-    '최종발표를 앞둔 마무리 활동 시간입니다. 수업에서 진행하며 앱에 따로 낼 것은 없습니다.');
+  var h = stTitleOnly(WK_PREP, '팀 활동 6',
+    '최종발표를 앞둔 마무리 활동 시간입니다.');
   var open = DB.get('rubrics', function(r){return r.round===3 && r.openAt;});
   if(open.length){
     h += '<div class="card"><h3>📢 최종발표 평가 기준</h3><p class="muted">공개일 '+esc(open[0].openAt)+' · 최종발표는 이 기준으로 평가합니다</p>'+ rubricTable(3) +'</div>';
@@ -4625,17 +4667,17 @@ function stPrep(){
   return h;
 }
 function savePrep(tid){
-  if(!canFix(12)){ toast('⛔ '+FIX_LOCKED); return; }
+  if(!canFix(WK_PREP)){ toast('⛔ '+FIX_LOCKED); return; }   /* ⛔ 쓰이지 않는 옛 함수(학생 입력 삭제됨) — 번호만 맞춰 둡니다 */
   var sp=document.querySelector('input[name=p12]:checked');
-  var row={teamId:tid,week:12,stage:sp?sp.value:'시작 전',did:val('p12who'),next:val('p12next'),at:nowStr()};
-  var ex=DB.one('activity', function(x){return x.teamId===tid&&x.week===12;});
+  var row={teamId:tid,week:WK_PREP,stage:sp?sp.value:'시작 전',did:val('p12who'),next:val('p12next'),at:nowStr()};
+  var ex=DB.one('activity', function(x){return x.teamId===tid&&x.week===WK_PREP;});
   if(ex) DB.set('activity', ex.id, row); else DB.add('activity', row);
-  toast('12주차 준비 상황을 제출했습니다.'); render();
+  toast(WK_PREP+'주차 준비 상황을 제출했습니다.'); render();
 }
 /* 🔴 18차 — 「점수」가 아니라 「수준」을 보여 줍니다.
    교수님 지시: "단순히 점수가 아닌 각 점수의 의미, 수준이 설명되어 있어서
                 학생들이 그걸 기반으로 평가할 수 있도록"
-   ▸ 12주차 「최종발표 평가 기준 공개」와 [루브릭 만들기]의 미리보기가 이 함수 하나를 씁니다. */
+   ▸ 11주차(WK_PREP) 「최종발표 평가 기준 공개」와 [루브릭 만들기]의 미리보기가 이 함수 하나를 씁니다. */
 function rubricTable(round){
   var D = (typeof RUBRIC_DRAFT!=='undefined' && RUBRIC_DRAFT[round]) || {};
   var h = D.run ? '<div class="note"><b>진행</b> '+esc(D.run)+(D.note? '<br>'+esc(D.note):'')+'</div>' : '';
@@ -4699,7 +4741,7 @@ function accToggle(id){
      · "교수들에게는 동일하게 13-14주차에 팀과 순서를 선정하거나 수정할 수 있게 해줘"
 
    🔑 누가 정하나
-     · 4·7주차  — **담당교수가 자기 강좌 8팀**만 (기존 「수정은 자기 강좌만」 규칙 그대로)
+     · 4·8주차  — **담당교수가 자기 강좌 8팀**만 (2026-10-01 O-0122: 중간발표2 7→8주차) (기존 「수정은 자기 강좌만」 규칙 그대로)
      · 13·14주차 — **교수 3명 모두**가 **24팀 전체**를 정하고 고칩니다 (통합 발표)
 
    🔴 세 분이 같은 배정표 하나를 고칩니다 — 조용히 덮어쓰지 않습니다
@@ -4709,11 +4751,11 @@ function accToggle(id){
      ③ 무엇이 바뀌었는지 **변경 기록(audit)**에 남깁니다
    ========================================================================== */
 
-var PRES_WEEKS = [4, 7, 13, 14];
+var PRES_WEEKS = PRES_WEEKS_ALL.slice();   /* [4, 8, 13, 14] — WEEKDEF 의 eval 주차에서 옵니다(O-0122) */
 function presJoint(n){ return n===13 || n===14; }            /* 3개 강좌 합동 주차 */
 /* 그 주에 발표하는 팀 수
    · 13·14주차(합동) — 24팀을 12+12로 나눕니다 (그대로)
-   · 4·7주차 — 그 강좌에 「실제로 있는 팀 수」입니다. 정원(8)에 고정하지 않습니다.
+   · 4·8주차 — 그 강좌에 「실제로 있는 팀 수」입니다. 정원(8)에 고정하지 않습니다.
      반마다 팀 수가 다릅니다(예: F2 7팀). 7팀 반은 7팀으로 순서를 정할 수 있어야 합니다.
      (2026-09-16 · 7팀 반에서 「8팀이어야」로 막히던 버그 수정) */
 function presNeed(n, cid){ return presJoint(n) ? 12 : presPool(n, cid).length; }
@@ -4749,7 +4791,7 @@ var presPick    = {};      /* 화면에서 고르는 중인 값 {n: {teamId:순�
 function presCanEdit(n){
   if(!isProf()) return false;
   if(presJoint(n)) return true;                 /* 🔴 13·14주차는 교수 3명 모두 */
-  return canEdit(myClass());                    /* 4·7주차는 자기 강좌만 */
+  return canEdit(myClass());                    /* 4·8주차는 자기 강좌만 */
 }
 
 /* ---- 저장 -------------------------------------------------------------- */
@@ -4800,7 +4842,7 @@ function presSave(n, ids, seenRev){
   return {ok:true, auto:auto};
 }
 
-/* 무작위 순서 — 4·7주차에서 교수님이 매번 손으로 번호를 매기지 않으시도록 */
+/* 무작위 순서 — 4·8주차에서 교수님이 매번 손으로 번호를 매기지 않으시도록 */
 function presShuffle(n){
   var pool = presPool(n).slice();
   for(var i=pool.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
@@ -4947,12 +4989,12 @@ function rbPick(r, cur, onclickTpl){
 }
 
 /* ==========================================================================
-   4·7·13·14주차 — 동료평가
+   4·8·13·14주차 — 동료평가
    🔒 지켜야 할 것
      · 자기 팀은 목록에 아예 없습니다 (evalTargets 에서 걸러냅니다)
      · 「누가 평가했는지」는 어느 화면에도 그리지 않습니다
      · 소요 시간을 조용히 기록
-   🔴 2026-09-14 교수님 방침 (4·7·13·14 공통):
+   🔴 2026-09-14 교수님 방침 (4·8·13·14 공통):
      ① 서술(코멘트) 입력을 완전히 없앱니다 — 점수만 매깁니다.
         (2026-09-14 추가 지시 — 교수평가 prof_eval 의 「한 줄 총평」도 없앴습니다.
          이제 세 평가(교수·팀간·팀내) 모두 점수만 매깁니다. 관련 폼은 p7_profpanel.js.)
@@ -5208,7 +5250,7 @@ function submitIntra(studentId, round){
     '제출하면 수정할 수 없습니다.\n정말 이대로 제출할까요?';
   APP.confirm(msg, doIt);
 }
-/* ⛔ 옛 saveFilm() — 7주차 영상 제출은 18차에 폐기했습니다.
+/* ⛔ 옛 saveFilm() — 옛 7주차(현 8주차) 영상 제출은 18차에 폐기했습니다.
    교수님 지시: "각 주차에 직접 학생이 파일을 제출하는 건 만들 필요 없어. 따로 받을 예정" */
 
 /* ==========================================================================
@@ -5287,22 +5329,26 @@ function weekProf(n, def){
     /* 📢 5주차 — 1회차(4주차) 발표평가 결과를 학생에게 공개 (R9) */
     h += discloseControlCard('r1','1회차 발표평가 결과 (4주차)',
       '학생은 5주차에서 우리 팀 총점과 팀간 순위(같은 반 안)를 봅니다. 교수·동료 세부 점수는 공개되지 않습니다.'); }
-  /* ⛔ 6·9·10·12주차는 2026-08-23 「타이틀만」으로 바뀌어 학생 제출이 없습니다 →
+  /* 🙅 학생 입력 없는 주차(6·7·10·11 — O-0122 재번호)는 교수 화면 맨 위에 그 사실을 알립니다 */
+  if(noInputWeek(def)) h = '<div class="note g">✅ <b>이 주차는 학생이 앱에 입력·제출할 것이 없습니다.</b> '+
+    '수업 시간 팀 활동'+(def.tutor? ' · 아래 <b>교수 튜터링 '+def.tutor+'회차</b>를 팀별로 기록하시면 됩니다.' : '입니다.')+
+    ' 학생 화면에도 「입력할 것 없음」으로 보이며, 진행률·미제출 집계에서 빠집니다.</div>' + h;
+  /* ⛔ 6·9·10·12주차(현 6·7·10·11)는 2026-08-23 「타이틀만」으로 바뀌어 학생 제출이 없습니다 →
      제출 현황판(profActivityPanel)을 걷어냈습니다. 교수 튜터링(def.tutor)은 위에서 그대로 나옵니다. */
-  /* 📢📝 8주차 — 중간고사 점수 입력(R11) + 2회차(7주차) 발표평가 결과 공개(R9) */
-  if(n===8){
+  /* 📢📝 9주차(WK_MID) — 중간고사 점수 입력(R11) + 2회차(8주차) 발표평가 결과 공개(R9) */
+  if(n===WK_MID){
     h += examInputCard('mid','중간고사',
-      '중간고사 점수는 여기서 입력합니다. 아래 버튼을 누르면 [최종 점수 계산] 화면의 중간고사 칸이 바로 열립니다. 저장하면 학생은 9주차에서 본인 점수만 봅니다.');
-    h += discloseControlCard('r2','2회차 발표평가 결과 (7주차)',
-      '학생은 8주차에서 우리 팀 총점과 팀간 순위(같은 반 안)를 봅니다. 교수·동료 세부 점수는 공개되지 않습니다.');
+      '중간고사 점수는 여기서 입력합니다. 아래 버튼을 누르면 [최종 점수 계산] 화면의 중간고사 칸이 바로 열립니다. 저장하면 학생은 '+(WK_MID+1)+'주차에서 본인 점수만 봅니다.');
+    h += discloseControlCard('r2','2회차 발표평가 결과 ('+WK_R2+'주차)',
+      '학생은 '+WK_MID+'주차에서 우리 팀 총점과 팀간 순위(같은 반 안)를 봅니다. 교수·동료 세부 점수는 공개되지 않습니다.');
   }
-  /* 📢 9주차 — 본인 중간고사 점수 공개 (R9) */
-  if(n===9){
+  /* 📢 10주차(중간고사 다음 주) — 본인 중간고사 점수 공개 (R9) */
+  if(n===WK_MID+1){
     h += discloseControlCard('mid','중간고사 점수',
-      '학생은 9주차에서 본인 중간고사 점수만 봅니다. 점수 입력은 8주차(또는 [최종 점수 계산])에서 합니다.');
+      '학생은 '+(WK_MID+1)+'주차에서 본인 중간고사 점수만 봅니다. 점수 입력은 '+WK_MID+'주차(또는 [최종 점수 계산])에서 합니다.');
   }
-  if(n===11){ h += profExcursionPanel(cids); }   /* 🚌 11주차 — 팀별 견학 의견 모아 보기 */
-  if(n===12){ var TR=tlRounds();       /* 🔴 튜터링 회차는 WEEKDEF 의 tutor 표시에서 자동으로 옵니다(6주차 제거 시 자동 반영) */
+  if(n===WK_TRIP){ h += profExcursionPanel(cids); }   /* 🚌 12주차(WK_TRIP) — 팀별 견학 의견 모아 보기 */
+  if(n===WK_PREP){ var TR=tlRounds();       /* 🔴 튜터링 회차는 WEEKDEF 의 tutor 표시에서 자동으로 옵니다(6주차 제거 시 자동 반영) */
     h += '<div class="card"><h3>튜터링 '+TR.length+'회 완주 확인</h3><div class="scroll"><table><tr><th>팀</th>'+
       TR.map(function(r){return '<th class="c">'+r.round+'회<br><span class="muted" style="font-weight:400">'+r.week+'주</span></th>';}).join('')+'<th class="c">계</th></tr>'+
       DB.get('teams', function(t){return cids.indexOf(t.classId)>=0;}).map(function(t){
@@ -5415,11 +5461,11 @@ function teamWorkPeek(teamId, n){
 }
 
 /* ==========================================================================
-   평가 주차(4·7·13·14) — 교수 화면  (2026-08-22 · 18차 전면 개편)
+   평가 주차(4·8·13·14 — 2026-10-01 O-0122 재번호) — 교수 화면  (2026-08-22 · 18차 전면 개편)
    --------------------------------------------------------------------------
    ⛔ 학생 파일 제출 자리는 없습니다 — 교수님이 따로 받으십니다.
    🔑 채점 권한
-     · 4·7주차   — 담당교수가 **자기 강좌 8팀**만
+     · 4·8주차   — 담당교수가 **자기 강좌 8팀**만
      · 13·14주차 — 🔴 **교수 3명 모두가 그 주 발표하는 12팀 전부**를 평가합니다
                     (교수님 확정: "13-14주차에 교수평가는 3명이 다 같이해")
                     → 기존 「수정은 자기 강좌만」 규칙의 **예외**입니다.
@@ -5429,7 +5475,7 @@ function teamWorkPeek(teamId, n){
 function evalCanScore(n, classId){
   if(!isProf()) return false;
   if(presJoint(n)) return true;          /* 13·14주차 예외 — 다른 강좌 팀도 채점 */
-  return canEdit(classId);               /* 4·7주차 — 자기 강좌만 */
+  return canEdit(classId);               /* 4·8주차 — 자기 강좌만 */
 }
 
 /* 한 교수가 한 팀에 매긴 점수 */
@@ -5648,7 +5694,7 @@ function peSet(teamId, rubricId, v){
 function saveProfEval(teamId, round, n){
   var t = team(teamId);
   if(!evalCanScore(n, t.classId)){
-    toast(presJoint(n)? '평가 권한이 없습니다.' : (t.classId===myClass()? '[내 강좌] 보기로 바꾸신 뒤 입력해 주세요.' : '4·7주차는 자기 강좌만 채점할 수 있습니다.'));
+    toast(presJoint(n)? '평가 권한이 없습니다.' : (t.classId===myClass()? '[내 강좌] 보기로 바꾸신 뒤 입력해 주세요.' : WK_R1+'·'+WK_R2+'주차는 자기 강좌만 채점할 수 있습니다.'));
     return;
   }
   var rb = DB.get('rubrics', function(r){ return r.round===round && r.kind==='prof'; });
@@ -5840,7 +5886,7 @@ function approveTopic(id, ok){
   DB.log(ok?'최종 주제 승인':'최종 주제 보완 요청', id); toast(ok?'승인했습니다.':'보완을 요청했습니다.'); render();
 }
 
-/* 🚌 11주차 — 현장견학 일지 모아 보기 (2026-08-26 개인별로 전환)
+/* 🚌 12주차(WK_TRIP) — 현장견학 일지 모아 보기 (2026-08-26 개인별로 전환)
    학생마다 자기 일지 하나를 씁니다(팀이 없어도 씁니다). 교수님이 학생별로 모두 봅니다.
    팀이 있으면 팀별로 묶고, 팀이 없으면 「팀 없음」으로 묶습니다 — 아무도 빠지지 않게. 읽기 전용입니다. */
 function profExcursionPanel(cids){
@@ -5874,7 +5920,7 @@ function profExcursionPanel(cids){
   return h+'</div>';
 }
 
-/* 6·9·10·12주차 — 활동 현황 */
+/* (쓰이지 않음) 6·7·10·11주차 — 활동 현황 */
 function profActivityPanel(n, cids){
   var teams=DB.get('teams', function(t){return cids.indexOf(t.classId)>=0;});
   var help=[];
@@ -5899,7 +5945,7 @@ function profActivityPanel(n, cids){
 
    ▸ 팀을 하나씩 골라 들어갔다 나오는 방식이 아닙니다. 수업 중에 돌아다니며 쓰는
      화면이라 8팀이 죽 늘어서 있고, 팀마다 따로 저장됩니다.
-   ▸ 🔴 3주차(1회차)가 확정 사양입니다. 5·6·9·10·12주차는 「틀만」 재사용하며,
+   ▸ 🔴 3주차(1회차)가 확정 사양입니다. 5·7·10·11주차(O-0122 재번호)는 「틀만」 재사용하며,
      그 주차에 무엇을 보여줄지는 아직 교수님이 정하지 않으셨습니다.
      그래서 주차별 규칙을 손으로 박아 넣지 않고 원칙 하나로만 굴립니다 —
      「그 시점에 그 팀이 가진 것을 자동으로 보여준다」
@@ -6168,6 +6214,7 @@ function viewAdmin(){
        순서대로 나오도록, 일지이므로, 요일과 주차가 모두 표기될 수 있도록 해줘"
       (원문 「투터링」은 오타가 분명하여 「튜터링」으로 씁니다.)
 
+   ▸ 2026-10-01 (O-0122) 현행 회차 ↔ 주차: 1차 3주 · 2차 5주 · 3차 7주(10/7) · 4차 10주 · 5차 11주.
    ▸ 회차 ↔ 주차 대응은 손으로 박지 않습니다. WEEKDEF 의 tutor 표시에서 뽑고,
      날짜는 주차설정(weeks 표)에서 읽습니다 — 휴강·보강으로 날짜가 바뀌어도
      일지가 저절로 따라갑니다. 요일도 그 날짜에서 계산합니다.
@@ -6254,7 +6301,7 @@ function tlTeamRow(t, round, no){
 /* ---- 종이 한 장 ---- */
 function tlSheet(round, cid){
   var week=tlWeekOf(round), w=week? wrow(week) : null;
-  var iso = w? w.date : '';
+  var iso = (w && w.date) || (week? (wdef(week)||{}).date : '') || '';   /* 원격은 주차행에 날짜가 없어 WEEKDEF 계산값으로 */
   var cap = teamCap();
   var teams=DB.get('teams', function(t){return t.classId===cid;})
     .sort(function(a,b){return a.no-b.no;});
@@ -6448,7 +6495,7 @@ var stuQ='', stuSort='no', stuFilter='all', stuClass='', stuEdit=null, stuDel=nu
 
 /* 그 학생이 낼 것을 얼마나 냈나 (열려 있는 주차 기준) */
 function submitSummary(st){
-  var open = WEEKDEF.filter(function(d){ return d.kind!=='notice' && d.kind!=='result' && wState(d.n)!=='닫힘'; });
+  var open = WEEKDEF.filter(function(d){ return d.kind!=='notice' && d.kind!=='result' && !noInputWeek(d) && wState(d.n)!=='닫힘'; });
   var done = open.filter(function(d){ return hasSubmitted(st, d.n); }).length;
   return {done:done, all:open.length};
 }
@@ -7368,7 +7415,7 @@ var DEMO = {
             auto: '2026-09-09 11:'+(20+ti),
             nextdate:''});
         }
-        /* ⚠️ 최종 주제(5주차)·견학 의견(11주차)은 「학기 끝」 상태이므로 fill()이 아니라
+        /* ⚠️ 최종 주제(5주차)·견학 의견(12주차)은 「학기 끝」 상태이므로 fill()이 아니라
            fillScores()에서 채웁니다 — fill()은 「4주차 시점」 스냅샷입니다(그래서 가주제만 있고 최종은 없음). */
         made++;
       });
@@ -7438,7 +7485,7 @@ var DEMO = {
       });
     });
 
-    /* 🎤 18차 — 4·7주차 발표 순서 (강좌마다 8팀) · 13·14주차 배정 (24팀 → 12+12) */
+    /* 🎤 18차 — 4·8주차 발표 순서 (강좌마다 8팀) · 13·14주차 배정 (24팀 → 12+12) */
     CIDS.forEach(function(cid){
       var ts=DB.get('teams', function(t){return t.classId===cid;}).sort(function(a,b){return a.no-b.no;});
       [4,7].forEach(function(wn){ ts.forEach(function(t,i){ DB.add('assign',{n:wn, teamId:t.id, order:i+1}); }); });
@@ -7449,8 +7496,8 @@ var DEMO = {
       w13.forEach(function(t,i){ DB.add('assign',{n:13, teamId:t.id, order:i+1}); });
       w14.forEach(function(t,i){ DB.add('assign',{n:14, teamId:t.id, order:i+1}); });
       var m=DB.d.settings; if(!m.assignMeta) m.assignMeta={};
-      m.assignMeta[13]={rev:1, by:'곽호석', at:'2026-11-18 09:40'};
-      m.assignMeta[14]={rev:1, by:'곽호석', at:'2026-11-18 09:40'};
+      m.assignMeta[13]={rev:1, by:'곽호석', at:'2026-11-11 09:40'};
+      m.assignMeta[14]={rev:1, by:'곽호석', at:'2026-11-11 09:40'};
     })();
 
     /* 4주차(1회차) 평가 */
@@ -7494,7 +7541,7 @@ var DEMO = {
      🧮 19차 — 「학기 끝」까지 채우기
      --------------------------------------------------------------------------
      fill() 이 채우는 것은 4주차(1회차)까지입니다. 성적 화면·점수표를 눈으로
-     확인하려면 7주차(2회차)·13·14주차(3회차) 평가와 출석·중간·기말이 있어야
+     확인하려면 8주차(2회차)·13·14주차(3회차) 평가와 출석·중간·기말이 있어야
      하므로 여기서 이어 채웁니다.
      ⛔ fill() 안에 넣지 않았습니다 — 4주차 시점을 보여 주는 것이 fill() 의 몫이고,
         여기서 채우는 것은 「학기 끝 무렵」이라 다른 상태입니다.
@@ -7504,7 +7551,7 @@ var DEMO = {
     if(!DB.d.__demo) DEMO.fill();
     DB.hold();
     try{
-      /* 2회차(7주차) · 3회차(13·14주차) 교수평가 */
+      /* 2회차(8주차) · 3회차(13·14주차) 교수평가 */
       [2,3].forEach(function(rd){
         var rbP = DB.get('rubrics', function(x){return x.round===rd && x.kind==='prof';});
         var lst = (rd===3) ? DB.get('assign', function(a){return a.n===13;})
@@ -7621,7 +7668,7 @@ var DEMO = {
             at:'2026-09-23 11:2'+ti, editor:ed});
         });
       });
-      /* 🚌 11주차 견학 의견 — 강좌마다 앞 4팀만 (교수님이 「참여/미참여 팀」을 눌러 보시게) */
+      /* 🚌 12주차(WK_TRIP) 견학 의견 — 강좌마다 앞 4팀만 (교수님이 「참여/미참여 팀」을 눌러 보시게) */
       var evc=['현장에서 배양 공정을 직접 보니 수업의 스케일업 개념이 확 이해되었습니다.',
                '안전 장비를 갖추는 절차가 생각보다 까다로워 인상 깊었습니다.',
                '우리 팀 주제와 연결해 볼 부분이 많아 보고서에 반영하겠습니다.'];
@@ -7633,7 +7680,7 @@ var DEMO = {
           var ms=DB.get('members', function(m){return m.teamId===t.id;});
           ms.slice(0, ti===0?3:(ti===3?1:2)).forEach(function(m,k){
             var st=DB.one('students', m.studentId); if(!st) return;
-            DB.add('excursion',{teamId:t.id,classId:cid,week:11,author:st.name,authorId:st.id,
+            DB.add('excursion',{teamId:t.id,classId:cid,week:WK_TRIP,author:st.name,authorId:st.id,
               text:evc[k%evc.length],at:'2026-11-04 1'+(4+k)+':'+(20+ti)});
           });
         });
@@ -7652,7 +7699,7 @@ var DEMO = {
       /* ⛔ 결석생 예시는 여기(DEMO)에 넣지 않습니다 — 자체 점검(runCheck)이 이 fillScores 를
          기반 시나리오로 쓰는데, 결석 학생이 섞이면 「팀내 감점 손검산」 검사의 대상 학생과 겹쳐
          총점이 어긋납니다. 결석생 화면 확인은 발표평가 화면의 [결석]·[공결] 체크로 하시면 됩니다. */
-      DB.log('예시 데이터 — 학기 끝까지', '7주차·13·14주차 평가 + 출석·중간·기말 점수 + 최종 주제·견학 의견 + 성적 공개 ON');
+      DB.log('예시 데이터 — 학기 끝까지', '8주차·13·14주차 평가 + 출석·중간·기말 점수 + 최종 주제·견학 의견 + 성적 공개 ON');
     }finally{ DB.release(); }
   },
 
@@ -7702,7 +7749,7 @@ function admDemo(){
       '<div class="note" style="margin-top:8px">누르면 <b>팀 편성 · 가주제 · 튜터링 · 4주차 평가</b>가 가짜로 채워지고, '+
       '「오늘」이 <b>4주차 수업일(9/16)</b>로 옮겨져 평가 화면까지 눌러 보실 수 있습니다.</div>')+
     '<div class="note" style="margin-top:10px"><b>🧮 성적 화면·점수표까지 보시려면</b><br>'+
-      '위 예시는 <b>4주차까지</b>입니다. 아래를 누르면 <b>7주차·13·14주차 평가와 출석·중간·기말 점수</b>까지 채워져 '+
+      '위 예시는 <b>4주차까지</b>입니다. 아래를 누르면 <b>8주차·13·14주차 평가와 출석·중간·기말 점수</b>까지 채워져 '+
       '[최종 점수 계산]과 [점수표 인쇄]를 눌러 보실 수 있습니다.<br>'+
       '<span class="muted">F2 강좌 몇 명은 「아직 입력 안 함」으로 일부러 남겨 둡니다 — 덜 찬 상태의 화면도 보셔야 하므로.</span></div>'+
     '<button class="btn full" onclick="demoScores()">🧮 학기 끝까지 채우기 (성적·점수표 확인용)</button>'+
@@ -7721,7 +7768,7 @@ function demoFill(){
 }
 function demoScores(){
   if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY && !(typeof PREVIEW!=='undefined'&&PREVIEW)){ if(window.toast)toast('운영 중에는 사용할 수 없습니다.'); return; }
-  APP.confirm('7주차·13·14주차 평가와 출석·중간고사·기말고사 점수를 가짜로 채웁니다.'+
+  APP.confirm('8주차·13·14주차 평가와 출석·중간고사·기말고사 점수를 가짜로 채웁니다.'+
     '\n(예시 데이터가 없으면 먼저 채웁니다.)\n\n진행할까요?', function(){
       DEMO.fillScores();
       toast('학기 끝까지 채웠습니다 — [최종 점수 계산]을 눌러 보십시오.');
@@ -7957,14 +8004,17 @@ function autoPlace(cid){
 /* ==========================================================================
    🚫 주차에서 뺀 날 — 화면에 남깁니다 (2026-08-21 · 13차)
    --------------------------------------------------------------------------
-   🔴 그냥 날짜만 바꿔 두면 나중에 누군가 「왜 10/7이 없지?」 하고 되돌립니다.
+   🔴 그냥 날짜만 바꿔 두면 나중에 누군가 「왜 11/18이 없지?」 하고 되돌립니다.
       그래서 「뺐다」는 사실과 이유를 주차 설정 화면 두 곳에 붙여 둡니다.
+   🔴 2026-10-01 (O-0122): 뺀 날이 10/7 → 11/18 로 바뀌었습니다(10/7 은 7주차 수업).
+      날짜는 주차행(weeks)에 없을 수 있어(원격 — 상태만 저장) WEEKDEF 계산값을 대신 씁니다(wkDate).
    ========================================================================== */
+function wkDate(n){ var w=wrow(n), d=wdef(n); return (w&&w.date) || (d&&d.date) || ''; }
 function skipFirstShifted(){                 /* 몇 주차부터 밀렸는가 */
   if(!WEEK_SKIP.length) return 0;
   var first=null;
   WEEK_SKIP.forEach(function(x){ if(first===null || x.date<first) first=x.date; });
-  for(var i=0;i<WEEKDEF.length;i++){ var w=wrow(WEEKDEF[i].n); if(w && w.date>first) return WEEKDEF[i].n; }
+  for(var i=0;i<WEEKDEF.length;i++){ var dt=wkDate(WEEKDEF[i].n); if(dt && dt>first) return WEEKDEF[i].n; }
   return 0;
 }
 function weekSkipNote(){
@@ -7977,9 +8027,9 @@ function weekSkipNote(){
     '<br><span class="muted">⚠️ 휴강이 또 생기면 <b>날짜 15개를 손으로 고치지 마시고</b> 그 날 하루만 「뺀 날」에 더하면 됩니다 — 나머지가 저절로 밀립니다.</span></div>';
 }
 function weekSkipRow(n, cols){               /* n주차와 다음 주차 사이에 낀 날 */
-  var w=wrow(n), nx=wrow(n+1); if(!w) return '';
+  var a=wkDate(n), b=wkDate(n+1); if(!a) return '';
   return WEEK_SKIP.filter(function(x){
-      return dayDiff(w.date, x.date)>0 && (!nx || dayDiff(x.date, nx.date)>0); })
+      return dayDiff(a, x.date)>0 && (!b || dayDiff(x.date, b)>0); })
     .map(function(x){
       return '<tr><td class="c">🚫</td><td colspan="'+cols+'" class="muted">'+
         '<b>'+mdw(x.date)+'</b> — '+esc(x.why)+' <b>(주차에서 제외)</b></td></tr>'; }).join('');
@@ -7991,8 +8041,8 @@ function admWeekState(){
     '<div class="scroll"><table><tr><th class="c">주</th><th>활동</th><th>수업 날짜</th><th>마감</th><th>제출 창</th><th class="c">상태</th></tr>'+
     /* 🔴 날짜·상태를 정하는 표는 실제 수업 15주차만 — 16주차(kind:'result')는 날짜가 없는 결과확인 주차라 제외 */
     WEEKDEF.filter(function(d){ return d.kind!=='result'; }).map(function(d){ var w=wrow(d.n)||{};
-      return '<tr><td class="c">'+d.n+'</td><td>'+esc(d.title)+'</td><td>'+mdw(w.date)+'</td><td class="muted">'+esc(w.due||'-')+'</td>'+
-        '<td>'+(d.win==='수업시간'?'<span class="bg red">🔴 수업시간</span>':esc(d.win||'-'))+'</td>'+
+      return '<tr><td class="c">'+d.n+'</td><td>'+esc(d.title)+'</td><td>'+mdw(wkDate(d.n))+'</td><td class="muted">'+esc(w.due||'-')+'</td>'+
+        '<td>'+(d.win==='수업시간'?'<span class="bg red">🔴 수업시간</span>':(noInputWeek(d)?'<span class="muted">학생 입력 없음</span>':esc(d.win||'-')))+'</td>'+
         '<td class="c"><span class="bg '+(w.state==='열림'?'green':(w.state==='마감'?'gray':'gray'))+'">'+w.state+'</span> '+
         (canEdit(myClass())? '<button class="btn sm" onclick="cycleState('+d.n+')">바꾸기</button>':'')+'</td></tr>'+
         weekSkipRow(d.n, 5); }).join('')+
@@ -8134,7 +8184,7 @@ function admRubric(){
            : DB.get('peerMember', function(x){return x.round===rbRound;}).length;
   var lock = used>0;
   var h='<div class="card"><h2>루브릭 만들기</h2>'+
-    '<div class="btnrow">'+[[1,'1회차 (4주)'],[2,'2회차 (7주)'],[3,'3회차 (13·14주)']].map(function(x){
+    '<div class="btnrow">'+[[1,'1회차 (4주)'],[2,'2회차 ('+WK_R2+'주)'],[3,'3회차 (13·14주)']].map(function(x){
       return '<button class="btn sm '+(rbRound===x[0]?'pri':'')+'" onclick="rbRound='+x[0]+';render()">'+x[1]+'</button>';}).join('')+'</div>'+
     '<div class="btnrow" style="margin-top:6px">'+[['prof','교수평가'],['inter','동료평가 팀간'],['intra','동료평가 팀내']].map(function(x){
       return '<button class="btn sm '+(rbKind===x[0]?'pri':'')+'" onclick="rbKind=\''+x[0]+'\';render()">'+x[1]+'</button>';}).join('')+'</div>'+
@@ -8208,7 +8258,7 @@ function openRb(){
 function admProfEval(){
   return '<div class="card"><h2>평가 입력</h2>'+
     '<p class="muted">평가는 <b>그 주차 화면 안에서</b> 합니다. 화면을 두 벌 만들지 않기 위해서입니다.</p>'+
-    '<div class="menu">'+[4,7,13,14].map(function(n){
+    '<div class="menu">'+PRES_WEEKS_ALL.map(function(n){
       return '<button class="btn" onclick="go(\'week\',{n:'+n+'})">'+n+'주차 '+esc(wdef(n).title)+' 평가</button>';}).join('')+'</div></div>';
 }
 
@@ -8234,10 +8284,10 @@ function admWeekMaster(){
     /* 🔴 날짜를 정하는 표는 실제 수업 15주차만 — 16주차(kind:'result')는 날짜가 없는 결과확인 주차라 제외 */
     WEEKDEF.filter(function(d){ return d.kind!=='result'; }).map(function(d){ var w=wrow(d.n)||{};
       return '<tr><td class="c">'+d.n+'</td>'+
-        '<td><input type="date" id="wm_d_'+d.n+'" value="'+esc(w.date)+'"></td>'+
+        '<td><input type="date" id="wm_d_'+d.n+'" value="'+esc(wkDate(d.n))+'"></td>'+
         '<td style="width:90px"><input type="time" id="wm_o_'+d.n+'" value="'+esc(w.open)+'"></td>'+
         '<td><input type="text" id="wm_u_'+d.n+'" value="'+esc(w.due||'')+'"></td>'+
-        '<td>'+esc(d.win||'-')+'</td>'+
+        '<td>'+(noInputWeek(d)?'<span class="muted">학생 입력 없음</span>':esc(d.win||'-'))+'</td>'+
         '<td class="c"><button class="btn sm pri" onclick="saveWM('+d.n+')">저장</button></td></tr>'+
         weekSkipRow(d.n, 5); }).join('')+
     '</table></div>'+ weekSkipNote() +
@@ -8295,7 +8345,7 @@ function admSettings(){
     '⛔ 학생이 두 번 이상 손대야 하는 절차는 만들지 않습니다.</div>'+
     '<div class="note">🔴 <b>13·14주차 교수평가는 교수 3명이 모두 12팀 전부</b>를 평가합니다 (교수님 확정 · 2026-08-22). '+
       '팀 점수는 <b>세 분의 평균</b>입니다. ⛔ 선택지를 남겨 두지 않았습니다 — 잘못 건드리면 점수가 흔들립니다.</div>'+
-          '<div class="chk"><input type="checkbox" '+(s.midFeedback?'checked':'')+' onchange="DB.d.settings.midFeedback=this.checked;DB.flush()"><span>8주차 「팀별 중간 피드백」을 쓴다 <span class="muted">(⏸️ 교수님 확인 대기 — 필요 없다고 하시면 만들지 않습니다)</span></span></div>'+
+          '<div class="chk"><input type="checkbox" '+(s.midFeedback?'checked':'')+' onchange="DB.d.settings.midFeedback=this.checked;DB.flush()"><span>'+WK_MID+'주차 「팀별 중간 피드백」을 쓴다 <span class="muted">(⏸️ 교수님 확인 대기 — 필요 없다고 하시면 만들지 않습니다)</span></span></div>'+
     '<div class="chk"><input type="checkbox" '+(s.showGrade?'checked':'')+' onchange="DB.d.settings.showGrade=this.checked;DB.flush()"><span>점수를 학생에게 공개한다 <span class="muted">(기본 비공개)</span></span></div>'+
     '<div class="note a">⚠️ 아래 토글들은 <b>아직 확정되지 않은 결정</b>입니다. 설계서 I절에 적어 두었고(팀 편성 방식·팀장 지정 2건은 2026-08-20 교수님 지시로 해소), 정해지면 <b>숫자·토글만 바꿔 끼우면</b> 됩니다.</div></div>';
 }
@@ -8337,7 +8387,7 @@ function admDash(){
       return '<tr>'+(SESS.scope==='all'?'<td class="nw">'+esc(classProf(t.classId))+'</td>':'')+
         '<td class="nw">'+esc(t.no+'팀 '+t.name)+'</td>'+
         WEEKDEF.map(function(d){
-          if(d.kind==='notice' || d.kind==='result') return '<td class="c">—</td>';
+          if(d.kind==='notice' || d.kind==='result' || noInputWeek(d)) return '<td class="c">—</td>';
           if(wState(d.n)==='닫힘') return '<td class="c">🔒</td>';
           /* 🔴 3주차는 제출함이 3개라 「1/3」이 있습니다 — 다 낸 것과 섞이면 안 됩니다 (8차) */
           if(d.kind==='research'){ var c=subCount(t.id);
@@ -8346,12 +8396,12 @@ function admDash(){
           var mark = done===ms.length? '✅' : (done>0? '⚠️':'⬛');
           return '<td class="c">'+mark+'</td>'; }).join('')+'</tr>';
     }).join('')+'</table></div>'+
-    '<p class="muted">✅완료 ⚠️일부 💾임시저장 ⬛미제출 🔒미개시 —해당없음 · 8·11주는 낼 것이 없어 「—」입니다. '+
+    '<p class="muted">✅완료 ⚠️일부 💾임시저장 ⬛미제출 🔒미개시 —해당없음 · 6·7·9·10·11·12주는 학생이 앱에 낼 것이 없어 「—」입니다. '+
     '3주차는 제출함이 3개라 <b>⚠️1/3</b>처럼 몇 개를 냈는지 함께 적습니다.</p></div>';
 
   /* 3-3 평가 현황 */
   h += '<div class="card"><h3>3-3. 평가 현황</h3><div class="scroll"><table><tr><th>회차</th><th class="c">팀간 제출</th><th class="c">팀내 제출</th></tr>'+
-    [[1,'1회차 (4주)'],[2,'2회차 (7주)'],[3,'3회차 (13·14주)']].map(function(r){
+    [[1,'1회차 ('+WK_R1+'주)'],[2,'2회차 ('+WK_R2+'주)'],[3,'3회차 (13·14주)']].map(function(r){
       var ss=DB.get('students', function(s){return cids.indexOf(s.classId)>=0&&s.active!==false;});
       var i=ss.filter(function(s){return DB.one('peerTeam', function(p){return p.round===r[0]&&p.evaluator===s.id;});}).length;
       var m=ss.filter(function(s){return DB.one('peerMember', function(p){return p.round===r[0]&&p.evaluator===s.id;});}).length;
@@ -8706,10 +8756,10 @@ function hasProfNum(rows){
       교수님이 보여 주신 본보기도 「출석 중간 기말 발표1 발표2 최종발표」였습니다. */
 var MK_ITEMS = [
   {k:'att', label:'출석',         short:'출석',     w:11, where:'학기 전체',  kind:'input'},
-  {k:'mid', label:'중간고사',     short:'중간',     w:11, where:'8주차',     kind:'input', added:true},
+  {k:'mid', label:'중간고사',     short:'중간',     w:11, where:WK_MID+'주차', kind:'input', added:true},
   {k:'fin', label:'기말고사',     short:'기말',     w:11, where:'15주차',    kind:'input', added:true},
   {k:'r1',  label:'중간발표평가1', short:'발표1',    w:12, where:'4주차',     kind:'auto', round:1},
-  {k:'r2',  label:'중간발표평가2', short:'발표2',    w:12, where:'7주차',     kind:'auto', round:2},
+  {k:'r2',  label:'중간발표평가2', short:'발표2',    w:12, where:WK_R2+'주차', kind:'auto', round:2},
   {k:'r3',  label:'최종발표평가',  short:'최종발표', w:17, where:'13·14주차', kind:'auto', round:3}
 ];
 var MK_DEFAULT = {att:20, mid:10, fin:15, r1:10, r2:20, r3:25};
@@ -9148,7 +9198,7 @@ function mkWeightBox(cid){
   var rule = evalRule(cid);
   return '<div class="card"><h3>2. 발표평가 안쪽 비중 <span class="muted">— 교수 '+rule.profW+' : 동료 '+rule.peerW+'</span></h3>'+
     (rule.profW===40 && rule.peerW===60
-      ? '<div class="note g">✅ <b>교수평가 40% : 학생 동료평가 60%</b> — 교수님이 정해 주신 값입니다. 4·7·13·14주차 <b>세 회차 모두 같습니다</b>.</div>'
+      ? '<div class="note g">✅ <b>교수평가 40% : 학생 동료평가 60%</b> — 교수님이 정해 주신 값입니다. 4·8·13·14주차 <b>세 회차 모두 같습니다</b>.</div>'
       : '<div class="note r">⚠️ <b>지금 '+rule.profW+' : '+rule.peerW+'로 되어 있습니다.</b> 교수님이 정하신 값은 <b>40 : 60</b>입니다.</div>')+
     '<div class="note">🔴 <b>동료평가 60%는 「팀간 평가」만 셉니다.</b> 「팀내 평가」(같은 팀원끼리 주는 기여도 점수)는 <b>모으기만 하고 점수 계산에 넣지 않습니다</b> — 쓰임이 아직 정해지지 않았습니다.</div>'+
     '<div class="note">🔴 <b>학생 평가는 최고 1개·최저 1개를 빼고 평균</b>을 냅니다(악의적인 점수를 막기 위해). '+
@@ -9176,7 +9226,7 @@ function mkGaps(cid){
   /* 🟠 평가 미완료(결석 아님) 후보 — 아직 확정 안 함. 교수가 4-3 ②에서 확인·확정 */
   var missPend = missEntries(cid).filter(function(e){ return e.teamDone && !e.info.ok && e.stat.incomplete; }).length;
   if(missPend) gaps.push('평가 미완료 학생 확인 대기 '+missPend+'건 (아래 4-3 ②에서 확인)');
-  [[1,'4주차'],[2,'7주차'],[3,'13·14주차']].forEach(function(r){
+  [[1,WK_R1+'주차'],[2,WK_R2+'주차'],[3,'13·14주차']].forEach(function(r){
     var sub = ss.filter(function(s){ return DB.one('peerTeam', function(p){return p.round===r[0]&&p.evaluator===s.id;}); }).length;
     if(ss.length && sub<ss.length) gaps.push(r[1]+' 동료평가 제출률 '+Math.round(sub/ss.length*100)+'% ('+sub+'/'+ss.length+'명)');
   });
@@ -9390,7 +9440,7 @@ function mkAbsentPanel(cid){
   /* ── ① 결석생 ─────────────────────────────────────────────── */
   h += '<div class="hr" style="margin-top:10px"></div><b>① 결석생</b> <span class="muted">— 발표평가 화면에서 결석 체크한 학생</span>';
   if(!entries.length){
-    h += '<div class="note g" style="margin-top:6px">✅ 이 강좌에는 결석(평가 제외)으로 체크된 학생이 없습니다. 결석 체크는 발표평가 화면(4·7·13·14주차)에서 합니다.</div>';
+    h += '<div class="note g" style="margin-top:6px">✅ 이 강좌에는 결석(평가 제외)으로 체크된 학생이 없습니다. 결석 체크는 발표평가 화면(4·8·13·14주차)에서 합니다.</div>';
   }else{
     h += '<div class="btnrow" style="margin:6px 0 4px"><span class="bg '+(pendN?'red':'green')+'">확정 대기 '+pendN+'명</span>'+
          '<span class="bg gray">확정됨 '+confN+'명</span></div>';
@@ -10212,10 +10262,10 @@ function mkIntraPanel(cid){
   });
   if(!rows.length){
     h += '<div class="note">아직 팀내 평가가 쌓이지 않았거나, 모든 학생이 팀 평균에 가깝습니다. '+
-         '<span class="muted">(팀내 평가는 4·7·14주차에 학생이 냅니다)</span></div>';
+         '<span class="muted">(팀내 평가는 4·8·14주차에 학생이 냅니다)</span></div>';
   }else{
     h += '<div class="scroll"><table><tr><th>이름 (학번)</th><th>팀</th>'+
-      '<th class="c">1회차<br><span class="muted">4주</span></th><th class="c">2회차<br><span class="muted">7주</span></th><th class="c">3회차<br><span class="muted">13·14주</span></th>'+
+      '<th class="c">1회차<br><span class="muted">4주</span></th><th class="c">2회차<br><span class="muted">'+WK_R2+'주</span></th><th class="c">3회차<br><span class="muted">13·14주</span></th>'+
       '<th class="c">평균</th><th>종합 판정</th></tr>'+
       rows.map(function(j){
         return '<tr><td class="nw">'+esc(j.st.name)+' <span class="muted">('+esc(j.st.no)+')</span></td>'+
@@ -10276,7 +10326,7 @@ function intraPeerPreview(st){
    ========================================================================== */
 function intraNoticeText(){
   var c=IN();
-  return '이 수업의 발표평가(4주차·7주차·13-14주차)는 교수평가 40% + 학생 동료평가 60%로 매깁니다.\n'+
+  return '이 수업의 발표평가('+WK_R1+'주차·'+WK_R2+'주차·13-14주차)는 교수평가 40% + 학생 동료평가 60%로 매깁니다.\n'+
     '동료평가는 「팀간 평가」이며, 받은 평가가 5건 이상이면 가장 높은 점수 1개와 가장 낮은 점수 1개를 빼고 평균을 냅니다.\n\n'+
     '이와 별도로 같은 팀원끼리 하는 「팀내 평가」를 받습니다. 팀내 평가에서 '+
     '우리 팀 평균의 '+Math.round(c.t3*100)+'%에 못 미치는 평가를 세 회차 가운데 '+c.minRounds+'회 이상 받으면, '+
@@ -10919,21 +10969,21 @@ function alBlocks(n, cid){
   /* 0. 언제·무엇을 */
   out.push({t:'수업 개요', type:'table', head:['항목','내용'], w:[2200,7438], rows:[
     ['주차', n+'주차'],
-    ['일시', tlLongDate(w.date)+' '+tlClassTime(cid)],
+    ['일시', tlLongDate((w&&w.date)||def.date)+' '+tlClassTime(cid)],
     ['활동', def.full],
     ['강좌', cid+(tlRoom(cid)? ' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid)],
-    ['제출 창', def.win? def.win : '앱 제출 없음 (안내만)'],
+    ['제출 창', def.win? def.win : (noInputWeek(def)? '학생 입력 없음 (수업 시간 팀 활동)' : '앱 제출 없음 (안내만)')],
     ['마감', w.due? w.due : '—'],
     ['주차 상태', w.state]
   ]});
 
-  /* 1. 안내문 (8·11·15주차) */
+  /* 1. 안내문 (9·12·15주차) */
   var nt=DB.one('weekNotice', function(x){ return x.classId===cid && x.n===n; });
   if(nt) out.push({t:'안내문 — '+nt.title, type:'p', text:nt.body});
 
-  /* 1b. 현장견학 의견 (11주차) — 학생이 앱에 남긴 견학 소감 (앱 저장 데이터) */
-  if(n===11){
-    var exs=DB.get('excursion', function(x){ return x.classId===cid && x.week===11; })
+  /* 1b. 현장견학 의견 (12주차 · WK_TRIP) — 학생이 앱에 남긴 견학 소감 (앱 저장 데이터) */
+  if(n===WK_TRIP){
+    var exs=DB.get('excursion', function(x){ return x.classId===cid && (x.week===WK_TRIP || x.week===undefined); })
               .sort(function(a,b){ return (a.at||'')<(b.at||'')? -1:1; });
     out.push({t:'현장견학 의견', type:'table', head:['작성자','의견','작성시각'], w:[2400,5638,1600],
       rows: exs.length? exs.map(function(x){ return [alDash(x.author), alDash(x.text), alDash(x.at)]; })
@@ -11013,13 +11063,13 @@ function alBlocks(n, cid){
                 sb? alDash(sb.editor) : '—', sb? alDash(sb.at) : '—'];
       })});
   }
-  /* 🔴 2026-08-23 20차 — 6·9·10·12주차는 「타이틀만」 주차입니다(학생 앱 입력 삭제, p5_weekstu.js).
+  /* 🔴 2026-08-23 20차 — 6·9·10·12주차(2026-10-01 재번호: 6·7·10·11)는 「타이틀만」 주차입니다(학생 앱 입력 삭제, p5_weekstu.js).
      영상은 KOSAC·드라이브로, 앱 개발은 수업에서 진행하므로 앱에 저장되는 학생 제출물이 없습니다.
      그래서 옛 영상 블록(kind:'video')·팀 활동 블록(kind:'activity')·12주차 준비상황 표는 뽑지 않습니다.
      ⛔ 이 블록들을 되살리면 「아직 내지 않았습니다」만 가득한 빈 표가 출력됩니다.
      ▸ 교수 튜터링(tutor:N)은 교수가 앱에 쓰는 기록이라 그대로 남습니다(아래 7번). */
   if(def.kind==='prep'){
-    /* 12주차 학생 입력(준비도·발표자·남은 과제)은 제외. 「최종발표 평가기준 공개」는
+    /* 11주차(WK_PREP) 학생 입력(준비도·발표자·남은 과제)은 제외. 「최종발표 평가기준 공개」는
        학생 입력이 아니라 교수가 앱에 공개한 정보(rubrics)라 안내로 남깁니다. */
     var op=DB.get('rubrics', function(r){ return r.round===3 && r.openAt; });
     out.push({t:'최종발표 평가기준 공개', type:'p',
@@ -11027,7 +11077,7 @@ function alBlocks(n, cid){
                      : '아직 공개하지 않았습니다.'});
   }
 
-  /* 6. 평가 주차 (4·7·13·14) */
+  /* 6. 평가 주차 (4·8·13·14) */
   if(def.kind==='eval'){
     var rd=def.round;
     var asg=DB.get('assign', function(a){ return a.n===n; }).sort(function(a,b){ return a.order-b.order; });
@@ -11105,7 +11155,7 @@ function alSheet(n, cid){
         '<td class="k">강좌</td><td class="v">'+esc(cid)+(tlRoom(cid)?' ('+esc(tlRoom(cid))+')':'')+'</td></tr>'+
       '<tr>'+
         '<td class="k">담당교수</td><td class="v">'+esc(classProf(cid))+'</td>'+
-        '<td class="k">일시</td><td class="v">'+esc(tlLongDate(w.date))+' '+esc(tlClassTime(cid))+'</td></tr>'+
+        '<td class="k">일시</td><td class="v">'+esc(tlLongDate((w&&w.date)||(wdef(n)||{}).date))+' '+esc(tlClassTime(cid))+'</td></tr>'+
       '<tr>'+
         '<td class="k">활동</td><td class="v">'+esc(def.full)+'</td>'+
         '<td class="k">출력일</td><td class="v">'+esc(nowStr().slice(0,10))+'</td></tr>'+
@@ -11128,7 +11178,7 @@ function alDocxBody(list, cid){
     out += dxP('학생의 주차별 활동기록 — '+n+'주차', {b:true, sz:30, align:'center', page: idx>0, after:60, keep:true});
     out += dxP('바이오기초설계 (2026학년도 2학기) · '+cid+(tlRoom(cid)? ' ('+tlRoom(cid)+')':'')+
                ' · 담당교수 '+classProf(cid), {sz:18, align:'center', color:'444444', after:40});
-    out += dxP(tlLongDate(w.date)+' '+tlClassTime(cid)+' · '+def.full,
+    out += dxP(tlLongDate((w&&w.date)||def.date)+' '+tlClassTime(cid)+' · '+def.full,
                {sz:18, align:'center', color:'444444', rule:true, after:120});
     if(DB.d && DB.d.__demo)
       out += dxP('※ 예시(가짜) 데이터입니다 — 실제 기록이 아닙니다.', {sz:16, color:'8A1010', after:100});
@@ -11866,7 +11916,7 @@ function viewSurveyOne(){
 }
 
 /* ==========================================================================
-   ⑦ 현장견학 일지 A4 — 11주차 현장견학 일지 (R13 · 2026-08-26 개인별로 전환)
+   ⑦ 현장견학 일지 A4 — 12주차(WK_TRIP) 현장견학 일지 (R13 · 2026-08-26 개인별로 전환)
    ▸ 값은 컬렉션 excursion 그대로 · 작성자·시각 포함.
    ▸ 견학 일지는 개인별입니다 — 학생마다 자기 일지 하나. 팀이 있으면 팀별로 묶고,
      팀이 없는 학생 일지는 「팀 없음」으로 빠짐없이 싣습니다.
@@ -11889,7 +11939,7 @@ function exData(cid){
 function exSheet(cid){
   var data = exData(cid), total=0, wrote=0, nTeams=0;
   data.forEach(function(d){ total+=d.list.length; if(d.t){ nTeams++; if(d.list.length) wrote++; } });
-  var nt = DB.one('weekNotice', function(x){ return x.classId===cid && x.n===11; });
+  var nt = DB.one('weekNotice', function(x){ return x.classId===cid && x.n===WK_TRIP; });
   var body = '';
   data.forEach(function(d){
     body += '<div class="alh">'+esc(d.title)+' <span class="dim">— '+d.list.length+'개</span></div>';
@@ -11902,7 +11952,7 @@ function exSheet(cid){
       }).join('')+'</tbody></table>';
   });
   return '<div class="a4sheet flow" data-what="'+esc(cid+' 현장견학 일지')+'"><div class="a4in">'+
-    '<div class="tlhead"><div class="tltitle">현장견학 일지 — 11주차</div><div class="tlrule"></div>'+
+    '<div class="tlhead"><div class="tltitle">현장견학 일지 — '+WK_TRIP+'주차</div><div class="tlrule"></div>'+
     '<table class="tlmeta"><tr>'+
       '<td class="k">교과목</td><td class="v">바이오기초설계 (2026학년도 2학기)</td>'+
       '<td class="k">강좌</td><td class="v">'+esc(cid)+(tlRoom(cid)?' ('+esc(tlRoom(cid))+')':'')+'</td></tr>'+
@@ -11922,7 +11972,7 @@ function exSheet(cid){
 function exDocxBody(cid){
   var data = exData(cid), total=0, wrote=0, nTeams=0;
   data.forEach(function(d){ total+=d.list.length; if(d.t){ nTeams++; if(d.list.length) wrote++; } });
-  var out = dxP('현장견학 일지 — 11주차', {b:true, sz:30, align:'center', after:60, keep:true})+
+  var out = dxP('현장견학 일지 — '+WK_TRIP+'주차', {b:true, sz:30, align:'center', after:60, keep:true})+
     dxP('바이오기초설계 (2026학년도 2학기) · 강좌 '+cid+(tlRoom(cid)?' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid),
         {sz:18, align:'center', color:'444444', after:40})+
     dxP(tlLongDate(wrow(11).date)+' · 참여 '+wrote+' / '+nTeams+'팀 · 일지 '+total+'개',
@@ -11952,14 +12002,14 @@ function viewExcursion(){
   var cchips = (vis.length>1)? '<div class="btnrow" style="margin-top:6px">'+
     vis.map(function(c){ return '<button class="btn sm '+(cid===c?'pri':'')+'" onclick="exGo(\''+c+'\')">'+esc(clsFull(c))+'</button>'; }).join('')+'</div>' : '';
   var h = topbar() +
-    '<div class="card noprint"><h3>현장견학 일지 <span class="muted">— 11주차 · A4 세로 · PDF·워드</span></h3>'+
+    '<div class="card noprint"><h3>현장견학 일지 <span class="muted">— '+WK_TRIP+'주차 · A4 세로 · PDF·워드</span></h3>'+
     cchips +
     '<div class="btnrow" style="margin-top:10px">'+
       '<button class="btn pri" onclick="tlPrint()">🖨 인쇄 · PDF로 저장</button>'+
       '<button class="btn" onclick="exDownloadDocx(\''+cid+'\')">📄 워드(.docx)로 받기</button>'+
       '<button class="btn" onclick="go(\'outputs\')">📄 출력물 허브</button>'+
     '</div>'+
-    '<div class="hint">11주차 현장견학에서 팀별로 학생들이 남긴 의견을 작성자·시각과 함께 A4로 정리합니다.</div>'+
+    '<div class="hint">'+WK_TRIP+'주차 현장견학에서 팀별로 학생들이 남긴 의견을 작성자·시각과 함께 A4로 정리합니다.</div>'+
     '<div id="tlWarn"></div></div>';
   h += '<div class="a4wrap"><div class="a4scale">'+ exSheet(cid) +'</div></div>';
   setTimeout(tlFit, 0);
@@ -11983,9 +12033,10 @@ function wpCells(def){
   else if(K==='team'){ act.push('팀 구성(팀명·의미)'); act.push('가주제 3개 선정'); act.push('KOSAC 소개'); res.push('팀 편성표'); res.push('가주제 3개'); }
   else if(K==='research'){ act.push('가주제 조사 · 자료 제출'); res.push('조사 자료 제출물'); }
   else if(K==='finaltopic'){ act.push('최종 주제 1개 선정 · 1~2분 광고 콘티(스토리라인) 작성'); res.push('최종 주제 · 광고 콘티(스토리라인)'); }
-  else if(K==='video'){ act.push('광고 영상 제작'); act.push('7주차 발표 평가 기준 안내(읽기)'); res.push('광고 영상 가편집본'); }
-  else if(K==='activity'){ act.push('팀 활동'); res.push('팀 활동 기록'); if(def.boost) act.push('영상 보강(필요 팀)'); }
-  else if(K==='prep'){ act.push('팀 활동'); act.push('최종발표 평가기준 공개'); res.push('발표 준비 상황'); res.push('평가기준 공개'); }
+  else if(K==='video'){ act.push('광고 영상 제작'); act.push(WK_R2+'주차 발표 평가 기준 안내(읽기)'); res.push('광고 영상 가편집본'); }
+  /* 🙅 O-0122 — 팀활동 주차는 학생 입력이 없습니다 → 결과물은 튜터링 일지(아래 def.tutor)뿐 */
+  else if(K==='activity'){ act.push('수업 시간 팀 활동(학생 입력 없음)'); if(def.boost) act.push('영상 보강(필요 팀)'); }
+  else if(K==='prep'){ act.push('수업 시간 팀 활동(학생 입력 없음)'); act.push('최종발표 평가기준 공개'); res.push('평가기준 공개'); }
   else if(K==='eval'){
     var lbl = def.round===1?'중간발표1' : def.round===2?'중간발표2' : (def.n===13?'최종발표1':'최종발표2');
     act.push(lbl+' 발표 · 평가');
@@ -11996,8 +12047,8 @@ function wpCells(def){
     if(def.intra) res.push('팀내 평가 결과');
   }
   else if(K==='notice'){
-    if(def.n===8){ act.push('중간고사(서면 평가)'); res.push('중간고사 점수'); }
-    else if(def.n===11){ act.push('현장견학'); res.push('팀별 견학 의견(견학 일지)'); }
+    if(def.n===WK_MID){ act.push('중간고사(서면 평가)'); res.push('중간고사 점수'); }
+    else if(def.n===WK_TRIP){ act.push('현장견학'); res.push('팀별 견학 의견(견학 일지)'); }
     else act.push(def.full||def.title);
   }
   else if(K==='final'){ act.push('기말고사'); act.push('최종설문조사'); res.push('기말 점수'); res.push('최종설문 응답'); }
@@ -12013,7 +12064,7 @@ function weeklyPlanSheet(){
   var rows = WEEKDEF.map(function(def){
     var w = wrow(def.n), c = wpCells(def);
     return '<tr>'+
-      '<td class="c"><b>'+def.n+'주</b><br><span class="dim">'+esc(wpMd(w?w.date:''))+'</span></td>'+
+      '<td class="c"><b>'+def.n+'주</b><br><span class="dim">'+esc(wpMd((w&&w.date)||def.date))+'</span></td>'+
       '<td class="nm">'+esc(def.title)+'</td>'+
       '<td>'+c.act.map(function(x){return esc(x);}).join('<br>')+'</td>'+
       '<td>'+c.res.map(function(x){return esc(x);}).join('<br>')+'</td></tr>';
@@ -12050,7 +12101,7 @@ function weeklyPlanDocxBody(){
         {sz:18, align:'center', color:'444444', rule:true, after:120});
   var rows = WEEKDEF.map(function(def){
     var w = wrow(def.n), c = wpCells(def);
-    return [def.n+'주\n'+wpMd(w?w.date:''), def.title, c.act.join('\n'), c.res.join('\n')];
+    return [def.n+'주\n'+wpMd((w&&w.date)||def.date), def.title, c.act.join('\n'), c.res.join('\n')];
   });
   out += dxTable(['주차','제목','활동 내용','결과물(산출물)'], rows, [1000, 1900, 3369, 3369], {sz:15, align:{0:'center'}});
   out += dxP('· 활동 내용은 그 주에 한 일, 결과물은 앱·기록에 남는 산출물입니다. 상세 기록은 [학생의 주차별 활동기록]에서 뽑으십시오.',
@@ -12176,7 +12227,7 @@ function viewOutputs(){
     '<button class="btn" onclick="svrGo(\''+cid+'\')">설문 그래프·엑셀</button>');
 
   h += card('⑦ 현장견학 일지',
-    '11주차 현장견학에서 팀별로 학생들이 남긴 의견을 작성자·시각과 함께 (팀 전체 한 파일).',
+    WK_TRIP+'주차 현장견학에서 팀별로 학생들이 남긴 의견을 작성자·시각과 함께 (팀 전체 한 파일).',
     '<button class="btn pri" onclick="exGo(\''+cid+'\')">현장견학 일지 A4</button>');
 
   h += card('⑧ 원자료 (CSV · 엑셀)',
@@ -13313,7 +13364,7 @@ var TBL = {
   topics       : { db:'topics',        cols:[['teamId','team_id'],['kind','kind'],['no','no']] },
   submits      : { db:'submits',       cols:[['teamId','team_id'],['topicId','topic_id'],['week','week'],['rev','rev']] },
   activity     : { db:'activity',      cols:[['teamId','team_id'],['week','week']] },
-  excursion    : { db:'excursion',     cols:[['teamId','team_id']] },   /* 🚌 11주차 견학 의견 — 서버 표 excursion 필요(아래 loadAll 안전장치 참고) */
+  excursion    : { db:'excursion',     cols:[['teamId','team_id']] },   /* 🚌 12주차(WK_TRIP) 견학 의견 — 서버 표 excursion 필요(아래 loadAll 안전장치 참고) */
   tutoring     : { db:'tutoring',      cols:[['teamId','team_id'],['round','round']] },
   surveys      : { db:'surveys',       cols:[['kind','kind']] },
   questions    : { db:'questions',     cols:[['surveyId','survey_id'],['order','ord']] },
@@ -13678,7 +13729,7 @@ var DBR = {
       return self.loadTable(t)
         .then(function(rows){ return {t:t, rows:(rows||[]).map(function(r){ return self.fromDb(t,r); })}; },
           function(err){
-            /* 🚌 11주차 견학 의견 표(excursion)는 서버에 나중에 만들 수 있습니다.
+            /* 🚌 12주차 견학 의견 표(excursion)는 서버에 나중에 만들 수 있습니다.
                아직 없더라도 이 표 하나 때문에 전체 시작(Promise.all)이 깨지지 않게, 이 표만 빈 채로 넘어갑니다.
                (저장을 시도하면 DBR.failed 에 쌓여 사람이 보게 되므로 「조용히 사라지는」 사고는 아닙니다.)
                ⛔ 다른 표는 그대로 크게 실패하게 둡니다 — 그래야 진짜 문제를 놓치지 않습니다. */
@@ -14486,12 +14537,12 @@ window.__protoCheck = function(){
       DB.add('topics',{teamId:T.id,kind:'최종',no:1,title:'미세조류 실내 공기 정화 화분',
         summary:'세 가주제 중 실현 가능성이 가장 높다고 판단했습니다.',from:tps[0].id,ok:false,comment:''});
       [[6,{plan:'광고 영상 기획 의도입니다.',stage:'기획',link:''}],
-       [7,{link:'https://youtu.be/x',did:'우리 팀 영상',next:'설명'}],
-       [9,{did:'이번 주 한 일',next:'다음 주 할 일'}],
-       [12,{stage:'준비 중',did:'학생26',next:'남은 과제'}]].forEach(function(x){
+       [8,{link:'https://youtu.be/x',did:'우리 팀 영상',next:'설명'}],
+       [10,{did:'이번 주 한 일',next:'다음 주 할 일'}],
+       [11,{stage:'준비 중',did:'학생26',next:'남은 과제'}]].forEach(function(x){
         var row=x[1]; row.teamId=T.id; row.week=x[0]; row.at=nowStr(); DB.add('activity', row);
       });
-      [5,6,7,9,12].forEach(function(n2){ DB.set('weeks','w'+n2,{state:'열림'}); previewOpen[n2]=true; });
+      [5,6,7,8,10,11].forEach(function(n2){ DB.set('weeks','w'+n2,{state:'열림'}); previewOpen[n2]=true; });
       var screens = [
         ['2주차 팀',      stMyTeam(DB.one('teams',T.id), DB.one('students',A.id))],
         ['2주차 가주제',  stTopics(DB.one('teams',T.id))],
@@ -14545,7 +14596,7 @@ window.__protoCheck = function(){
       /* 검사하며 만든 것 치우기 */
       DB.get('topics', function(x){return x.teamId===T.id&&x.kind==='최종';}).forEach(function(x){ DB.del('topics', x.id); });
       DB.get('activity', function(x){return x.teamId===T.id;}).forEach(function(x){ DB.del('activity', x.id); });
-      [5,6,7,9,12].forEach(function(n2){ DB.set('weeks','w'+n2,{state:'닫힘'}); delete previewOpen[n2]; });
+      [5,6,7,8,10,11].forEach(function(n2){ DB.set('weeks','w'+n2,{state:'닫힘'}); delete previewOpen[n2]; });
       SESS.me=DB.one('students', A.id); VIEW={name:'week',p:{n:3}};
     })();
 
@@ -14724,16 +14775,17 @@ window.__protoCheck = function(){
     ok('🔴 사전↔최종을 「짝 이름」으로 이음 (번호가 어긋나 있으므로)', pairOk,
        '사전14=최종13 AI_TOOLS · 사전15=최종14 AI_PAID · 사전18=최종17 AI_HABIT1 · 1~12=H01~H12 · 짝 없는 문항은 빈칸');
 
-    /* 11-9. ⚠️ 21번 경고는 교수에게만 보이고 학생에게는 안 보이는가 */
+    /* 11-9. 🔴 21번 문항 주차 표기 (2026-10-01 대표님 승인 O-0122): 「3·6·11」 → 「3·5·7·10·11」.
+             어긋남이 없어졌으므로 교수용 ⚠️ 표시도 없어야 하고, 학생·교수 어느 화면에도 옛 표기가 없어야 합니다. */
     var warnQ=qq.filter(function(q){return q.no===21;})[0];
     var stuScr=stSurvey(15,'최종');
     SESS.acc=DB.one('accounts','p2'); SESS.role='super'; SESS.me=null; SESS.scope='mine';
     svPick=post.id; VIEW={name:'admin',p:{p:'survey'}};
     var profScr=admSurvey();
-    ok('⚠️ 「3·6·11주차」 어긋남 표시 — 교수 화면에만 있고 학생 화면에는 없음',
-       !!warnQ && !!warnQ.warn && profScr.indexOf('운영표의 교수 튜터링은')>=0 &&
-       stuScr.indexOf('운영표의 교수 튜터링은')<0 && warnQ.text.indexOf('3·6·11주차')>=0,
-       '원문 「'+warnQ.text+'」는 그대로 두고, 교수 화면에만 ⚠️ 표시');
+    ok('🔴 21번 문항 주차 표기 「3·5·7·10·11주차」 · 옛 「3·6·11」·⚠️ 표시 0건',
+       !!warnQ && !warnQ.warn && warnQ.text.indexOf('3·5·7·10·11주차')>=0 &&
+       (profScr+stuScr).indexOf('3·6·11')<0 && (profScr+stuScr).indexOf('운영표의 교수 튜터링은')<0,
+       '「'+(warnQ? warnQ.text : '-')+'」');
 
     /* 되돌리기 — 검사하며 만든 응답·동의·임시저장을 지웁니다 */
     DB.get('answers', function(a){return a.studentId===A.id;}).forEach(function(a){ DB.del('answers', a.id); });
@@ -14871,13 +14923,15 @@ window.__protoCheck = function(){
               done:true, at:nowStr(), nextdate:''}).id);
           }
         });
-        [3,5,6,9,10,12].forEach(function(n5){
+        [3,5,6,7,10,11].forEach(function(n5){
           previewOpen[n5]=true; VIEW={name:'week', p:{n:n5}};
           var html='';
           try{ html=viewWeek(); }catch(e){ html='오류 '+e.message; }
           var hit=[];
           if(html.indexOf('ZZQ')>=0)                hit.push('튜터링 원문');
-          if(html.indexOf('튜터링')>=0)              hit.push('「튜터링」 낱말');
+          /* 🔴 2026-10-01 (O-0122) — 「이 주차에 교수 튜터링이 있다」는 안내는 이제 학생에게 보입니다(대표님 지시).
+                막는 것은 튜터링 「기록」(원문·교수 입력판·회차 제목)입니다. */
+          if(html.indexOf('id="tu_t_')>=0 || /교수 튜터링 \d회차/.test(html)) hit.push('교수 튜터링 입력판');
           if(html.indexOf('>확인했습니다<')>=0)       hit.push('[확인했습니다] 버튼');
           if(html.indexOf('수업 후에 올라옵니다')>=0)  hit.push('옛 안내문');
           if(html.indexOf('다음까지 할 일')>=0)       hit.push('다음까지 할 일');
@@ -14888,9 +14942,9 @@ window.__protoCheck = function(){
       }
       SESS.acc=k2.a; SESS.role=k2.r; SESS.me=k2.m; SESS.scope=k2.sc; VIEW=k2.v;
     })();
-    ok('🔴 학생 화면(3·5·6·9·10·12주차)에 튜터링 내용이 어디에도 안 보임', leakW.length===0,
+    ok('🔴 학생 화면(3·5·6·7·10·11주차)에 튜터링 기록이 어디에도 안 보임', leakW.length===0,
        leakW.length? '⛔ 샌 곳: '+leakWhy.join(' / ')
-                   : '여섯 주차 화면 글자를 전부 훑음 — 원문·「튜터링」 낱말·[확인했습니다]·옛 안내문 0건');
+                   : '여섯 주차 화면 글자를 전부 훑음 — 원문·교수 입력판·[확인했습니다]·옛 안내문 0건');
 
     /* 10-6. 🔴 학생 확인 기록(tutorAck)이 데이터에도 화면에도 남아 있지 않은가 */
     var ackGone = (typeof window.stTutor==='undefined') && (typeof window.ackTutor==='undefined')
@@ -15035,7 +15089,7 @@ window.__protoCheck = function(){
   var leak=[];
   DB.get('students', function(s){return s.active!==false && s.teamId;}).forEach(function(s){
     var keep=SESS.me; SESS.me=s;
-    [4,7,13,14].forEach(function(n){
+    PRES_WEEKS_ALL.forEach(function(n){
       var tg=evalTargets(wdef(n));
       if(tg.some(function(t){return t.id===s.teamId;})) leak.push(sn(s)+' '+n+'주차');
     });
@@ -15252,12 +15306,12 @@ window.__protoCheck = function(){
   ok('슈퍼 관리자는 3개 강좌 수정 가능', canEdit('F1')&&canEdit('F2')&&canEdit('F3'), '단 변경 기록이 남습니다');
 
   /* ==========================================================================
-     10-B. 📅 주차 날짜 — 10/7 보강 제외 (2026-08-21 · 13차)
+     10-B. 📅 주차 날짜 — 11/18 휴강 제외 · 10/7 수업 (2026-10-01 · O-0122 · 옛 13차 10/7 제외를 대체)
      ========================================================================== */
-  /* 10-B-1. 🔴 10/7 이 15주 어디에도 없는가 (16주차 result 는 날짜가 없어 제외) */
+  /* 10-B-1. 🔴 11/18 이 15주 어디에도 없는가 (16주차 result 는 날짜가 없어 제외) */
   var d15 = WEEKDEF.filter(function(w){ return w.kind!=='result'; }).map(function(w){ var r=wrow(w.n); return r?r.date:''; });
   var skipHit = WEEK_SKIP.filter(function(x){ return d15.indexOf(x.date)>=0; });
-  ok('🔴 10/7(수)이 어느 주차에도 없음', skipHit.length===0,
+  ok('🔴 11/18(수)이 어느 주차에도 없음 · 10/7(수)은 7주차', skipHit.length===0 && d15[6]==='2026-10-07',
      '뺀 날 '+WEEK_SKIP.map(function(x){return x.date+'('+x.why+')';}).join(' · ')+' — 15줄 어디에도 나오지 않음');
 
   /* 10-B-2. 🔴 15개가 전부 수요일이고, 7일 간격이되 뺀 날만 건너뛰는가 */
@@ -15271,22 +15325,35 @@ window.__protoCheck = function(){
   ok('🔴 15개 날짜가 전부 수요일 · 7일 간격 · 뺀 날만 건너뜀',
      notWed.length===0 && gapBad.length===0,
      notWed.length? '⛔ 수요일 아님: '+notWed.join(',') : (gapBad.length? '⛔ 간격 이상: '+gapBad.join(',') :
-       d15[0]+' ~ '+d15[14]+' · 6주(9/30) → 7주(10/14)는 10/7을 건너뛰어 14일'));
+       d15[0]+' ~ '+d15[14]+' · 12주(11/11) → 13주(11/25)는 11/18을 건너뛰어 14일'));
 
   /* 10-B-3. 새 날짜표가 교수님이 주신 값과 한 줄씩 맞는가 */
   var WANT = ['2026-08-26','2026-09-02','2026-09-09','2026-09-16','2026-09-23','2026-09-30',
-              '2026-10-14','2026-10-21','2026-10-28','2026-11-04','2026-11-11','2026-11-18',
+              '2026-10-07','2026-10-14','2026-10-21','2026-10-28','2026-11-04','2026-11-11',
               '2026-11-25','2026-12-02','2026-12-09'];
   var wrong = [];
   WANT.forEach(function(x,i){ if(d15[i]!==x) wrong.push((i+1)+'주차 '+d15[i]+'(맞는값 '+x+')'); });
+  /* 10-B-3b. 🔴 주차별 내용(제목)이 대표님 확정표와 한 줄씩 맞는가 (O-0122) */
+  var TWANT = ['오리엔테이션','팀·가주제','팀활동1','중간발표1','팀활동2','팀활동3','팀활동4','중간발표2',
+               '중간고사','팀활동5','팀활동6','현장견학','최종발표1','최종발표2','기말·설문','최종결과'];
+  var twrong = TWANT.filter(function(x,i){ return !wdef(i+1) || wdef(i+1).title!==x; });
+  ok('🔴 주차별 제목이 대표님 확정표(O-0122)와 16줄 일치', twrong.length===0,
+     twrong.length? '⛔ '+twrong.join(',') : '6 팀활동3 · 7 팀활동4 · 8 중간발표2 · 9 중간고사 · 10 팀활동5 · 11 팀활동6 · 12 현장견학 · 13 최종발표1');
+  var attrOk = wdef(7).kind==='activity' && wdef(7).tutor===3 && wdef(7).boost===true &&
+               wdef(10).kind==='activity' && wdef(10).tutor===4 && !wdef(10).boost &&
+               wdef(11).kind==='prep' && wdef(11).tutor===5 &&
+               wdef(8).round===2 && wdef(8).film===true && WK_R2===8 && WK_MID===9 && WK_TRIP===12 && WK_PREP===11 &&
+               PRES_WEEKS_ALL.join()==='4,8,13,14' && PRES_WEEKS.join()==='4,8,13,14';
+  ok('🔴 팀활동4=활동·튜터3·보강 · 팀활동5=활동·튜터4 · 팀활동6=prep·튜터5 · 중간발표2=8주 round2·film', attrOk,
+     '평가주차 '+PRES_WEEKS_ALL.join('·')+' · 중간고사 '+WK_MID+'주 · 견학 '+WK_TRIP+'주 · 마무리 '+WK_PREP+'주');
   ok('새 날짜표 15줄이 교수님 값과 한 줄씩 일치', wrong.length===0,
      wrong.length? '⛔ '+wrong.join(' / ') : '1주 8/26 ~ 15주 12/9 · 15줄 전건 일치');
 
   /* 10-B-4. ⭐ 학사일정 세 가지가 맞아떨어졌는가 (이번 정정으로 풀린 것) */
-  var mid = wrow(8).date, fin = wrow(15).date, trip = wrow(11).date;
+  var mid = wrow(WK_MID).date, fin = wrow(15).date, trip = wrow(WK_TRIP).date;
   ok('중간고사 · 기말고사 · 현장견학이 학사일정 안에 들어옴',
      mid>='2026-10-19' && mid<='2026-10-23' && fin>='2026-12-07' && fin<='2026-12-11' && trip==='2026-11-11',
-     '8주 중간고사 '+mid+' (공식 10/19~23) · 15주 기말 '+fin+' (공식 12/7~11) · 11주 견학 '+trip+' (계획서 11/11)');
+     WK_MID+'주 중간고사 '+mid+' (공식 10/19~23) · 15주 기말 '+fin+' (공식 12/7~11) · '+WK_TRIP+'주 견학 '+trip+' (계획서 11/11)');
 
   /* 10-B-5. 마감일이 수업일을 따라 함께 밀렸는가 */
   var dueBad = WEEKDEF.filter(function(w){
@@ -15297,7 +15364,7 @@ window.__protoCheck = function(){
     return r.due !== want; });
   ok('마감일이 수업일을 따라 함께 밀림', dueBad.length===0,
      dueBad.length? '⛔ '+dueBad.map(function(w){return w.n+'주차';}).join(',') :
-       '9주차 마감 '+wrow(9).due+' · 12주차 마감 '+wrow(12).due+' (「마감일까지」=수업일+6일)');
+       '5주차 마감 '+wrow(5).due+' · 8주차 마감 '+wrow(8).due+' · 7주차(입력 없음) 마감 「'+(wrow(7).due||'없음')+'」 (「마감일까지」=수업일+6일)');
 
   /* 10-B-6. 🔴 날짜를 손으로 15개 적어 두지 않았는가 (한 곳만 고쳐도 다 밀리는가) */
   var keepStart = WEEK_START, keepSkip = WEEK_SKIP.slice();
@@ -15305,22 +15372,25 @@ window.__protoCheck = function(){
   var re = []; (function(){ var cur=WEEK_START;
     WEEKDEF.forEach(function(w){ while(weekSkipOf(cur)) cur=isoAdd(cur,7); re.push(cur); cur=isoAdd(cur,7); }); })();
   WEEK_SKIP.length=0; keepSkip.forEach(function(x){ WEEK_SKIP.push(x); });
-  ok('🔴 뺀 날에 한 줄 더하면 뒤 주차가 저절로 밀림', re[10]==='2026-11-18' && re[14]==='2026-12-16',
-     '시험 삼아 11/11을 빼 보니 11주차가 11/18로, 15주차가 12/16으로 저절로 밀림 (되돌려 놓았습니다)');
+  ok('🔴 뺀 날에 한 줄 더하면 뒤 주차가 저절로 밀림', re[11]==='2026-11-25' && re[14]==='2026-12-16',
+     '시험 삼아 11/11을 빼 보니 12주차가 (11/18도 빠져) 11/25로, 15주차가 12/16으로 저절로 밀림 (되돌려 놓았습니다)');
 
-  /* 10-B-7. 화면에 「10/7은 뺀 날」이 남아 있는가 */
+  /* 10-B-7. 화면에 「11/18은 뺀 날」이 남아 있는가 · 10/7 은 더 이상 「뺀 날」로 나오지 않는가 */
   var keepW={a:SESS.acc,r:SESS.role,m:SESS.me,sc:SESS.scope,v:VIEW};
   SESS.acc=DB.one('accounts','p2'); SESS.role='super'; SESS.me=null; SESS.scope='mine';
   VIEW={name:'admin',p:{p:'weekmaster'}}; var wmH=viewAdmin();
   VIEW={name:'admin',p:{p:'weekstate'}};  var wsH=viewAdmin();
-  ok('주차 설정 두 화면에 「10/7 — 수업 없음」이 남아 있음',
+  var skipRow12 = weekSkipRow(12, 5);
+  ok('주차 설정 두 화면에 「11/18 — 2학년 현장견학으로 휴강」이 남아 있음',
      wmH.indexOf('주차에서 제외')>=0 && wsH.indexOf('주차에서 제외')>=0 &&
-     wmH.indexOf('10/7(수)')>=0 && wsH.indexOf('10/7(수)')>=0,
-     '표 안(6주 → 7주 사이)에 🚫 줄 + 표 아래 안내 — 「왜 10/7이 없지」 하고 되돌리는 것을 막습니다');
+     wmH.indexOf('11/18(수)')>=0 && wsH.indexOf('11/18(수)')>=0 && wsH.indexOf('2학년 현장견학으로 휴강')>=0 &&
+     skipRow12.indexOf('11/18(수)')>=0 && weekSkipRow(6,5)==='' &&
+     wsH.indexOf('다른 요일 보강')<0 && skipFirstShifted()===13,
+     '표 안(12주 → 13주 사이)에 🚫 줄 + 표 아래 안내(13주차부터 밀림) — 옛 「10/7 보강」 문구 0건');
   SESS.acc=keepW.a; SESS.role=keepW.r; SESS.me=keepW.m; SESS.scope=keepW.sc; VIEW=keepW.v;
 
-  /* 10-B-8. 튜터링 회차 날짜가 새 값으로 따라왔는가 (회차·주차는 WEEKDEF 에서 자동으로 — 6주차/3회차 제거 반영) */
-  var tuWant = {1:'2026-09-09',2:'2026-09-23',3:'2026-10-28',4:'2026-11-04',5:'2026-11-18'};
+  /* 10-B-8. 튜터링 회차 날짜가 새 값으로 따라왔는가 (회차·주차는 WEEKDEF 에서 자동으로 — O-0122: 3차=7주 10/7) */
+  var tuWant = {1:'2026-09-09',2:'2026-09-23',3:'2026-10-07',4:'2026-10-28',5:'2026-11-04'};
   var tuBad = tlRounds().filter(function(r){ return wrow(r.week).date !== tuWant[r.round]; });
   ok('튜터링 회차 날짜가 새 주차표를 따라옴', tuBad.length===0,
      tlRounds().map(function(r){ return r.round+'차='+mdw(wrow(r.week).date); }).join(' · '));
@@ -15332,7 +15402,7 @@ window.__protoCheck = function(){
   SESS.acc=DB.one('accounts','p2'); SESS.role='super'; SESS.me=null; SESS.scope='mine';
 
   /* 11-1. 튜터링 회차·주차 대응이 WEEKDEF 의 tutor 정의와 맞는가 (하드코딩 없이 자동으로).
-     🔴 6주차 튜터링(3회차) 제거로 회차는 1·2·4·5·6 (3회차 없음) · 주차는 3·5·9·10·12 가 됩니다. */
+     🔴 현행(O-0122) 회차 1~5 · 주차 3·5·7·10·11. */
   var RS=tlRounds();
   var expT = WEEKDEF.filter(function(w){return w.tutor;}).sort(function(a,b){return a.tutor-b.tutor;});
   ok('튜터링 회차·주차 대응이 WEEKDEF 와 맞음',
@@ -15399,7 +15469,7 @@ window.__protoCheck = function(){
      (!plainSt || sh1.indexOf(plainSt.name+'('+plainSt.no+')')<0),
      (dupSt? dupNm+' → 학번 병기 ○ · ':'')+(plainSt? plainSt.name+' → 이름만 ○':''));
 
-  /* 11-10. 회차를 바꾸면 제목·주차·날짜가 같이 바뀌는가 (마지막 회차 = 12주차 · 하드코딩 없이) */
+  /* 11-10. 회차를 바꾸면 제목·주차·날짜가 같이 바뀌는가 (마지막 회차 = 11주차 · 하드코딩 없이) */
   var lastR=RS[RS.length-1];
   var sh6=tlSheet(lastR.round,'F2');
   ok('회차를 바꾸면 제목·주차·날짜가 같이 바뀜',
@@ -15536,7 +15606,7 @@ window.__protoCheck = function(){
   /* 12-10. 교수가 고친 해석문이 저장되고 인쇄본에도 나가는가 */
   var kBefore=svrText('course', SC14);
   svrEdit=null;
-  DB.add('svNote',{key:svrKey('course',SC14), text:'교수 확인: 21번 문항은 3·6·11주차 표기가 운영표와 달라 참고만 합니다.',
+  DB.add('svNote',{key:svrKey('course',SC14), text:'교수 확인: 21번 문항(교수 튜터링 3·5·7·10·11주차)은 참고만 합니다.',
                    at:nowStr(), by:'점검'});
   var kAfter=svrText('course', SC14);
   var inPrint=svrNoteBox('course', SC14, true).indexOf('교수 확인: 21번 문항')>=0;
@@ -15791,7 +15861,7 @@ window.__protoCheck = function(){
   SESS.acc=keepU.a; SESS.role=keepU.r; SESS.me=keepU.m; SESS.scope=keepU.sc; VIEW=keepU.v;
 
   /* ══════════════════════════════════════════════════════════════════════
-     14.  🎤 18차 — 평가 주차 4·7·13·14 (루브릭 · 발표 배정 · 통합 평가)
+     14.  🎤 18차 — 평가 주차 4·8·13·14 (루브릭 · 발표 배정 · 통합 평가)
      ══════════════════════════════════════════════════════════════════════ */
   (function(){
     var keep={a:SESS.acc, r:SESS.role, m:SESS.me, sc:SESS.scope, v:VIEW};
@@ -15839,19 +15909,19 @@ window.__protoCheck = function(){
 
     /* 14-4. ⛔ 이 주차들에 학생 파일 제출 자리가 없는가 */
     var fileBad=[];
-    [4,7,13,14].forEach(function(n4){
+    PRES_WEEKS_ALL.forEach(function(n4){
       previewOpen[n4]=true; VIEW={name:'week',p:{n:n4}};
       var html=viewWeek();
       if(html.indexOf('발표자료 제출')>=0 || html.indexOf('영상 링크')>=0 ||
          html.indexOf('type="file"')>=0 || html.indexOf('올리기</button>')>=0) fileBad.push(n4+'주차');
     });
-    ok('⛔ 4·7·13·14주차에 학생 파일·영상 제출 자리가 없음', fileBad.length===0,
+    ok('⛔ 4·8·13·14주차에 학생 파일·영상 제출 자리가 없음', fileBad.length===0,
        fileBad.length? '⛔ 남아 있음: '+fileBad.join(' ') : '네 주차 모두 평가만 있습니다 — 발표자료는 교수님이 따로 받으십니다');
 
     /* 14-5. 순서가 없으면 「아직 정해지지 않았습니다」 */
-    var save7=DB.get('assign', function(a){return a.n===7;}).map(function(a){return {n:a.n,teamId:a.teamId,order:a.order};});
-    DB.get('assign', function(a){return a.n===7;}).forEach(function(a){ DB.del('assign', a.id); });
-    previewOpen[7]=true; VIEW={name:'week',p:{n:7}};
+    var save7=DB.get('assign', function(a){return a.n===WK_R2;}).map(function(a){return {n:a.n,teamId:a.teamId,order:a.order};});
+    DB.get('assign', function(a){return a.n===WK_R2;}).forEach(function(a){ DB.del('assign', a.id); });
+    previewOpen[WK_R2]=true; VIEW={name:'week',p:{n:WK_R2}};
     var noOrd=viewWeek();
     ok('발표 순서가 아직 없으면 「수업 시간에 안내됩니다」로 알림', noOrd.indexOf('아직 정해지지 않았습니다')>=0,
        '빈 평가서를 늘어놓지 않습니다');
@@ -15892,23 +15962,23 @@ window.__protoCheck = function(){
        presMeta(13).by==='성동은',
        '성동은 저장 성공 → 최병규는 「'+String(rP3.msg).slice(0,26)+'…」 · 변경 기록 '+(auditAfter-auditBefore)+'건 · 마지막 수정자 '+presMeta(13).by);
 
-    /* 14-9. 🔴 배정 권한 — 13·14주차는 교수 3명 모두 · 4·7주차는 자기 강좌만 */
+    /* 14-9. 🔴 배정 권한 — 13·14주차는 교수 3명 모두 · 4·8주차는 자기 강좌만 */
     var permBad=[];
     [['p1','성동은','F1'],['p2','곽호석','F2'],['p3','최병규','F3']].forEach(function(px){
       SESS.acc=DB.one('accounts',px[0]); SESS.role=(px[0]==='p2'?'super':'prof'); SESS.scope='mine';
       if(!presCanEdit(13) || !presCanEdit(14)) permBad.push(px[1]+' 13·14주차 배정 불가');
       if(!presCanEdit(4)) permBad.push(px[1]+' 자기 강좌 4주차 배정 불가');
     });
-    ok('🔴 13·14주차 배정은 교수 3명 모두 가능 · 4·7주차는 자기 강좌', permBad.length===0,
+    ok('🔴 13·14주차 배정은 교수 3명 모두 가능 · 4·8주차는 자기 강좌', permBad.length===0,
        permBad.length? '⛔ '+permBad.join(' / ') : '세 분 모두 13·14주차 24팀을 정하고 고치실 수 있습니다');
 
     /* 14-10. 🔴 채점 권한 — 13·14주차만 다른 강좌 팀 허용 */
     SESS.acc=DB.one('accounts','p1'); SESS.role='prof'; SESS.scope='mine';    /* 성동은 = F1 */
     var canOther13 = evalCanScore(13,'F2') && evalCanScore(14,'F3');
-    var canOther4  = evalCanScore(4,'F2') || evalCanScore(7,'F3');
-    ok('🔴 13·14주차만 다른 강좌 팀 채점 허용 · 4·7주차는 자기 강좌만',
+    var canOther4  = evalCanScore(4,'F2') || evalCanScore(WK_R2,'F3');
+    ok('🔴 13·14주차만 다른 강좌 팀 채점 허용 · 4·8주차는 자기 강좌만',
        canOther13 && !canOther4 && evalCanScore(4,'F1'),
-       '성동은 교수 → 13·14주차 F2·F3 팀 채점 가능 ○ · 4·7주차 다른 강좌 ✕ · 4주차 자기 강좌 ○');
+       '성동은 교수 → 13·14주차 F2·F3 팀 채점 가능 ○ · 4·8주차 다른 강좌 ✕ · 4주차 자기 강좌 ○');
 
     /* 14-11. 🔴 교수 3명 점수가 들어가면 「평균」이고, 한 명만 내면 1/3로 보이는가 */
     var t3=presList(13)[0].team;
@@ -16029,7 +16099,7 @@ window.__protoCheck = function(){
     CIDS.forEach(function(c){ var r=evalRule(c);
       if(!(r.profW===40 && r.peerW===60 && r.adjust==='절사평균')) wBad.push(c+' '+r.profW+':'+r.peerW+'/'+r.adjust); });
     ok('🎤 발표평가 비중 교수 40 : 동료 60 · 보정 「절사평균」 (세 강좌 모두)',
-       wBad.length===0, wBad.length? '⛔ '+wBad.join(' / ') : 'F1·F2·F3 동일 — 4·7·13·14주차 세 회차 모두 같습니다');
+       wBad.length===0, wBad.length? '⛔ '+wBad.join(' / ') : 'F1·F2·F3 동일 — 4·8·13·14주차 세 회차 모두 같습니다');
 
     /* 15-4. 절사 — 22건에서 최고 1·최저 1을 빼고 20건 평균 */
     var L22=[]; for(var t1=0;t1<22;t1++) L22.push(t1+1);      /* 1..22 */
