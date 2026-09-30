@@ -1962,7 +1962,17 @@ if(typeof PREVIEW!=='undefined' && PREVIEW){
    · [예시 데이터 채우기]를 누른 뒤   → 4주차 수업일 9/16. 평가 화면까지 눌러 보시라고. */
 var PROTO_DAY_BASE = '2026-08-26';
 var PROTO_DAY_DEMO = '2026-09-16';
-function protoToday(){ return (DB.d && DB.d.__demo) ? PROTO_DAY_DEMO : PROTO_DAY_BASE; }
+/* 🔴 2026-10-01 (O-0122 후속) — 배포본(IS_DEPLOY)은 「실제 오늘」을 씁니다.
+      옛 코드는 배포본도 8/26 에 고정돼 학생 홈에 「다음 2주차는 9/2(수)에 열립니다」가 떴습니다.
+      이번 주(curWeek)·마감 D-일수·교수 홈의 평가주 경고가 모두 이 값 하나로 계산됩니다.
+      교내 시제품(index.html)은 옛 동작(8/26 · 예시 데이터면 9/16) 그대로입니다. */
+function protoToday(){
+  if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY){
+    var d=new Date(); function p(n){ return (n<10?'0':'')+n; }
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  }
+  return (DB.d && DB.d.__demo) ? PROTO_DAY_DEMO : PROTO_DAY_BASE;
+}
 
 /* 교수 3명 — 교번·강좌번호는 교수님이 주신 값 그대로. 절대 고치지 않습니다.
    🔴 2026-08-20 교수님 정정: 교수마다 강좌번호가 다릅니다 (옛 A/B/C 구분은 폐기)
@@ -2000,6 +2010,7 @@ var CIDS = ['F1','F2','F3'];
    ▸ 마감일도 여기서 함께 계산합니다 (「마감일까지」 = 수업일 +6일 23:59,
      그 밖 = 수업일 당일 23:59). 날짜가 밀리면 마감도 같이 밀립니다.
    ========================================================================== */
+var WEEK_SCHED_V = '2026-10-01';          /* 🔴 주차표(WEEK_SKIP·WEEKDEF)를 바꾸면 이 값도 바꿉니다 — 교내용 로컬 저장본이 한 번 새 주차표로 맞춰집니다(DB.syncLocalWeeks) */
 var WEEK_START = '2026-08-26';                 /* 1주차 수업일 (수) */
 var WEEK_SKIP = [                              /* 🚫 수업이 없어 주차에서 뺀 날 */
   { date:'2026-11-18', why:'2학년 현장견학으로 휴강' }
@@ -2024,10 +2035,11 @@ var WEEKDEF = [
   /* 🔴 2026-10-01 (O-0122) — 6·7·10·11주차는 「학생 입력 없음」 주차입니다(수업 시간 팀 활동 · 교수 튜터링).
         그래서 win(제출 창)을 두지 않습니다 → 마감(due)도 생기지 않습니다. 판정은 noInputWeek(). */
   {n:6, title:'팀활동3',     full:'팀 활동 3 · 광고 영상 제작 · 8주차 발표 평가 기준 안내', kind:'video'},
-  {n:7, title:'팀활동4',     full:'팀 활동 4 · 교수 튜터링', kind:'activity', tutor:3, boost:true},
+  {n:7, title:'팀활동4',     full:'팀 활동 4 · 교수 튜터링', kind:'activity', tutor:3},
   {n:8, title:'중간발표2',   full:'중간발표2 — 1~2분 광고영상 · KOSAC 제출', win:'수업시간', kind:'eval', round:2, film:true},
   {n:9, title:'중간고사',    full:'중간고사 (서면 평가)', kind:'notice', key:'mid'},
-  {n:10,title:'팀활동5',     full:'팀 활동 5 · 교수 튜터링', kind:'activity', tutor:4},
+  /* 🔴 2026-10-01 대표님 결정 A — 「영상 보강(필요 팀)」(boost)은 7주차가 아니라 10주차(10/28)에서 합니다 */
+  {n:10,title:'팀활동5',     full:'팀 활동 5 · 교수 튜터링 · 영상 보강(필요 팀)', kind:'activity', tutor:4, boost:true},
   {n:11,title:'팀활동6',     full:'팀 활동 6 · 교수 튜터링', kind:'prep', tutor:5},
   {n:12,title:'현장견학',    full:'현장견학', kind:'notice', key:'trip'},
   {n:13,title:'최종발표1',   full:'최종발표1 (12팀) · 3개 강좌 합동', win:'수업+당일', kind:'eval', round:3, joint:true},
@@ -2074,7 +2086,33 @@ var DB = {
     try{ raw = localStorage.getItem(STORE); }catch(e){ raw=null; }
     if(raw){ try{ this.d = JSON.parse(raw); }catch(e){ this.d=null; } }
     if(!this.d || this.d.__v!==DATA_V){ this.d = SEED.build(); this.flush(); }
+    else this.syncLocalWeeks();
     return this.d;
+  },
+  /* 🔴 2026-10-01 (O-0122 후속) — 교내용(로컬 저장) 전용 「주차표 맞춤」.
+     ▸ 로컬 저장본에는 주차행(weeks)에 옛 날짜·마감이 박혀 있어, 주차표를 바꿔도 옛 값이 남았습니다.
+     ▸ DATA_V 를 올리면 풀리지만 DATA_V 는 서버 app_meta.data_v(14)와 맞물려 있어 올리지 않습니다.
+       대신 저장본에 __weekSched 표시를 두고, WEEK_SCHED_V 와 다를 때 「한 번만」 주차행·안내문·견학일지 번호를 새 주차표로 맞춥니다.
+     ▸ ⛔ 데이터베이스 방식(배포본 · DBR.on)에서는 아무것도 하지 않습니다 — 서버 자료는 SQL 로 따로 맞춥니다.
+     ▸ 주차 열림/닫힘(state)은 그대로 둡니다. [주차 공통 설정]에서 손으로 바꾼 날짜는 이때 한 번 새 값으로 덮입니다(로컬 시험용). */
+  syncLocalWeeks:function(){
+    if(typeof DBR!=='undefined' && DBR.on) return;
+    var d=this.d; if(!d || d.__weekSched===WEEK_SCHED_V) return;
+    d.weeks = d.weeks || [];
+    WEEKDEF.forEach(function(w){
+      var r=null; for(var i=0;i<d.weeks.length;i++) if(d.weeks[i].n===w.n){ r=d.weeks[i]; break; }
+      if(!r){ d.weeks.push({ id:'w'+w.n, n:w.n, title:w.title, date:w.date, open:'10:00', due:w.due||'', win:w.win||'', state:'닫힘', notice:'' }); return; }
+      r.title=w.title; r.date=w.date; r.due=w.due||''; r.win=w.win||'';
+    });
+    (d.weekNotice||[]).forEach(function(x){
+      if(x.title==='시험 안내'){ x.n=WK_MID; x.body=String(x.body||'').replace('범위: 1~7주차','범위: 1~'+(WK_MID-1)+'주차'); }
+      else if(x.title==='견학 안내'){ x.n=WK_TRIP; }
+      else if(x.title==='기말고사 안내'){ x.body=String(x.body||'').replace('범위: 8~14주차','범위: '+WK_MID+'~14주차'); }
+    });
+    (d.excursion||[]).forEach(function(x){ if(x.week!==WK_TRIP) x.week=WK_TRIP; });
+    (d.questions||[]).forEach(function(q){ if(q.no===21 && String(q.text||'').indexOf('3·6·11주차')>=0){ q.text=q.text.replace('3·6·11주차','3·5·7·10·11주차'); q.warn=''; } });
+    d.__weekSched = WEEK_SCHED_V;
+    this.flush();
   },
   /* 🔴 18차 — 「묶어서 한 번만 저장」
      예시 데이터를 채울 때 DB.add 가 수천 번 불리는데, 그때마다 데이터 전체를 글자로 바꿔
@@ -2135,7 +2173,7 @@ var DB = {
    -------------------------------------------------------------------------- */
 var SEED = {
   build:function(){
-    var d = { __v:DATA_V, __seq:0, __demo:false,
+    var d = { __v:DATA_V, __weekSched:WEEK_SCHED_V, __seq:0, __demo:false,
       accounts:[], classes:[], students:[], weeks:[], weekExc:[], weekNotice:[],
       teams:[], members:[], topics:[], submits:[], activity:[],
       excursion:[],          /* 🚌 12주차(WK_TRIP) 현장견학 — 팀별 견학 의견 (팀원이 한 줄씩 쌓는 목록형) */
@@ -2707,6 +2745,11 @@ function roLabel(cid){
    -------------------------------------------------------------------------- */
 function wrow(n){ return DB.one('weeks', function(w){return w.n===n;}); }
 function wState(n){ var w=wrow(n); return w?w.state:'닫힘'; }
+/* 🔴 2026-10-01 (O-0122 후속) — 원격(DB) 주차행에는 날짜·마감이 없습니다(상태만 저장).
+      그래서 날짜·마감은 「주차행에 있으면 그것(교수가 [주차 공통 설정]에서 바꾼 값), 없으면 WEEKDEF 계산값」으로 읽습니다.
+      ⛔ wrow() 결과에 date·due 를 써 넣지 않습니다 — DB.set 때 서버로 새어 나갈 수 있습니다. */
+function wkDate(n){ var w=wrow(n), d=wdef(n); return (w&&w.date) || (d&&d.date) || ''; }
+function wDue(n){ var w=wrow(n), d=wdef(n); return (w&&w.due) || (d&&d.due) || ''; }
 function curWeek(){
   var best=1;
   WEEKDEF.forEach(function(w){ if(dayDiff(w.date, protoToday())>=0) best=w.n; });
@@ -2729,7 +2772,7 @@ function curWeek(){
        눌리지 않는 버튼을 남겨 두면 학생이 계속 누르고, 결국 교수님께 전화합니다.
    ========================================================================== */
 var FIX_LOCKED = '마감되어 학생은 고칠 수 없습니다. 담당교수님께 말씀하세요.';
-function dueLabel(n){ var w=wrow(n); if(!w||!w.due) return ''; var p=String(w.due).split(' '); return mdw(p[0])+' '+(p[1]||''); }
+function dueLabel(n){ var due=wDue(n); if(!due) return ''; var p=String(due).split(' '); return mdw(p[0])+' '+(p[1]||''); }
 function canFix(n){ return wState(n)!=='마감'; }
 /* 화면 위쪽에 놓는 안내 */
 function fixNote(n){
@@ -2758,6 +2801,9 @@ function submitBar(n, has, onclick){
 /* 학생 뱃지 — 「내가 낼 것이 있는가」 */
 function studentBadge(n){
   var def=wdef(n), w=wrow(n)||{};   /* 🛡️ 16주차(kind:'result')는 주차행이 없을 수 있어 null 방지 */
+  /* 🚌 12주차(현장견학)는 안내 + 「나의 현장견학 일지」 쓰기가 있습니다 (O-0122 후속) */
+  if(n===WK_TRIP && def.kind==='notice'){ if(w.state==='닫힘') return {t:'🔒 잠김', c:'gray'};
+    return (typeof myExcursion==='function' && myExcursion())? {t:'✅ 일지 작성', c:'green'} : {t:'✏️ 견학 일지', c:'amber'}; }
   if(def.kind==='notice') return {t:'▫️ 안내만', c:'gray'};
   /* 🙅 2026-10-01 (O-0122) — 6·7·10·11주차는 앱에 낼 것이 없습니다. 「해야 함·오늘까지」로 재촉하지 않습니다 */
   if(noInputWeek(def)) return w.state==='닫힘' ? {t:'🔒 잠김', c:'gray'} : {t:'▫️ 입력 없음', c:'gray'};
@@ -2783,6 +2829,9 @@ function studentBadge(n){
 /* 교수 뱃지 — 「내 강좌가 얼마나 냈는가」 */
 function profBadge(n){
   var def=wdef(n), w=wrow(n)||{};   /* 🛡️ 16주차(kind:'result')는 주차행이 없을 수 있어 null 방지 */
+  if(n===WK_TRIP && def.kind==='notice'){ if(w.state==='닫힘') return {t:'🔒 닫힘',c:'gray'};
+    var exN={}; DB.get('excursion', function(x){ return visibleClasses().indexOf(x.classId)>=0; }).forEach(function(x){ exN[x.authorId]=1; });
+    return {t:'✏️ 견학 일지 '+Object.keys(exN).length+'명', c:'gray'}; }
   if(def.kind==='notice') return {t:'▫️ 안내만',c:'gray'};
   if(def.kind==='result') return {t:'▫️ 결과 공개',c:'gray'};
   /* 🙅 학생 입력 없는 주차(6·7·10·11) — 「미제출 N명」을 세지 않습니다. 튜터링 주차는 튜터링 표시 */
@@ -3205,7 +3254,7 @@ function viewWeek(){
   if(!def) return '<div class="card">없는 주차입니다.</div>';
   var head = topbar() +
    '<div class="card"><h2>'+n+'주차 — '+esc(def.full)+'</h2>'+
-   '<p class="muted">'+mdw(def.date)+' 10:00~13:00'+(w&&w.due? ' · 마감 '+esc(w.due):'')+(def.win? ' · 제출 창 '+esc(def.win):'')+'</p>'+
+   '<p class="muted">'+mdw(def.date)+' 10:00~13:00'+(wDue(n)? ' · 마감 '+esc(wDue(n)):'')+(def.win? ' · 제출 창 '+esc(def.win):'')+'</p>'+
    (w.notice? '<div class="note b"><b>[안내]</b> '+esc(w.notice)+'</div>':'')+
    '</div>';
 
@@ -3221,7 +3270,7 @@ function viewWeek(){
   }
   if(w.state==='닫힘') head += '<div class="note a">🔎 <b>미리 보기</b> — 실제로는 아직 닫혀 있는 주차입니다.</div>';
   if(w.state==='마감') head += noInputWeek(def) ? '<div class="note">⬛ 지난 주차입니다.</div>'
-                                              : '<div class="note">⬛ 이 주차는 마감되었습니다 ('+esc(w.due)+'). 낸 것은 읽기 전용으로 남습니다.</div>';
+                                              : '<div class="note">⬛ 이 주차는 마감되었습니다 ('+esc(wDue(n))+'). 낸 것은 읽기 전용으로 남습니다.</div>';
 
   if(!isProf() && !SESS.me) return head + '<div class="card"><div class="note a">학생 정보가 없습니다. 다시 로그인해 주세요.</div>'+
     '<button class="btn pri" onclick="APP.logout()">로그인으로</button></div>' + pager(n);
@@ -3331,7 +3380,8 @@ function stNotice(n){
   if(!nt) return '<div class="card"><p class="muted">안내는 수업에서 공지됩니다.</p></div>';
   return '<div class="card"><h3>'+esc(nt.title)+'</h3><p>'+esc(nt.body).replace(/ · /g,'<br>')+'</p>'+
     '<p class="muted">'+esc(nt.file)+'</p>'+
-    (n!==15? '<div class="note">ℹ️ 이 주차는 앱에 제출할 것이 없습니다.</div>':'')+'</div>';
+    (n===WK_TRIP? '<div class="note g">✏️ 현장견학이 끝나면 아래 <b>[나의 현장견학 일지]</b>에 보고 느낀 점을 적어 주세요.</div>'
+      : (n!==15? '<div class="note">ℹ️ 이 주차는 앱에 제출할 것이 없습니다.</div>':''))+'</div>';
 }
 
 /* 1·15주 설문 화면은 pS_surveyui.js 로 옮겼습니다 (2026-08-21 11차) */
@@ -4640,7 +4690,8 @@ function saveWeek6(tid){
 function stActivity(n, def){
   def = def || wdef(n) || {};
   return stTitleOnly(n, String(def.title||'').replace(/^팀활동/, '팀 활동 '),
-    '팀별로 최종 주제 활동을 이어가는 시간입니다.');
+    '팀별로 최종 주제 활동을 이어가는 시간입니다.'+
+    (def.boost? ' 중간발표2 광고영상을 보강할 필요가 있는 팀은 이 시간에 영상을 보강합니다(앱에 올리지 않습니다).' : ''));
 }
 function saveActivity(tid,n){
   if(!canFix(n)){ toast('⛔ '+FIX_LOCKED); return; }
@@ -5331,7 +5382,7 @@ function weekProf(n, def){
       '학생은 5주차에서 우리 팀 총점과 팀간 순위(같은 반 안)를 봅니다. 교수·동료 세부 점수는 공개되지 않습니다.'); }
   /* 🙅 학생 입력 없는 주차(6·7·10·11 — O-0122 재번호)는 교수 화면 맨 위에 그 사실을 알립니다 */
   if(noInputWeek(def)) h = '<div class="note g">✅ <b>이 주차는 학생이 앱에 입력·제출할 것이 없습니다.</b> '+
-    '수업 시간 팀 활동'+(def.tutor? ' · 아래 <b>교수 튜터링 '+def.tutor+'회차</b>를 팀별로 기록하시면 됩니다.' : '입니다.')+
+    '수업 시간 팀 활동'+(def.boost? ' · <b>영상 보강(필요 팀)</b>' : '')+(def.tutor? ' · 아래 <b>교수 튜터링 '+def.tutor+'회차</b>를 팀별로 기록하시면 됩니다.' : '입니다.')+
     ' 학생 화면에도 「입력할 것 없음」으로 보이며, 진행률·미제출 집계에서 빠집니다.</div>' + h;
   /* ⛔ 6·9·10·12주차(현 6·7·10·11)는 2026-08-23 「타이틀만」으로 바뀌어 학생 제출이 없습니다 →
      제출 현황판(profActivityPanel)을 걷어냈습니다. 교수 튜터링(def.tutor)은 위에서 그대로 나옵니다. */
@@ -6042,7 +6093,7 @@ function tuCard(t, n, def){
         '<b>튜터링 '+round+'회차</b><span style="flex:1"></span>'+
         '<span class="muted" id="tuAt_'+t.id+'">'+(tu&&tu.auto? '💾 저장됨 '+esc(String(tu.auto).slice(11)) : '')+'</span></div>'+
       '<label class="f">일자 <span class="req">*</span></label>'+
-      '<input type="date" id="tu_d_'+t.id+'" value="'+esc(tu&&tu.date? tu.date : wrow(n).date)+'" oninput="tuTouch(\''+t.id+'\','+round+')">'+
+      '<input type="date" id="tu_d_'+t.id+'" value="'+esc(tu&&tu.date? tu.date : wkDate(n))+'" oninput="tuTouch(\''+t.id+'\','+round+')">'+
       '<label class="f">튜터링 내용 <span class="req">*</span> <span class="lim">1,000자</span></label>'+
       '<textarea id="tu_t_'+t.id+'" maxlength="1000" oninput="tuTouch(\''+t.id+'\','+round+')">'+esc(tu?tu.talk||'':'')+'</textarea>'+
       '<label class="f">지적·보완 사항 <span class="lim">500자 · 선택</span></label>'+
@@ -7488,7 +7539,7 @@ var DEMO = {
     /* 🎤 18차 — 4·8주차 발표 순서 (강좌마다 8팀) · 13·14주차 배정 (24팀 → 12+12) */
     CIDS.forEach(function(cid){
       var ts=DB.get('teams', function(t){return t.classId===cid;}).sort(function(a,b){return a.no-b.no;});
-      [4,7].forEach(function(wn){ ts.forEach(function(t,i){ DB.add('assign',{n:wn, teamId:t.id, order:i+1}); }); });
+      [WK_R1, WK_R2].forEach(function(wn){ ts.forEach(function(t,i){ DB.add('assign',{n:wn, teamId:t.id, order:i+1}); }); });
     });
     (function(){
       var all=DB.get('teams').slice().sort(function(a,b){ return a.classId===b.classId? a.no-b.no : (a.classId<b.classId?-1:1); });
@@ -7681,7 +7732,7 @@ var DEMO = {
           ms.slice(0, ti===0?3:(ti===3?1:2)).forEach(function(m,k){
             var st=DB.one('students', m.studentId); if(!st) return;
             DB.add('excursion',{teamId:t.id,classId:cid,week:WK_TRIP,author:st.name,authorId:st.id,
-              text:evc[k%evc.length],at:'2026-11-04 1'+(4+k)+':'+(20+ti)});
+              text:evc[k%evc.length],at:wkDate(WK_TRIP)+' 1'+(4+k)+':'+(20+ti)});   /* 견학일(11/11) 오후 */
           });
         });
       });
@@ -8009,7 +8060,7 @@ function autoPlace(cid){
    🔴 2026-10-01 (O-0122): 뺀 날이 10/7 → 11/18 로 바뀌었습니다(10/7 은 7주차 수업).
       날짜는 주차행(weeks)에 없을 수 있어(원격 — 상태만 저장) WEEKDEF 계산값을 대신 씁니다(wkDate).
    ========================================================================== */
-function wkDate(n){ var w=wrow(n), d=wdef(n); return (w&&w.date) || (d&&d.date) || ''; }
+/* wkDate(n) · wDue(n) 은 p3_core.js 로 옮겼습니다(앱 전체 공용) */
 function skipFirstShifted(){                 /* 몇 주차부터 밀렸는가 */
   if(!WEEK_SKIP.length) return 0;
   var first=null;
@@ -8041,7 +8092,7 @@ function admWeekState(){
     '<div class="scroll"><table><tr><th class="c">주</th><th>활동</th><th>수업 날짜</th><th>마감</th><th>제출 창</th><th class="c">상태</th></tr>'+
     /* 🔴 날짜·상태를 정하는 표는 실제 수업 15주차만 — 16주차(kind:'result')는 날짜가 없는 결과확인 주차라 제외 */
     WEEKDEF.filter(function(d){ return d.kind!=='result'; }).map(function(d){ var w=wrow(d.n)||{};
-      return '<tr><td class="c">'+d.n+'</td><td>'+esc(d.title)+'</td><td>'+mdw(wkDate(d.n))+'</td><td class="muted">'+esc(w.due||'-')+'</td>'+
+      return '<tr><td class="c">'+d.n+'</td><td>'+esc(d.title)+'</td><td>'+mdw(wkDate(d.n))+'</td><td class="muted">'+esc(wDue(d.n)||'-')+'</td>'+
         '<td>'+(d.win==='수업시간'?'<span class="bg red">🔴 수업시간</span>':(noInputWeek(d)?'<span class="muted">학생 입력 없음</span>':esc(d.win||'-')))+'</td>'+
         '<td class="c"><span class="bg '+(w.state==='열림'?'green':(w.state==='마감'?'gray':'gray'))+'">'+w.state+'</span> '+
         (canEdit(myClass())? '<button class="btn sm" onclick="cycleState('+d.n+')">바꾸기</button>':'')+'</td></tr>'+
@@ -8286,7 +8337,7 @@ function admWeekMaster(){
       return '<tr><td class="c">'+d.n+'</td>'+
         '<td><input type="date" id="wm_d_'+d.n+'" value="'+esc(wkDate(d.n))+'"></td>'+
         '<td style="width:90px"><input type="time" id="wm_o_'+d.n+'" value="'+esc(w.open)+'"></td>'+
-        '<td><input type="text" id="wm_u_'+d.n+'" value="'+esc(w.due||'')+'"></td>'+
+        '<td><input type="text" id="wm_u_'+d.n+'" value="'+esc(wDue(d.n))+'"></td>'+
         '<td>'+(noInputWeek(d)?'<span class="muted">학생 입력 없음</span>':esc(d.win||'-'))+'</td>'+
         '<td class="c"><button class="btn sm pri" onclick="saveWM('+d.n+')">저장</button></td></tr>'+
         weekSkipRow(d.n, 5); }).join('')+
@@ -8396,7 +8447,7 @@ function admDash(){
           var mark = done===ms.length? '✅' : (done>0? '⚠️':'⬛');
           return '<td class="c">'+mark+'</td>'; }).join('')+'</tr>';
     }).join('')+'</table></div>'+
-    '<p class="muted">✅완료 ⚠️일부 💾임시저장 ⬛미제출 🔒미개시 —해당없음 · 6·7·9·10·11·12주는 학생이 앱에 낼 것이 없어 「—」입니다. '+
+    '<p class="muted">✅완료 ⚠️일부 💾임시저장 ⬛미제출 🔒미개시 —해당없음 · 6·7·9·10·11주는 학생이 앱에 낼 것이 없어 「—」입니다(12주 현장견학 일지는 [현장견학 일지]에서 봅니다). '+
     '3주차는 제출함이 3개라 <b>⚠️1/3</b>처럼 몇 개를 냈는지 함께 적습니다.</p></div>';
 
   /* 3-3 평가 현황 */
@@ -8955,7 +9006,11 @@ function absClearConfirm(sid, round){
      확정 전에는 정상 경로로 팀 점수를 그대로 줍니다(추측으로 깎지 않습니다).
    ========================================================================== */
 /* 회차 → 그 회차 발표가 열리는 주차들 (r3 은 13·14주차에 걸쳐 있습니다) */
-function roundWeeks(round){ return round===1?[4]:(round===2?[7]:(round===3?[13,14]:[])); }
+/* 🔴 2026-10-01 (O-0122 후속) — 옛 코드는 2회차를 [7]로 박아 두어, 주차 재편 뒤 팀간 평가 필요 수가 틀렸습니다.
+      이제 WEEKDEF 의 kind:'eval' 주차에서 round 로 찾습니다 (1→[4] · 2→[8] · 3→[13,14]). */
+function roundWeeks(round){
+  return WEEKDEF.filter(function(d){ return d.kind==='eval' && d.round===round; }).map(function(d){ return d.n; });
+}
 /* 이 학생이 이 회차에 「팀간 평가로 내야 할」 팀 수 — 제출현황 패널과 같은 기준(evalTargets) */
 function peerInterNeed(sid, round){
   var st=DB.one('students', sid); if(!st || !st.teamId) return 0;
@@ -10973,7 +11028,7 @@ function alBlocks(n, cid){
     ['활동', def.full],
     ['강좌', cid+(tlRoom(cid)? ' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid)],
     ['제출 창', def.win? def.win : (noInputWeek(def)? '학생 입력 없음 (수업 시간 팀 활동)' : '앱 제출 없음 (안내만)')],
-    ['마감', w.due? w.due : '—'],
+    ['마감', wDue(n) || '—'],
     ['주차 상태', w.state]
   ]});
 
@@ -11682,7 +11737,7 @@ function tlTopicPlain(t){
 function tlDocxBody(list, cid){
   var cap = teamCap(), out='';
   list.forEach(function(round, idx){
-    var week = tlWeekOf(round), w = week? wrow(week) : null, iso = w? w.date : '';
+    var week = tlWeekOf(round), iso = week? wkDate(week) : '';   /* O-0122 후속 — 원격도 날짜가 나오게 */
     out += dxP('교수 튜터링 일지 ('+round+'차)', {b:true, sz:30, align:'center', page: idx>0, after:60, keep:true})+
       dxP('바이오기초설계 (2026학년도 2학기) · '+cid+(tlRoom(cid)?' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid),
           {sz:18, align:'center', color:'444444', after:40})+
@@ -11819,7 +11874,7 @@ function svOneSheet(kind, cids){
     '<table class="tlmeta"><tr>'+
       '<td class="k">교과목</td><td class="v">바이오기초설계 (2026학년도 2학기)</td>'+
       '<td class="k">범위</td><td class="v">'+esc(svrScopeName(cids))+'</td></tr>'+
-    '<tr><td class="k">설문</td><td class="v">'+esc(kind)+'설문 ('+wk+'주차 '+esc(mdw(wrow(wk).date))+')</td>'+
+    '<tr><td class="k">설문</td><td class="v">'+esc(kind)+'설문 ('+wk+'주차 '+esc(mdw(wkDate(wk)))+')</td>'+
       '<td class="k">응답</td><td class="v">'+info.n+' / '+info.tot+'명</td></tr>'+
     '<tr><td class="k">출력일</td><td class="v">'+esc(nowStr().slice(0,10))+'</td>'+
       '<td class="k"></td><td class="v"></td></tr></table></div>'+
@@ -11846,7 +11901,7 @@ function svOneDocxBody(kind, cids, pg){
   var info = svRespInfo(kind, cids), wk=(kind==='사전')?1:15;
   var out = dxP(kind+'설문 결과', {b:true, sz:30, align:'center', page:!!pg, after:60, keep:true})+
     dxP('바이오기초설계 (2026학년도 2학기) · '+svrScopeName(cids), {sz:18, align:'center', color:'444444', after:40})+
-    dxP(kind+'설문 ('+wk+'주차 '+mdw(wrow(wk).date)+') · 응답 '+info.n+' / '+info.tot+'명',
+    dxP(kind+'설문 ('+wk+'주차 '+mdw(wkDate(wk))+') · 응답 '+info.n+' / '+info.tot+'명',
         {sz:18, align:'center', color:'444444', rule:true, after:120})+
     (DB.d&&DB.d.__demo? dxP('※ 예시(가짜) 데이터입니다 — 실제 응답이 아닙니다.', {sz:16, color:'8A1010', after:100}):'');
   var rows = svAggForKind(kind, cids).map(svAggCells);
@@ -11957,7 +12012,7 @@ function exSheet(cid){
       '<td class="k">교과목</td><td class="v">바이오기초설계 (2026학년도 2학기)</td>'+
       '<td class="k">강좌</td><td class="v">'+esc(cid)+(tlRoom(cid)?' ('+esc(tlRoom(cid))+')':'')+'</td></tr>'+
     '<tr><td class="k">담당교수</td><td class="v">'+esc(classProf(cid))+'</td>'+
-      '<td class="k">일시</td><td class="v">'+esc(tlLongDate(wrow(11).date))+'</td></tr>'+
+      '<td class="k">일시</td><td class="v">'+esc(tlLongDate(wkDate(WK_TRIP)))+'</td></tr>'+
     '<tr><td class="k">참여</td><td class="v">'+wrote+' / '+nTeams+'팀 · 일지 '+total+'개</td>'+
       '<td class="k">출력일</td><td class="v">'+esc(nowStr().slice(0,10))+'</td></tr></table></div>'+
     (nt? '<div class="scnote"><b>견학 안내</b><br>'+esc(nt.body).replace(/ · /g,'<br>')+'</div>':'')+
@@ -11975,7 +12030,7 @@ function exDocxBody(cid){
   var out = dxP('현장견학 일지 — '+WK_TRIP+'주차', {b:true, sz:30, align:'center', after:60, keep:true})+
     dxP('바이오기초설계 (2026학년도 2학기) · 강좌 '+cid+(tlRoom(cid)?' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid),
         {sz:18, align:'center', color:'444444', after:40})+
-    dxP(tlLongDate(wrow(11).date)+' · 참여 '+wrote+' / '+nTeams+'팀 · 일지 '+total+'개',
+    dxP(tlLongDate(wkDate(WK_TRIP))+' · 참여 '+wrote+' / '+nTeams+'팀 · 일지 '+total+'개',
         {sz:18, align:'center', color:'444444', rule:true, after:120})+
     (DB.d&&DB.d.__demo? dxP('※ 예시(가짜) 데이터입니다 — 실제 의견이 아닙니다.', {sz:16, color:'8A1010', after:100}):'');
   data.forEach(function(d){
@@ -12914,7 +12969,7 @@ function viewSvPrint(){
     '<table class="tlmeta"><tr>'+
       '<td class="k">교과목</td><td class="v">바이오기초설계 (2026학년도 2학기)</td>'+
       '<td class="k">범위</td><td class="v">'+esc(svrScopeName(cids))+'</td></tr>'+
-    '<tr><td class="k">설문</td><td class="v">사전(1주차 '+esc(mdw(wrow(1).date))+') · 최종(15주차 '+esc(mdw(wrow(15).date))+')</td>'+
+    '<tr><td class="k">설문</td><td class="v">사전(1주차 '+esc(mdw(wkDate(1)))+') · 최종(15주차 '+esc(mdw(wkDate(15)))+')</td>'+
       '<td class="k">출력일</td><td class="v">'+esc(nowStr().slice(0,10))+'</td></tr>'+
     '</table></div>'+
     '<div class="svp">'+
@@ -15339,13 +15394,31 @@ window.__protoCheck = function(){
   var twrong = TWANT.filter(function(x,i){ return !wdef(i+1) || wdef(i+1).title!==x; });
   ok('🔴 주차별 제목이 대표님 확정표(O-0122)와 16줄 일치', twrong.length===0,
      twrong.length? '⛔ '+twrong.join(',') : '6 팀활동3 · 7 팀활동4 · 8 중간발표2 · 9 중간고사 · 10 팀활동5 · 11 팀활동6 · 12 현장견학 · 13 최종발표1');
-  var attrOk = wdef(7).kind==='activity' && wdef(7).tutor===3 && wdef(7).boost===true &&
-               wdef(10).kind==='activity' && wdef(10).tutor===4 && !wdef(10).boost &&
+  var attrOk = wdef(7).kind==='activity' && wdef(7).tutor===3 && !wdef(7).boost &&
+               wdef(10).kind==='activity' && wdef(10).tutor===4 && wdef(10).boost===true &&   /* 결정 A: 영상 보강 10주차 */
                wdef(11).kind==='prep' && wdef(11).tutor===5 &&
                wdef(8).round===2 && wdef(8).film===true && WK_R2===8 && WK_MID===9 && WK_TRIP===12 && WK_PREP===11 &&
                PRES_WEEKS_ALL.join()==='4,8,13,14' && PRES_WEEKS.join()==='4,8,13,14';
-  ok('🔴 팀활동4=활동·튜터3·보강 · 팀활동5=활동·튜터4 · 팀활동6=prep·튜터5 · 중간발표2=8주 round2·film', attrOk,
+  ok('🔴 팀활동4=활동·튜터3 · 팀활동5=활동·튜터4·영상보강 · 팀활동6=prep·튜터5 · 중간발표2=8주 round2·film', attrOk,
      '평가주차 '+PRES_WEEKS_ALL.join('·')+' · 중간고사 '+WK_MID+'주 · 견학 '+WK_TRIP+'주 · 마무리 '+WK_PREP+'주');
+  /* 10-B-3c. 🔴 회차 → 발표 주차 (O-0122 후속 — 옛 코드는 2회차를 [7]로 박아 두었습니다) */
+  ok('🔴 roundWeeks — 1회차 [4] · 2회차 [8] · 3회차 [13,14] (WEEKDEF 에서 찾음)',
+     roundWeeks(1).join()==='4' && roundWeeks(2).join()==='8' && roundWeeks(3).join()==='13,14',
+     '1→['+roundWeeks(1)+'] · 2→['+roundWeeks(2)+'] · 3→['+roundWeeks(3)+']');
+  /* 10-B-3d. 🔴 8주차 발표 배정이 「팀간 평가로 내야 할 팀 수」에 잡히는가 */
+  (function(){
+    var st8 = DB.one('students', function(s){ return s.active!==false && s.teamId; });
+    if(!st8){ ok('🔴 8주차 배정이 팀간 평가 필요 수에 잡힘', false, '⛔ 팀이 있는 학생이 없어 확인 못 함'); return; }
+    var ts8 = DB.get('teams', function(t){ return t.classId===st8.classId; }).sort(function(a,b){ return a.no-b.no; });
+    var had = DB.get('assign', function(a){ return a.n===WK_R2 && ts8.some(function(t){ return t.id===a.teamId; }); }).length;
+    var made8 = [];
+    if(!had) ts8.forEach(function(t,i){ made8.push(DB.add('assign',{n:WK_R2, teamId:t.id, order:i+1}).id); });
+    var need8 = peerInterNeed(st8.id, 2);
+    var want8 = DB.get('assign', function(a){ return a.n===WK_R2 && a.teamId!==st8.teamId && ts8.some(function(t){ return t.id===a.teamId; }); }).length;
+    made8.forEach(function(id){ DB.del('assign', id); });
+    ok('🔴 8주차 배정이 팀간 평가 필요 수에 잡힘 (2회차)', need8>0 && need8===want8,
+       '2회차 팀간 평가 필요 '+need8+'팀 = 8주차 배정 '+want8+'팀(자기 팀 제외)'+(made8.length?' · 검사용 배정은 지웠습니다':''));
+  })();
   ok('새 날짜표 15줄이 교수님 값과 한 줄씩 일치', wrong.length===0,
      wrong.length? '⛔ '+wrong.join(' / ') : '1주 8/26 ~ 15주 12/9 · 15줄 전건 일치');
 
