@@ -6311,9 +6311,20 @@ function tlMemberName(st){
   return esc(s);
 }
 
-/* ---- 그 시점에 그 팀이 가진 주제 (10차 원칙 그대로) ---- */
-function tlTopicText(t){
-  var fin=DB.one('topics', function(x){return x.teamId===t.id && x.kind==='최종';});
+/* ---- 그 시점에 그 팀이 가진 주제 (10차 원칙 그대로) ----
+   🔴 2026-10-04 (O-0198) — 「그 시점」을 회차로 따집니다.
+      최종 주제를 정하는 주차(WEEKDEF 의 kind:'finaltopic')보다 「앞선」 회차의 일지에는
+      그때 모습대로 가주제를 적습니다. 옛 코드는 회차와 상관없이 「지금」의 최종 주제를 찍어,
+      최종 주제가 정해진 뒤에 1차(3주차) 일지를 다시 뽑으면 가주제 3개가 사라졌습니다.
+      ▸ 주차 번호는 박지 않습니다 — 회차→주차는 tlWeekOf, 최종주제 주차는 WEEKDEF 에서 찾습니다.
+      ▸ round 를 안 넘기면(옛 호출) 지금까지와 똑같이 동작합니다. */
+function tlFinalWeek(){ return wkOf(function(d){ return d.kind==='finaltopic'; }); }
+function tlBeforeFinal(round){
+  var w=tlWeekOf(round), f=tlFinalWeek();
+  return !!(w && f && w < f);
+}
+function tlTopicText(t, round){
+  var fin=tlBeforeFinal(round)? null : DB.one('topics', function(x){return x.teamId===t.id && x.kind==='최종';});
   if(fin) return '<b>최종</b> '+esc(fin.title);
   var tps=teamTopics(t.id);
   if(!tps.length) return '<span class="dim">가주제 미정</span>';
@@ -6345,7 +6356,7 @@ function tlTeamRow(t, round, no){
   }
 
   return '<tr data-team="'+esc(t.no+'팀 「'+t.name+'」')+'"><td class="tno"><b>'+t.no+'팀</b><br>「'+esc(t.name)+'」</td>'+
-    '<td><div class="mem">'+names+'</div><div class="tpc">'+tlTopicText(t)+'</div></td>'+
+    '<td><div class="mem">'+names+'</div><div class="tpc">'+tlTopicText(t, round)+'</div></td>'+
     '<td class="talk">'+talk+'</td></tr>';
 }
 
@@ -11727,8 +11738,9 @@ function evalSummaryAllDownloadDocx(cid){
    ④ 교수 튜터링 일지 — Word  (A4/PDF 는 pT_tutorlog.js 에 이미 있습니다)
    ▸ 화면 A4 일지(tlSheet)와 같은 자료를 씁니다. 회차마다 새 쪽에서 시작합니다.
    ========================================================================== */
-function tlTopicPlain(t){
-  var fin = DB.one('topics', function(x){ return x.teamId===t.id && x.kind==='최종'; });
+function tlTopicPlain(t, round){
+  /* 2026-10-04 (O-0198) — 최종주제 주차보다 앞선 회차는 그때 모습대로 가주제 (pT_tutorlog.js tlBeforeFinal 과 같은 규칙) */
+  var fin = tlBeforeFinal(round)? null : DB.one('topics', function(x){ return x.teamId===t.id && x.kind==='최종'; });
   if(fin) return '[최종] '+fin.title;
   var tps = teamTopics(t.id);
   if(!tps.length) return '(가주제 미정)';
@@ -11760,7 +11772,7 @@ function tlDocxBody(list, cid){
             return m.st.name + (tlDupName(m.st.name)? '('+m.st.no+')' : '');
           }).join('·')
         : '팀원 없음';
-      var memTopic = names + '\n' + tlTopicPlain(t);
+      var memTopic = names + '\n' + tlTopicPlain(t, round);
       var talk;
       if(!wrote){ talk = '— 미작성 —'; }
       else {
