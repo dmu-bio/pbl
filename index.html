@@ -380,6 +380,7 @@ tr.alt td{background:#f7f9fb}
    흑백 프린터와 색각 이상에서 무너집니다. 그래서 「밝기 + 빗금」으로 구분합니다. */
 .sbf.blue{background:#8b949e}                     /* 사전 실측 — 중간 회색 */
 .sbf.green{background:#1a2129}                    /* 최종-현재 — 거의 검정 */
+.sbf.mid{background:#4d5661}                      /* 중간설문 — 사전(밝은 회색)과 최종(거의 검정) 사이 밝기. 빗금(최종-회고)과 겹치지 않게 */
 .sbf.gray{background:repeating-linear-gradient(45deg,#3f4854,#3f4854 4px,#eef1f5 4px,#eef1f5 9px)}
 .sbv{flex:0 0 66px;text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:var(--ink)}
 /* 이름표가 긴 보기(문장)는 막대 위로 올립니다 */
@@ -747,7 +748,7 @@ var RUBRIC_DRAFT = {
   },
 
   /* ══════════════════════════════════════════════════════════════════
-     2회차 — 8주차 중간발표2 「광고영상」 (2026-10-01 O-0122: 옛 7주차)
+     2회차 — 8주차 중간발표2 「광고영상」 (2026-10-01 주차 재편: 옛 7주차)
      🔴 성격: **영상**입니다. 글 발표와 보는 곳이 다릅니다 —
         메시지 · 내용의 정확성 · 영상 완성도 · 창의성 · 영상 시간(러닝타임)의 활용.
      🔴 2026-09-23 교수님 지시: 영상 길이가 1분·2분으로 팀마다 달라, 특정 시간(1분/60초)을
@@ -755,7 +756,7 @@ var RUBRIC_DRAFT = {
      ══════════════════════════════════════════════════════════════════ */
   2: {
     title: '광고영상',
-    run:   '최종 주제 1개에 대한 광고영상(러닝타임 자유) — 상영 후 질의응답',
+    run:   '최종 주제 1개에 대한 광고영상(러닝타임 자유) — 상영 후 바로 앱에서 평가합니다',
     note:  '광고입니다. 다 설명하는 것이 아니라 **하나를 남기는 것**이 목적입니다.',
     /* 🔴 KOSAC 는 교외 공모전입니다 — 앱이 제출을 대신 받지 않습니다.
        앱에 체크칸을 두면 「체크했으니 낸 것」이라는 오해가 생기고, 실제 제출과 어긋나도
@@ -884,6 +885,10 @@ var RUBRIC_DRAFT = {
     intra: RB_INTRA
   }
 };
+
+/* 안내 글(note)의 강조 — 글 안의 「**…**」는 굵은 글씨로 그립니다(별표가 글자로 보이지 않게).
+   같은 상자의 「진행」과 같은 <b> 입니다. 그 밖의 글자는 esc() 그대로입니다. */
+function rbNoteHtml(s){ return esc(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>'); }
 
 /* 그 회차의 만점 — 항목 수 × 4 (⛔ 가중치 없음) */
 function rbFull(round, kind){
@@ -3540,7 +3545,7 @@ var STORE = 'bio_basic_design_proto_v1';
    6 = 2026-08-21 (11차) 교수님의 실제 설문지 반영 (문항 구조 전면 교체 · sdraft 표 신설)
    7 = 2026-08-21 (13차) 🔴 10/7 보강 제외 — 7~15주차 날짜가 한 주씩 밀림
    8 = 2026-08-21 (14차) 설문 해석문 저장표(svNote) 신설
-   ⚠️ 2026-10-01 (O-0122) 주차 재편(10/7 수업 · 11/18 휴강)은 DATA_V 를 올리지 않았습니다 —
+   ⚠️ 2026-10-01 주차 재편(10/7 수업 · 11/18 휴강)은 DATA_V 를 올리지 않았습니다 —
       날짜는 코드 계산값이고, 서버 app_meta.data_v 와 어긋나면 안 되기 때문입니다. */
 var DATA_V = 14;  /* 14 = 2026-08-23 (20차) ⚖️ 팀내 평가 감점(intraPenalty·settings.intra) 신설 +
                           ⛔ 등급 정원(aP/a/b) 폐기 — 앱은 점수 합산까지만 */  /* 11 = 2026-08-22 등급 정원 A+3/A3/B2 정정
@@ -3560,7 +3565,7 @@ if(typeof PREVIEW!=='undefined' && PREVIEW){
    · [예시 데이터 채우기]를 누른 뒤   → 4주차 수업일 9/16. 평가 화면까지 눌러 보시라고. */
 var PROTO_DAY_BASE = '2026-08-26';
 var PROTO_DAY_DEMO = '2026-09-16';
-/* 🔴 2026-10-01 (O-0122 후속) — 배포본(IS_DEPLOY)은 「실제 오늘」을 씁니다.
+/* 🔴 2026-10-01 (주차 재편 후속) — 배포본(IS_DEPLOY)은 「실제 오늘」을 씁니다.
       옛 코드는 배포본도 8/26 에 고정돼 학생 홈에 「다음 2주차는 9/2(수)에 열립니다」가 떴습니다.
       이번 주(curWeek)·마감 D-일수·교수 홈의 평가주 경고가 모두 이 값 하나로 계산됩니다.
       교내 시제품(index.html)은 옛 동작(8/26 · 예시 데이터면 9/16) 그대로입니다. */
@@ -3594,7 +3599,7 @@ var CIDS = ['F1','F2','F3'];
    📅 주차 날짜 — 🔴 15개를 손으로 적지 않습니다 (2026-08-21 · 13차)
    --------------------------------------------------------------------------
    🔴 (옛) 2026-08-21 교수님 지시: 10/7(수)은 다른 요일 보강으로 수업 없음 → 10/7 제외.
-   🔴 (현행) 2026-10-01 교수님 확정 (O-0122):
+   🔴 (현행) 2026-10-01 교수님 확정:
       · 10/7(수)은 이제 수업합니다 → 새 7주차 「팀활동4」
       · 11/18(수)은 2학년 현장견학으로 휴강 → 주차에서 뺍니다
       · 날짜별 내용은 그대로, 7~12주차 번호와 팀활동 번호만 한 칸씩 바뀝니다
@@ -3630,15 +3635,15 @@ var WEEKDEF = [
   {n:3, title:'팀활동1',     full:'팀 활동 1 · 조사 자료 제출', win:'마감일까지', kind:'research', tutor:1},
   {n:4, title:'중간발표1',   full:'중간발표1 — 가주제 정리 발표', win:'수업시간', kind:'eval', round:1},
   {n:5, title:'팀활동2',     full:'팀 활동 2 · 최종 주제 선정', win:'마감일까지', kind:'finaltopic', tutor:2},
-  /* 🔴 2026-10-01 (O-0122) — 6·7·10·11주차는 「학생 입력 없음」 주차입니다(수업 시간 팀 활동 · 교수 튜터링).
+  /* 🔴 2026-10-01 — 6·7·10·11주차는 「학생 입력 없음」 주차입니다(수업 시간 팀 활동 · 교수 튜터링).
         그래서 win(제출 창)을 두지 않습니다 → 마감(due)도 생기지 않습니다. 판정은 noInputWeek(). */
   {n:6, title:'팀활동3',     full:'팀 활동 3 · 광고 영상 제작 · 8주차 발표 평가 기준 안내', kind:'video'},
   {n:7, title:'팀활동4',     full:'팀 활동 4 · 교수 튜터링', kind:'activity', tutor:3},
   {n:8, title:'중간발표2',   full:'중간발표2 — 1~2분 광고영상 · KOSAC 제출', win:'수업시간', kind:'eval', round:2, film:true},
-  /* 🗳 2026-10-13 — 9주차에 「중간 설문」이 붙습니다(survey:'중간'). kind·key 는 그대로 둡니다 —
+  /* 🗳 2026-10-13 — 9주차에 「중간설문조사」가 붙습니다(survey:'중간' · 이름은 1주차 사전설문조사 · 15주차 최종설문조사와 같은 꼴). kind·key 는 그대로 둡니다 —
         중간고사 점수 입력·2회차 결과 공개·10주차 점수 카드가 이 두 값에 걸려 있습니다.
         설문은 반별 스위치(weekExc)가 켜진 반 학생에게만 보입니다 — 판정은 wkSvOn(). */
-  {n:9, title:'중간고사',    full:'중간고사 · 중간 설문', kind:'notice', key:'mid', survey:'중간'},
+  {n:9, title:'중간고사',    full:'중간고사 · 중간설문조사', kind:'notice', key:'mid', survey:'중간'},
   /* 🔴 2026-10-01 교수님 결정 A — 「영상 보강(필요 팀)」(boost)은 7주차가 아니라 10주차(10/28)에서 합니다 */
   {n:10,title:'팀활동5',     full:'팀 활동 5 · 교수 튜터링 · 영상 보강(필요 팀)', kind:'activity', tutor:4, boost:true},
   {n:11,title:'팀활동6',     full:'팀 활동 6 · 교수 튜터링', kind:'prep', tutor:5},
@@ -3664,7 +3669,7 @@ var WEEKDEF = [
 
 function wdef(n){ for(var i=0;i<WEEKDEF.length;i++) if(WEEKDEF[i].n===n) return WEEKDEF[i]; return null; }
 
-/* 🔢 역할별 주차 번호 (2026-10-01 · O-0122) — 번호를 코드에 박지 않고 WEEKDEF 에서 찾습니다.
+/* 🔢 역할별 주차 번호 (2026-10-01) — 번호를 코드에 박지 않고 WEEKDEF 에서 찾습니다.
    주차가 또 밀려도 WEEKDEF 만 고치면 화면·출력물·자체점검이 따라옵니다. */
 function wkOf(fn){ for(var i=0;i<WEEKDEF.length;i++) if(fn(WEEKDEF[i])) return WEEKDEF[i].n; return null; }
 var WK_R1   = wkOf(function(d){ return d.round===1; });          /* 중간발표1        (4)  */
@@ -3690,7 +3695,7 @@ var DB = {
     else{ this.syncLocalWeeks(); this.syncLocalMid(); }
     return this.d;
   },
-  /* 🔴 2026-10-01 (O-0122 후속) — 교내용(로컬 저장) 전용 「주차표 맞춤」.
+  /* 🔴 2026-10-01 (주차 재편 후속) — 교내용(로컬 저장) 전용 「주차표 맞춤」.
      ▸ 로컬 저장본에는 주차행(weeks)에 옛 날짜·마감이 박혀 있어, 주차표를 바꿔도 옛 값이 남았습니다.
      ▸ DATA_V 를 올리면 풀리지만 DATA_V 는 서버 app_meta.data_v(14)와 맞물려 있어 올리지 않습니다.
        대신 저장본에 __weekSched 표시를 두고, WEEK_SCHED_V 와 다를 때 「한 번만」 주차행·안내문·견학일지 번호를 새 주차표로 맞춥니다.
@@ -4380,7 +4385,7 @@ function roLabel(cid){
    -------------------------------------------------------------------------- */
 function wrow(n){ return DB.one('weeks', function(w){return w.n===n;}); }
 function wState(n){ var w=wrow(n); return w?w.state:'닫힘'; }
-/* 🔴 2026-10-01 (O-0122 후속) — 원격(DB) 주차행에는 날짜·마감이 없습니다(상태만 저장).
+/* 🔴 2026-10-01 (주차 재편 후속) — 원격(DB) 주차행에는 날짜·마감이 없습니다(상태만 저장).
       그래서 날짜·마감은 「주차행에 있으면 그것(교수가 [주차 공통 설정]에서 바꾼 값), 없으면 WEEKDEF 계산값」으로 읽습니다.
       ⛔ wrow() 결과에 date·due 를 써 넣지 않습니다 — DB.set 때 서버로 새어 나갈 수 있습니다. */
 function wkDate(n){ var w=wrow(n), d=wdef(n); return (w&&w.date) || (d&&d.date) || ''; }
@@ -4458,8 +4463,8 @@ function wkSvSet(cid, n, on){
   var r=wkSvRow(cid, n);
   if(r) DB.set('weekExc', r.id, {survey:!!on, at:nowStr(), by:(SESS.acc? SESS.acc.name:'')});
   else DB.add('weekExc', {id:'we_'+cid+'_'+n, classId:cid, n:n, survey:!!on, at:nowStr(), by:(SESS.acc? SESS.acc.name:'')});
-  DB.log(wkSurveyKind(n)+' 설문 '+(on?'켜기':'끄기'), cid+' · '+n+'주차');
-  toast(on? cid+' 학생에게 '+wkSurveyKind(n)+' 설문이 보입니다.' : cid+' 학생에게는 안내문만 보입니다.');
+  DB.log(wkSurveyKind(n)+'설문 '+(on?'켜기':'끄기'), cid+' · '+n+'주차');
+  toast(on? cid+' 학생에게 '+wkSurveyKind(n)+'설문이 보입니다.' : cid+' 학생에게는 안내문만 보입니다.');
   render();
 }
 /* 그 설문이 붙은 주차 — 사전 1 · 최종 15 · 그 밖은 WEEKDEF 의 survey 칸에서 찾습니다(중간 = 9) */
@@ -4467,6 +4472,42 @@ function svWeekOf(kind){
   if(kind==='사전') return wkOf(function(d){ return d.kind==='survey'; }) || 1;
   if(kind==='최종') return wkOf(function(d){ return d.kind==='final'; }) || 15;
   return wkOf(function(d){ return d.survey===kind; });
+}
+/* ==========================================================================
+   🗂 설문을 늘어놓는 순서 — 이 한 곳에서만 정합니다 (2026-10-13)
+   --------------------------------------------------------------------------
+   ▸ 기준은 「그 설문이 붙은 주차」입니다. 주차표(WEEKDEF)를 앞에서부터 읽어
+     사전(1주차) → 중간(9주차) → 최종(15주차) 순서가 됩니다.
+     등록한 순서나 id 순서(sv_1 · sv_25 · sv_mid)로 그리면 나중에 만든 설문이 끝에 붙습니다.
+   ▸ 탭 · 단추 · 표의 칸 · 엑셀 시트 · 내려받기 목록은 화면마다 순서를 손으로 적지 않고
+     svKinds() · svList() 를 돌려서 그립니다. 주차표에서 설문 주차가 바뀌면 순서도 따라 바뀝니다.
+   ▸ 사전·최종은 주차 종류(kind)로 붙은 설문이라 늘 나오고, 주차에 덧붙는 설문(survey 칸 — 지금은 중간)은
+     등록돼 있을 때만 나옵니다(등록 전에 빈 칸·빈 단추가 생기지 않게). svKinds(true) 는 등록과 무관하게 전부.
+   ========================================================================== */
+function svSlots(){
+  var out=[];
+  WEEKDEF.slice().sort(function(a,b){ return a.n-b.n; }).forEach(function(d){
+    var k = d.kind==='survey'? '사전' : (d.kind==='final'? '최종' : (d.survey||''));
+    if(k && !out.some(function(x){ return x.kind===k; })) out.push({kind:k, n:d.n, fixed:!d.survey});
+  });
+  return out;
+}
+function svKinds(all){
+  return svSlots().filter(function(x){
+    return all || x.fixed || !!DB.one('surveys', function(s){ return s.kind===x.kind; });
+  }).map(function(x){ return x.kind; });
+}
+/* 등록된 설문 줄을 주차 순으로 (주차표에 없는 종류는 맨 뒤 · 같은 자리면 id 순) */
+function svList(){
+  var ord=svKinds(true);
+  function at(s){ var i=ord.indexOf(s.kind); return i<0? 999 : i; }
+  return DB.get('surveys').sort(function(a,b){ return (at(a)-at(b)) || (a.id<b.id? -1 : (a.id>b.id? 1 : 0)); });
+}
+/* 그 반이 그 설문의 대상인가 — 사전·최종은 모든 반, 주차에 덧붙는 설문은 그 반이 켰을 때만 */
+function svOnFor(kind, cid){
+  var slot=svSlots().filter(function(x){ return x.kind===kind; })[0];
+  if(!slot) return false;
+  return slot.fixed? true : wkSvOn(cid, slot.n);
 }
 /* 그 학생이 그 설문에 한 줄이라도 냈는가 (1·15주차와 같은 기준) */
 function svDid(kind, st){
@@ -4477,12 +4518,12 @@ function svDid(kind, st){
 /* 학생 뱃지 — 「내가 낼 것이 있는가」 */
 function studentBadge(n){
   var def=wdef(n), w=wrow(n)||{};   /* 🛡️ 16주차(kind:'result')는 주차행이 없을 수 있어 null 방지 */
-  /* 🚌 12주차(현장견학)는 안내 + 「나의 현장견학 일지」 쓰기가 있습니다 (O-0122 후속) */
+  /* 🚌 12주차(현장견학)는 안내 + 「나의 현장견학 일지」 쓰기가 있습니다 (주차 재편 후속) */
   if(n===WK_TRIP && def.kind==='notice'){ if(w.state==='닫힘') return {t:'🔒 잠김', c:'gray'};
     return (typeof myExcursion==='function' && myExcursion())? {t:'✅ 일지 작성', c:'green'} : {t:'✏️ 견학 일지', c:'amber'}; }
   /* 🗳 설문이 붙은 안내 주차(9주차) — 우리 반 스위치가 켜져 있으면 아래 「낼 것이 있는 주차」와 같이 봅니다 */
   if(def.kind==='notice' && !(SESS.me && wkSvOn(SESS.me.classId, n))) return {t:'▫️ 안내만', c:'gray'};
-  /* 🙅 2026-10-01 (O-0122) — 6·7·10·11주차는 앱에 낼 것이 없습니다. 「해야 함·오늘까지」로 재촉하지 않습니다 */
+  /* 🙅 2026-10-01 — 6·7·10·11주차는 앱에 낼 것이 없습니다. 「해야 함·오늘까지」로 재촉하지 않습니다 */
   if(noInputWeek(def)) return w.state==='닫힘' ? {t:'🔒 잠김', c:'gray'} : {t:'▫️ 입력 없음', c:'gray'};
   /* 🔴 16주차 「최종결과」 — 낼 것이 없는 결과 확인 주차. 공개 여부로 뱃지를 나눕니다 */
   if(def.kind==='result'){
@@ -4553,7 +4594,7 @@ function hasSubmitted(st, n){
   if(def.kind==='notice' && def.survey && wkSvOn(st.classId, n)) return svDid(def.survey, st);
   if(def.kind==='notice') return true;
   if(def.kind==='result') return true;   /* 낼 것이 없는 결과 확인 주차 — 「미제출」로 세지 않습니다 */
-  if(noInputWeek(def)) return true;      /* 🙅 6·7·10·11주차 — 낼 것이 없습니다(O-0122) */
+  if(noInputWeek(def)) return true;      /* 🙅 6·7·10·11주차 — 낼 것이 없습니다 */
   if(def.kind==='survey'){
     var sv=DB.one('surveys',function(s){return s.kind==='사전';});
     return !!DB.one('answers', function(a){return a.surveyId===sv.id && a.studentId===st.id;});
@@ -4758,7 +4799,7 @@ function viewAbout(){
         '<tr><td class="c">2</td><td class="nw">가주제 → 최종주제</td><td>팀당 가주제 3개 도출 → 튜터링 → 최종 1개로 압축.</td></tr>'+
         '<tr><td class="c">3</td><td class="nw">발표 · 평가</td><td>회차별 교수평가 + 동료평가.</td></tr>'+
         '<tr><td class="c">4</td><td class="nw">성적 확인</td><td>과정평가 결과를 학생이 직접 조회.</td></tr>'+
-        '<tr><td class="c">5</td><td class="nw">설문·튜터링·활동 기록</td><td>사전/최종 설문, 튜터링 기록, 활동 이력 축적.</td></tr>'+
+        '<tr><td class="c">5</td><td class="nw">설문·튜터링·활동 기록</td><td>사전·중간·최종 설문, 튜터링 기록, 활동 이력 축적.</td></tr>'+
         '<tr><td class="c">6</td><td class="nw">AI 활용 원칙</td><td>AI는 복사 도구가 아니라 <b>탐색·검증 도구</b>로 사용.</td></tr>'+
       '</table></div>'+
       '<div class="note" style="margin-top:12px"><b>ℹ️ AI 활용 원칙</b><br>'+
@@ -4852,8 +4893,8 @@ function todoBand(){
     var d0 = open.filter(function(d){return d.n===cur;})[0] || open[0];
     var w0 = wrow(d0.n);
     var dd = d0.due? dayDiff(protoToday(), d0.due.split(' ')[0]) : null;
-    return '<div class="note r"><b>📌 이번 주 할 일</b><br>'+d0.n+'주차 '+((d0.kind==='notice' && d0.survey)? esc(d0.survey)+' 설문 — 미응답' : esc(d0.title)+' — 미제출')+
-      /* 🔴 2026-10-01 (O-0122) — 마감이 지났는데 주차가 아직 열려 있으면 「D--1」로 찍히던 것을 「마감 지남」으로 */
+    return '<div class="note r"><b>📌 이번 주 할 일</b><br>'+d0.n+'주차 '+((d0.kind==='notice' && d0.survey)? esc(d0.survey)+'설문조사 — 미제출' : esc(d0.title)+' — 미제출')+
+      /* 🔴 2026-10-01 — 마감이 지났는데 주차가 아직 열려 있으면 「D--1」로 찍히던 것을 「마감 지남」으로 */
       (dd!==null? ' ('+(dd===0?'오늘 마감':(dd<0?'마감 지남 · 아직 낼 수 있음':'D-'+dd))+')':'')+
       ' <button class="btn sm pri" style="float:right" onclick="go(\'week\',{n:'+d0.n+'})">바로 가기 →</button></div>';
   }
@@ -6544,12 +6585,12 @@ function delExcursion(id){
   DB.del('excursion', id); toast('내 현장견학 일지를 지웠습니다.'); render();
 }
 
-/* ===== 타이틀 전용 주차 (6·7·10·11 — 2026-10-01 O-0122 재번호. 옛 6·9·10·12) — 학생 입력 없음 (2026-08-23 교수님 지시) =====
+/* ===== 타이틀 전용 주차 (6·7·10·11 — 2026-10-01 주차 재번호. 옛 6·9·10·12) — 학생 입력 없음 (2026-08-23 교수님 지시) =====
    교수님: "6주차 광고 영상 제작 / 9·10·12주차 최종 앱 개발 — 제목만 남기고 학생 입력은 삭제.
            수업에서 진행하고, 앱에 따로 낼 것은 없다."
    ▸ 학생 화면의 입력 요소만 걷어냈습니다. 교수 튜터링(tutor:N)은 그대로 유지됩니다(교수 화면).
    ▸ 「5주차 이후 팀 주제는 최종 1개만」 원칙에 맞춰 우리 팀 최종 주제를 함께 보여 줍니다(표시만).
-   🔴 2026-10-01 (O-0122) 교수님: "6주차에는 학생이 직접 입력할 것이 없었는데 학생 화면에 헷갈리게 하는 문구가 있다"
+   🔴 2026-10-01 교수님: "6주차에는 학생이 직접 입력할 것이 없었는데 학생 화면에 헷갈리게 하는 문구가 있다"
       → 「입력할 것 없음」을 맨 위 초록 띠로 먼저 알립니다. 마감·제출 창·미제출 표시는 이 주차들에서 모두 없앴습니다
         (WEEKDEF 에서 win 제거 · studentBadge/profBadge/hasSubmitted 가 noInputWeek() 로 걸러 냄).
       → 튜터링 주차(tutor:N)는 「교수 튜터링이 있는 날」이라는 것만 알립니다(학생은 튜터링 기록을 보지 않습니다 — 17차). */
@@ -6571,7 +6612,7 @@ function stTitleOnly(n, title, sub){
 /* ===== 6주차 — 광고 영상 제작 + 8주차(WK_R2) 발표 평가 기준 안내 =====
    🔴 2026-09-23 교수님 지시: 6주차 교수 튜터링을 없애고, 대신 「중간발표2 · 1~2분 광고영상」
       발표에 쓸 평가 기준을 학생이 미리 보게 합니다.
-   🔴 2026-10-01 (O-0122): 10/7 이 7주차(팀활동4)가 되어 중간발표2 는 8주차(10/14)로 밀렸습니다.
+   🔴 2026-10-01: 10/7 이 7주차(팀활동4)가 되어 중간발표2 는 8주차(10/14)로 밀렸습니다.
       「다음 주 7주차」 → 「8주차(10/14)」. 「영상은 따로 제출합니다」처럼 이번 주에 낼 것이 있는 듯한 말을 뺐습니다.
    ▸ 「읽기 안내」입니다 — 입력·제출·저장이 없습니다.
    ▸ 루브릭은 지어내지 않고, 중간발표2 에 실제 쓰는 2회차 루브릭(rubricTable(2))을 그대로 씁니다
@@ -6598,7 +6639,7 @@ function saveWeek6(tid){
   toast('6주차 진행 상황을 제출했습니다.'); render();
 }
 
-/* ===== 7·10주차 — 팀 활동 4·5 (타이틀만 · 교수 튜터링) — 제목은 WEEKDEF 에서 옵니다(O-0122) ===== */
+/* ===== 7·10주차 — 팀 활동 4·5 (타이틀만 · 교수 튜터링) — 제목은 WEEKDEF 에서 옵니다 ===== */
 function stActivity(n, def){
   def = def || wdef(n) || {};
   return stTitleOnly(n, String(def.title||'').replace(/^팀활동/, '팀 활동 '),
@@ -6643,7 +6684,7 @@ function savePrep(tid){
    ▸ 11주차(WK_PREP) 「최종발표 평가 기준 공개」와 [루브릭 만들기]의 미리보기가 이 함수 하나를 씁니다. */
 function rubricTable(round){
   var D = (typeof RUBRIC_DRAFT!=='undefined' && RUBRIC_DRAFT[round]) || {};
-  var h = D.run ? '<div class="note"><b>진행</b> '+esc(D.run)+(D.note? '<br>'+esc(D.note):'')+'</div>' : '';
+  var h = D.run ? '<div class="note"><b>진행</b> '+esc(D.run)+(D.note? '<br>'+rbNoteHtml(D.note):'')+'</div>' : '';
   [['prof','교수평가'],['inter','동료평가 — 팀간'],['intra','동료평가 — 팀내']].forEach(function(k){
     var rs=DB.get('rubrics', function(r){return r.round===round && r.kind===k[0];})
              .sort(function(a,b){return a.order-b.order;});
@@ -6704,7 +6745,7 @@ function accToggle(id){
      · "교수들에게는 동일하게 13-14주차에 팀과 순서를 선정하거나 수정할 수 있게 해줘"
 
    🔑 누가 정하나
-     · 4·8주차  — **담당교수가 자기 강좌 8팀**만 (2026-10-01 O-0122: 중간발표2 7→8주차) (기존 「수정은 자기 강좌만」 규칙 그대로)
+     · 4·8주차  — **담당교수가 자기 강좌 8팀**만 (2026-10-01 주차 재편: 중간발표2 7→8주차) (기존 「수정은 자기 강좌만」 규칙 그대로)
      · 13·14주차 — **교수 3명 모두**가 **24팀 전체**를 정하고 고칩니다 (통합 발표)
 
    🔴 세 분이 같은 배정표 하나를 고칩니다 — 조용히 덮어쓰지 않습니다
@@ -6714,7 +6755,7 @@ function accToggle(id){
      ③ 무엇이 바뀌었는지 **변경 기록(audit)**에 남깁니다
    ========================================================================== */
 
-var PRES_WEEKS = PRES_WEEKS_ALL.slice();   /* [4, 8, 13, 14] — WEEKDEF 의 eval 주차에서 옵니다(O-0122) */
+var PRES_WEEKS = PRES_WEEKS_ALL.slice();   /* [4, 8, 13, 14] — WEEKDEF 의 eval 주차에서 옵니다 */
 function presJoint(n){ return n===13 || n===14; }            /* 3개 강좌 합동 주차 */
 /* 그 주에 발표하는 팀 수
    · 13·14주차(합동) — 24팀을 12+12로 나눕니다 (그대로)
@@ -7014,7 +7055,7 @@ function stEval(n, def){
      ⛔ 교수님 지시: "각 주차에 직접 학생이 파일을 제출하는 건 만들 필요 없어. 따로 받을 예정"
         → 파일·영상 제출 자리를 전부 걷어냈습니다. 이 주차에는 평가만 있습니다. */
   h += '<div class="card"><h3>' + esc(D.title || (n + '주차 발표')) + ' <span class="muted">' + n + '주차</span></h3>' +
-    '<div class="note"><b>진행</b> ' + esc(D.run || '') + (D.note ? '<br>' + esc(D.note) : '') + (D.extra ? '<br>'+esc(D.extra) : '') + '</div>' +
+    '<div class="note"><b>진행</b> ' + esc(D.run || '') + (D.note ? '<br>' + rbNoteHtml(D.note) : '') + (D.extra ? '<br>'+esc(D.extra) : '') + '</div>' +
     '<p class="muted">이 주차에는 <b>따로 낼 파일이 없습니다.</b> 발표자료는 담당교수님이 따로 받으십니다. ' +
     '여러분이 할 일은 <b>동료평가</b>입니다.</p></div>';
 
@@ -7229,7 +7270,7 @@ function profWeekSurveyCard(n, def, cids){
   var kind=def.survey;
   var sv=DB.one('surveys', function(s){return s.kind===kind;});
   var h='<div class="card"><h3>'+esc(kind)+'설문 운영 현황</h3>';
-  if(!sv) return h+'<div class="note a">'+esc(kind)+' 설문이 아직 등록되지 않았습니다. 등록된 뒤에 켤 수 있습니다.</div></div>';
+  if(!sv) return h+'<div class="note a">'+esc(kind)+'설문이 아직 등록되지 않았습니다. 등록된 뒤에 켤 수 있습니다.</div></div>';
   function stu(cid){ return DB.get('students', function(s){return s.classId===cid&&s.active!==false;}); }
   function did(s){ return !!DB.one('answers', function(a){return a.surveyId===sv.id&&a.studentId===s.id;}); }
   var closed = wState(n)==='닫힘';
@@ -7242,10 +7283,10 @@ function profWeekSurveyCard(n, def, cids){
   cids.forEach(function(cid){
     var ss=stu(cid), done=ss.filter(did).length, on=wkSvOn(cid,n), ed=canEdit(cid);
     h += '<div class="hr"></div><b>'+esc(clsFull(cid))+'</b><div style="margin-top:4px">'+
-      (on? '이 반 학생에게 '+esc(kind)+' 설문이 보이고 있습니다 '+
+      (on? '이 반 학생에게 '+esc(kind)+'설문이 보이고 있습니다 '+
              (ed? '<button class="btn sm" onclick="wkSvSet(\''+cid+'\','+n+',false)">끄기</button>':'')+
              ' <span class="muted">· 응답 '+done+'/'+ss.length+(closed? ' · '+n+'주차가 닫혀 있어 학생에게는 아직 보이지 않습니다':'')+'</span>'
-         : '이 반 학생에게 '+esc(kind)+' 설문 보이기 '+
+         : '이 반 학생에게 '+esc(kind)+'설문 보이기 '+
              (ed? '<button class="btn sm pri" onclick="wkSvSet(\''+cid+'\','+n+',true)">켜기</button>':'')+
              ' <span class="muted">· 꺼짐: 학생에게는 안내문만 보입니다</span>')+
       '</div>'+((!ed && roLabel(cid))? '<div class="note">'+roLabel(cid)+'</div>':'');
@@ -7274,7 +7315,7 @@ function weekProf(n, def){
   /* 🗳 설문이 붙은 주차(9주차) — 주차는 열렸는데 내 반 설문이 꺼져 있으면 맨 위에 알립니다.
      설문을 하지 않는 반에는 계속 보이는 띠라 문구를 중립으로 둡니다. */
   if(def.survey && wState(n)==='열림' && !wkSvOn(myClass(), n) && DB.one('surveys', function(s){return s.kind===def.survey;}))
-    h += '<div class="note a">⚠️ <b>'+n+'주차는 열려 있지만 이 반의 '+esc(def.survey)+' 설문은 꺼져 있습니다.</b> '+
+    h += '<div class="note a">⚠️ <b>'+n+'주차는 열려 있지만 이 반의 '+esc(def.survey)+'설문은 꺼져 있습니다.</b> '+
       '학생에게는 안내문만 보입니다. 설문을 하지 않는 반이면 그대로 두십시오.</div>';
 
   if(def.kind==='notice' || def.kind==='final'){
@@ -7346,7 +7387,7 @@ function weekProf(n, def){
     /* 📢 5주차 — 1회차(4주차) 발표평가 결과를 학생에게 공개 (R9) */
     h += discloseControlCard('r1','1회차 발표평가 결과 (4주차)',
       '학생은 5주차에서 우리 팀 총점과 팀간 순위(같은 반 안)를 봅니다. 교수·동료 세부 점수는 공개되지 않습니다.'); }
-  /* 🙅 학생 입력 없는 주차(6·7·10·11 — O-0122 재번호)는 교수 화면 맨 위에 그 사실을 알립니다 */
+  /* 🙅 학생 입력 없는 주차(6·7·10·11 — 주차 재번호)는 교수 화면 맨 위에 그 사실을 알립니다 */
   if(noInputWeek(def)) h = '<div class="note g">✅ <b>이 주차는 학생이 앱에 입력·제출할 것이 없습니다.</b> '+
     '수업 시간 팀 활동'+(def.boost? ' · <b>영상 보강(필요 팀)</b>' : '')+(def.tutor? ' · 아래 <b>교수 튜터링 '+def.tutor+'회차</b>를 팀별로 기록하시면 됩니다.' : '입니다.')+
     ' 학생 화면에도 「입력할 것 없음」으로 보이며, 진행률·미제출 집계에서 빠집니다.</div>' + h;
@@ -7478,7 +7519,7 @@ function teamWorkPeek(teamId, n){
 }
 
 /* ==========================================================================
-   평가 주차(4·8·13·14 — 2026-10-01 O-0122 재번호) — 교수 화면  (2026-08-22 · 18차 전면 개편)
+   평가 주차(4·8·13·14 — 2026-10-01 주차 재번호) — 교수 화면  (2026-08-22 · 18차 전면 개편)
    --------------------------------------------------------------------------
    ⛔ 학생 파일 제출 자리는 없습니다 — 교수님이 따로 받으십니다.
    🔑 채점 권한
@@ -7516,7 +7557,7 @@ function profEvalPanel(n, def, cids){
 
   /* ① 이 주차 운영 안내 */
   h += '<div class="card"><h3>'+esc(D.title || (n+'주차 발표'))+' <span class="muted">'+n+'주차</span></h3>'+
-    '<div class="note"><b>진행</b> '+esc(D.run||'')+(D.note? '<br>'+esc(D.note):'') + (D.extra ? '<br>'+esc(D.extra) : '')+'</div>'+
+    '<div class="note"><b>진행</b> '+esc(D.run||'')+(D.note? '<br>'+rbNoteHtml(D.note):'') + (D.extra ? '<br>'+esc(D.extra) : '')+'</div>'+
     '<p class="muted">⛔ 학생이 앱에 <b>파일을 내지 않습니다</b> — 발표자료는 따로 받으십니다. '+
     '이 화면에서 하실 일은 <b>발표 순서 배정</b>과 <b>교수평가 입력</b>입니다.</p></div>';
 
@@ -7962,7 +8003,7 @@ function profActivityPanel(n, cids){
 
    ▸ 팀을 하나씩 골라 들어갔다 나오는 방식이 아닙니다. 수업 중에 돌아다니며 쓰는
      화면이라 8팀이 죽 늘어서 있고, 팀마다 따로 저장됩니다.
-   ▸ 🔴 3주차(1회차)가 확정 사양입니다. 5·7·10·11주차(O-0122 재번호)는 「틀만」 재사용하며,
+   ▸ 🔴 3주차(1회차)가 확정 사양입니다. 5·7·10·11주차(주차 재번호)는 「틀만」 재사용하며,
      그 주차에 무엇을 보여줄지는 아직 교수님이 정하지 않으셨습니다.
      그래서 주차별 규칙을 손으로 박아 넣지 않고 원칙 하나로만 굴립니다 —
      「그 시점에 그 팀이 가진 것을 자동으로 보여준다」
@@ -8231,7 +8272,7 @@ function viewAdmin(){
        순서대로 나오도록, 일지이므로, 요일과 주차가 모두 표기될 수 있도록 해줘"
       (원문 「투터링」은 오타가 분명하여 「튜터링」으로 씁니다.)
 
-   ▸ 2026-10-01 (O-0122) 현행 회차 ↔ 주차: 1차 3주 · 2차 5주 · 3차 7주(10/7) · 4차 10주 · 5차 11주.
+   ▸ 2026-10-01 현행 회차 ↔ 주차: 1차 3주 · 2차 5주 · 3차 7주(10/7) · 4차 10주 · 5차 11주.
    ▸ 회차 ↔ 주차 대응은 손으로 박지 않습니다. WEEKDEF 의 tutor 표시에서 뽑고,
      날짜는 주차설정(weeks 표)에서 읽습니다 — 휴강·보강으로 날짜가 바뀌어도
      일지가 저절로 따라갑니다. 요일도 그 날짜에서 계산합니다.
@@ -8278,7 +8319,7 @@ function tlMemberName(st){
 }
 
 /* ---- 그 시점에 그 팀이 가진 주제 (10차 원칙 그대로) ----
-   🔴 2026-10-04 (O-0198) — 「그 시점」을 회차로 따집니다.
+   🔴 2026-10-04 — 「그 시점」을 회차로 따집니다.
       최종 주제를 정하는 주차(WEEKDEF 의 kind:'finaltopic')보다 「앞선」 회차의 일지에는
       그때 모습대로 가주제를 적습니다. 옛 코드는 회차와 상관없이 「지금」의 최종 주제를 찍어,
       최종 주제가 정해진 뒤에 1차(3주차) 일지를 다시 뽑으면 가주제 3개가 사라졌습니다.
@@ -10074,7 +10115,7 @@ function autoPlace(cid){
    --------------------------------------------------------------------------
    🔴 그냥 날짜만 바꿔 두면 나중에 누군가 「왜 11/18이 없지?」 하고 되돌립니다.
       그래서 「뺐다」는 사실과 이유를 주차 설정 화면 두 곳에 붙여 둡니다.
-   🔴 2026-10-01 (O-0122): 뺀 날이 10/7 → 11/18 로 바뀌었습니다(10/7 은 7주차 수업).
+   🔴 2026-10-01: 뺀 날이 10/7 → 11/18 로 바뀌었습니다(10/7 은 7주차 수업).
       날짜는 주차행(weeks)에 없을 수 있어(원격 — 상태만 저장) WEEKDEF 계산값을 대신 씁니다(wkDate).
    ========================================================================== */
 /* wkDate(n) · wDue(n) 은 p3_core.js 로 옮겼습니다(앱 전체 공용) */
@@ -10153,16 +10194,22 @@ function svRestoreBlocked(){
 }
 var svPick=null;
 function admSurvey(){
-  var svs=DB.get('surveys');
+  var svs=svList();          /* 🗂 주차 순 — 사전 · 중간 · 최종 (p3_core.js 의 순서 규칙) */
   if(!svPick) svPick=svs[0].id;
   var sv=DB.one('surveys', svPick);
   var qs=DB.get('questions', function(q){return q.surveyId===sv.id;}).sort(function(a,b){return a.order-b.order;});
   var lockSv=svLocked(sv), noRestore=svRestoreBlocked();
+  /* 설문마다 한 줄 — 주차 · 문항 수 · 어디서 온 문항인지. 문항 수는 아래 카드 제목과 같은 셈법입니다 */
+  function svLine(s){
+    var q2=DB.get('questions', function(q){return q.surveyId===s.id;});
+    var nNo=q2.filter(function(q){return q.no;}).length, nFree=q2.length-nNo;
+    return '· <b>'+esc(s.kind)+'설문</b> ('+svWeekOf(s.kind)+'주차) — 문항 '+nNo+'개'+(nFree? ' + 자유 의견 '+nFree : '')+' · '+
+      (SV_FIXED_LOCK[s.kind]? '확정본 그대로 · 처음부터 잠김' : '교수님이 주신 설문지 원문 그대로');
+  }
   var h='<div class="card"><h2>설문 만들기</h2>'+
-    '<div class="note g"><b>✅ 교수님이 주신 실제 설문지가 그대로 들어가 있습니다.</b> (2026-08-21)<br>'+
-    '원본: <b>바이오기초설계_사전사후_설문지_최종.docx</b> — 사전 23문항 · 최종 22문항 + 자유 의견 2.<br>'+
-    '문항 글자는 <b>한 자도 바꾸지 않았고</b>, 예시 괄호·따옴표·줄바꿈까지 원문 그대로입니다.<br>'+
-    '중간설문('+WK_MID+'주차)은 확정본 문항이 그대로 들어 있고, 처음부터 잠겨 있습니다.<br>'+
+    '<div class="note g"><b>✅ 설문 문항은 확정된 그대로 들어 있습니다.</b><br>'+
+    svs.map(svLine).join('<br>')+'<br>'+
+    '<span class="muted">사전·최종 원본: 바이오기초설계_사전사후_설문지_최종.docx (예시 괄호·따옴표·줄바꿈까지 그대로)</span><br>'+
     '<b>응답이 한 건이라도 들어온 설문은 고칠 수 없습니다</b> — 문항을 지우거나 원본으로 되돌리면 그 문항의 응답이 함께 지워지기 때문입니다. '+
     '응답이 없는 설문만 아래에서 고치실 수 있고, 고치면 학생 화면이 그대로 따라 그려집니다.</div>'+
     '<div class="btnrow">'+svs.map(function(s){
@@ -10190,7 +10237,8 @@ function admSurvey(){
       /* 🔒 이 표시는 교수 화면에만 있습니다 — 학생 화면에는 그리지 않습니다 */
       (q.warn? '<div class="note a">'+esc(q.warn)+'</div>':'')+
       (lockSv? (
-        '<div style="white-space:pre-wrap">'+esc(q.text)+'</div>'+
+        /* 제목 줄이 문항의 첫 줄입니다 — 둘째 줄(예시 괄호 등)이 있는 문항만 전문을 한 번 더 보여 줍니다 */
+        (String(q.text).indexOf('\n')>=0? '<div style="white-space:pre-wrap">'+esc(q.text)+'</div>' : '')+
         ((q.opts||[]).length? '<div class="muted" style="margin-top:4px">보기: '+(q.opts||[]).map(function(o){return esc(o);}).join(' ∥ ')+'</div>':'')+
         ((q.type==='5점' && (q.labels||[]).length===5 && q.labels[0]!=='1')?'<div class="muted" style="margin-top:4px">1 '+esc(q.labels[0])+' ~ 5 '+esc(q.labels[4])+'</div>':'')+
         '<div class="muted" style="margin-top:4px">'+(q.req?'필수':'선택')+(q.pair? ' · 짝 이름 '+esc(q.pair):'')+' · 🔒 '+svLockWhy(sv)+'</div>'
@@ -10226,7 +10274,7 @@ function svRestore(){
   APP.confirm('사전·최종 설문 문항을 「교수님이 주신 원본 설문지」 그대로 되돌립니다.\n\n'+
     '· 여기서 고치신 내용은 사라집니다\n'+
     '· 문항을 지우고 다시 만드는 동작이라, 응답이 들어온 뒤에는 쓸 수 없습니다(지금은 응답 0건)\n'+
-    '· 중간 설문은 건드리지 않습니다\n\n진행할까요?', function(){
+    '· 중간설문은 건드리지 않습니다\n\n진행할까요?', function(){
     if(svRestoreBlocked()){ toast('응답이 들어온 설문이 있어 원본으로 되돌릴 수 없습니다.'); render(); return; }
     ['pre','post'].forEach(function(k){
       var S=SURVEYDEF[k];
@@ -10489,9 +10537,8 @@ function admDash(){
   h += '<div class="card"><h3>설문 결과</h3>'+
     '<button class="btn pri full" onclick="svrGo(myClass())">설문 결과 대시보드 — 그래프·해석·엑셀</button>'+
     '<div class="hint">응답률 · 12문항 세 줄 비교 · AI 사용 분포 · 결과의 의미 · 엑셀(.xlsx) 내려받기가 그 화면에 모두 있습니다.</div></div>';
-  h += dashSurvey('사전', cids);
-  h += dashSurvey('중간', cids);     /* 🗳 9주차 중간 설문 — 문항별 분포(사전·최종과 같은 그림). 설문 줄이 없으면 그리지 않습니다 */
-  h += dashSurvey('최종', cids);
+  /* 🗂 설문마다 문항별 분포 — 주차 순(사전 · 중간 · 최종 · p3_core.js 의 순서 규칙). 설문 줄이 없으면 그리지 않습니다 */
+  svKinds().forEach(function(k){ h += dashSurvey(k, cids); });
   h += dashCompare(cids);
 
   /* 3-2 진행 현황 격자표 */
@@ -10514,7 +10561,7 @@ function admDash(){
           var mark = done===ms.length? '✅' : (done>0? '⚠️':'⬛');
           return '<td class="c">'+mark+'</td>'; }).join('')+'</tr>';
     }).join('')+'</table></div>'+
-    '<p class="muted">✅완료 ⚠️일부 💾임시저장 ⬛미제출 🔒미개시 —해당없음 · 6·7·10·11주는 학생이 앱에 낼 것이 없어 「—」입니다. '+WK_MID+'주는 중간 설문을 켠 반만 표시합니다(12주 현장견학 일지는 [현장견학 일지]에서 봅니다). '+
+    '<p class="muted">✅완료 ⚠️일부 💾임시저장 ⬛미제출 🔒미개시 —해당없음 · 6·7·10·11주는 학생이 앱에 낼 것이 없어 「—」입니다. '+WK_MID+'주는 중간설문을 켠 반만 표시합니다(12주 현장견학 일지는 [현장견학 일지]에서 봅니다). '+
     '3주차는 제출함이 3개라 <b>⚠️1/3</b>처럼 몇 개를 냈는지 함께 적습니다.</p></div>';
 
   /* 3-3 평가 현황 */
@@ -10728,9 +10775,9 @@ var CSVDEF = {
     return r; }},
   /* 🔴 설문 원자료 — 5점 척도는 「숫자로」 나갑니다 (집계해야 하므로).
      최종설문의 두 줄 응답은 Q1_현재 · Q1_수강전 처럼 칸을 나눕니다. 🔒 교번 칸 없음. */
-  survey:{ name:'survey_pre_raw.csv', title:'사전설문 원자료', build:function(cids){ return surveyCSV('사전', cids); }},
-  surveyMid:{ name:'survey_mid_raw.csv', title:'중간설문 원자료', build:function(cids){ return surveyCSV('중간', cids); }},
-  surveyPost:{ name:'survey_post_raw.csv', title:'최종설문 원자료', build:function(cids){ return surveyCSV('최종', cids); }},
+  survey:{ sv:'사전', name:'survey_pre_raw.csv', title:'사전설문 원자료', build:function(cids){ return surveyCSV('사전', cids); }},
+  surveyMid:{ sv:'중간', name:'survey_mid_raw.csv', title:'중간설문 원자료', build:function(cids){ return surveyCSV('중간', cids); }},
+  surveyPost:{ sv:'최종', name:'survey_post_raw.csv', title:'최종설문 원자료', build:function(cids){ return surveyCSV('최종', cids); }},
   tutor:{ name:'tutoring_all.csv', title:'튜터링 일지 전체 (규칙 제9조)', build:function(cids){
     /* 🔒 교번 칸 없음 — 담당교수는 이름만.
        🔴 17차 — 「학생확인수·학생확인시각」 두 칸을 없앴습니다(학생은 튜터링을 보지 않습니다).
@@ -10785,6 +10832,14 @@ function csvGrade(cid){
   g.rows.forEach(function(r,i){ rows.push([i+1, cid, classProf(cid), r.t.no, r.t.name, r.prof.toFixed(1), r.peer.toFixed(1), r.total.toFixed(1)]); });
   download('team_scores_'+cid+'.csv', rows);
 }
+/* 🗂 파일 단추의 순서 — 위 표에 적힌 차례 그대로이되, 설문 원자료(sv 칸이 있는 것)끼리는
+   주차 순(p3_core.js 의 svKinds)으로 놓습니다. 표에 적는 차례가 달라져도 사전 · 중간 · 최종으로 나옵니다. */
+function csvKeys(){
+  var keys=Object.keys(CSVDEF), ord=svKinds(true), i=0;
+  var sv=keys.filter(function(k){ return CSVDEF[k].sv; })
+             .sort(function(a,b){ return ord.indexOf(CSVDEF[a].sv)-ord.indexOf(CSVDEF[b].sv); });
+  return keys.map(function(k){ return CSVDEF[k].sv? sv[i++] : k; });
+}
 var csvPreview = null;
 function admDown(){
   var cids=visibleClasses();
@@ -10796,7 +10851,7 @@ function admDown(){
     '· 동료평가 원자료의 <b>평가자는 「평가자A」처럼 번호로만</b></div>'+
     '<p class="muted">지금 범위: <b>'+(SESS.scope==='all'?'3개 강좌 통합':clsFull(myClass()))+'</b></p></div>';
   h += '<div class="card"><h3>파일</h3><div class="menu">'+
-    Object.keys(CSVDEF).map(function(k){
+    csvKeys().map(function(k){
       return '<button class="btn" onclick="doCSV(\''+k+'\')">'+esc(CSVDEF[k].title)+'</button>'; }).join('')+
     '</div>'+
     '<div class="btnrow" style="margin-top:8px"><button class="btn pri" onclick="doZip()">PBL 결과보고서 첨부자료 (다면평가 + 튜터링 일지)</button></div></div>';
@@ -10810,8 +10865,9 @@ function admDown(){
       '<button class="btn" onclick="go(\'reports\',{t:\'r1\',cid:\''+myClass()+'\'})">발표평가 정리표 (교수·동료+루브릭)</button>'+
       '<button class="btn" onclick="tlOpen(1)">교수 튜터링 일지</button>'+
       '<button class="btn" onclick="alGo(\'all\')">학생의 주차별 활동기록</button>'+
-      '<button class="btn" onclick="svOneGo(\'사전\',\''+myClass()+'\')">사전설문 결과 A4</button>'+
-      '<button class="btn" onclick="svOneGo(\'최종\',\''+myClass()+'\')">최종설문 결과 A4</button>'+
+      /* 🗂 설문 결과 A4 — 주차 순(사전 · 중간 · 최종). 출력물 허브의 설문 단추와 같은 목록입니다 */
+      svKinds().map(function(k){
+        return '<button class="btn" onclick="svOneGo(\''+k+'\',\''+myClass()+'\')">'+k+'설문 결과 A4</button>'; }).join('')+
       '<button class="btn" onclick="exGo(\''+myClass()+'\')">현장견학 일지 A4</button>'+
     '</div>'+
     '<div class="note">🔒 발표평가 정리표는 팀내 <b>학생별 받은 점수</b>는 실리되 <b>평가자 신원은 익명</b>입니다. 점수는 <b>실제 배점으로 환산</b>해 표시합니다.</div></div>';
@@ -11074,7 +11130,7 @@ function absClearConfirm(sid, round){
      확정 전에는 정상 경로로 팀 점수를 그대로 줍니다(추측으로 깎지 않습니다).
    ========================================================================== */
 /* 회차 → 그 회차 발표가 열리는 주차들 (r3 은 13·14주차에 걸쳐 있습니다) */
-/* 🔴 2026-10-01 (O-0122 후속) — 옛 코드는 2회차를 [7]로 박아 두어, 주차 재편 뒤 팀간 평가 필요 수가 틀렸습니다.
+/* 🔴 2026-10-01 (주차 재편 후속) — 옛 코드는 2회차를 [7]로 박아 두어, 주차 재편 뒤 팀간 평가 필요 수가 틀렸습니다.
       이제 WEEKDEF 의 kind:'eval' 주차에서 round 로 찾습니다 (1→[4] · 2→[8] · 3→[13,14]). */
 function roundWeeks(round){
   return WEEKDEF.filter(function(d){ return d.kind==='eval' && d.round===round; }).map(function(d){ return d.n; });
@@ -13095,7 +13151,10 @@ function alBlocks(n, cid){
     ['일시', tlLongDate((w&&w.date)||def.date)+' '+tlClassTime(cid)],
     ['활동', def.full],
     ['강좌', cid+(tlRoom(cid)? ' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid)],
-    ['제출 창', def.win? def.win : (noInputWeek(def)? '학생 입력 없음 (수업 시간 팀 활동)' : '앱 제출 없음 (안내만)')],
+    /* 🗳 설문이 붙은 안내 주차(9주차) — 이 강좌가 설문을 켰으면 「앱 제출 없음」이 아닙니다(아래 「응답 현황」과 같은 판정) */
+    ['제출 창', def.win? def.win : (noInputWeek(def)? '학생 입력 없음 (수업 시간 팀 활동)'
+      : ((def.kind==='notice' && def.survey && wkSvOn(cid, n) && DB.one('surveys', function(x){ return x.kind===def.survey; }))
+          ? def.survey+'설문 응답 (설문을 켠 동안)' : '앱 제출 없음 (안내만)'))],
     ['마감', wDue(n) || '—'],
     ['주차 상태', w.state]
   ]});
@@ -13139,7 +13198,7 @@ function alBlocks(n, cid){
       ]});
     }else if(svM){
       out.push({t:def.survey+'설문 응답 현황', type:'table', head:['항목','내용'], w:[2200,7438], rows:[
-        ['응답', '이 강좌는 '+def.survey+' 설문을 켜지 않았습니다']
+        ['응답', '이 강좌는 '+def.survey+'설문을 켜지 않았습니다']
       ]});
     }
   }
@@ -13814,7 +13873,7 @@ function evalSummaryAllDownloadDocx(cid){
    ▸ 화면 A4 일지(tlSheet)와 같은 자료를 씁니다. 회차마다 새 쪽에서 시작합니다.
    ========================================================================== */
 function tlTopicPlain(t, round){
-  /* 2026-10-04 (O-0198) — 최종주제 주차보다 앞선 회차는 그때 모습대로 가주제 (pT_tutorlog.js tlBeforeFinal 과 같은 규칙) */
+  /* 2026-10-04 — 최종주제 주차보다 앞선 회차는 그때 모습대로 가주제 (pT_tutorlog.js tlBeforeFinal 과 같은 규칙) */
   var fin = tlBeforeFinal(round)? null : DB.one('topics', function(x){ return x.teamId===t.id && x.kind==='최종'; });
   if(fin) return '[최종] '+fin.title;
   var tps = teamTopics(t.id);
@@ -13824,7 +13883,7 @@ function tlTopicPlain(t, round){
 function tlDocxBody(list, cid){
   var cap = teamCap(), out='';
   list.forEach(function(round, idx){
-    var week = tlWeekOf(round), iso = week? wkDate(week) : '';   /* O-0122 후속 — 원격도 날짜가 나오게 */
+    var week = tlWeekOf(round), iso = week? wkDate(week) : '';   /* 주차 재편 후속 — 원격도 날짜가 나오게 */
     out += dxP('교수 튜터링 일지 ('+round+'차)', {b:true, sz:30, align:'center', page: idx>0, after:60, keep:true})+
       dxP('바이오기초설계 (2026학년도 2학기) · '+cid+(tlRoom(cid)?' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid),
           {sz:18, align:'center', color:'444444', after:40})+
@@ -13922,7 +13981,7 @@ function viewReports(){
 }
 
 /* ==========================================================================
-   ⑥ 설문 결과 A4 — 사전 · 최종 각각 한 종류 (R13 신설)
+   ⑥ 설문 결과 A4 — 설문마다 한 종류(주차 순: 사전 · 중간 · 최종) (R13 신설)
    ▸ 값은 pY_svreport.js 의 집계함수(svrAggRows·svrRespond·svrRate)를 그대로 씁니다.
    ▸ 문항별 응답수·평균·분포를 표로 정리합니다. 그래프 대시보드는 [설문 결과] 화면에 있습니다.
    ========================================================================== */
@@ -13934,8 +13993,11 @@ function svRespInfo(kind, cids){
   var n = sv? svrRespond(sv, cids) : 0, tot=0;
   /* 🗳 중간 설문의 분모는 설문을 켠 반의 학생 수입니다(켜지 않은 반은 대상이 아닙니다) */
   svrRate(cids).forEach(function(x){ if(kind!=='중간' || (x.mid!==null && x.mid!==undefined)) tot += x.tot; });
-  return { n:n, tot:tot, sv:sv };
+  /* 주차에 덧붙는 설문(중간)을 이 범위에서 켠 반이 하나도 없으면 「0 / 0명」 대신 그 사실을 적습니다 */
+  var off = !!sv && tot===0 && svSlots().some(function(x){ return x.kind===kind && !x.fixed; });
+  return { n:n, tot:tot, sv:sv, off:off };
 }
+function svRespText(info){ return info.off? '설문을 켠 반 없음' : info.n+' / '+info.tot+'명'; }
 /* 집계 한 줄 → 화면/워드 공용 셀 배열: [절, 문항, 구분/보기, 응답수, 평균, 분포] */
 function svAggCells(r){
   var isScale = (r[7]!=='' && r[7]!=null);
@@ -13963,7 +14025,7 @@ function svOneSheet(kind, cids){
       '<td class="k">교과목</td><td class="v">바이오기초설계 (2026학년도 2학기)</td>'+
       '<td class="k">범위</td><td class="v">'+esc(svrScopeName(cids))+'</td></tr>'+
     '<tr><td class="k">설문</td><td class="v">'+esc(kind)+'설문 ('+wk+'주차 '+esc(mdw(wkDate(wk)))+')</td>'+
-      '<td class="k">응답</td><td class="v">'+info.n+' / '+info.tot+'명</td></tr>'+
+      '<td class="k">응답</td><td class="v">'+svRespText(info)+'</td></tr>'+
     '<tr><td class="k">출력일</td><td class="v">'+esc(nowStr().slice(0,10))+'</td>'+
       '<td class="k"></td><td class="v"></td></tr></table></div>'+
     (DB.d&&DB.d.__demo? '<div class="scwarn">※ 예시(가짜) 데이터입니다 — 실제 응답이 아닙니다.</div>':'')+
@@ -13989,7 +14051,7 @@ function svOneDocxBody(kind, cids, pg){
   var info = svRespInfo(kind, cids), wk=svWeekOf(kind);
   var out = dxP(kind+'설문 결과', {b:true, sz:30, align:'center', page:!!pg, after:60, keep:true})+
     dxP('바이오기초설계 (2026학년도 2학기) · '+svrScopeName(cids), {sz:18, align:'center', color:'444444', after:40})+
-    dxP(kind+'설문 ('+wk+'주차 '+mdw(wkDate(wk))+') · 응답 '+info.n+' / '+info.tot+'명',
+    dxP(kind+'설문 ('+wk+'주차 '+mdw(wkDate(wk))+') · '+(info.off? '' : '응답 ')+svRespText(info),
         {sz:18, align:'center', color:'444444', rule:true, after:120})+
     (DB.d&&DB.d.__demo? dxP('※ 예시(가짜) 데이터입니다 — 실제 응답이 아닙니다.', {sz:16, color:'8A1010', after:100}):'');
   var rows = svAggForKind(kind, cids).map(svAggCells);
@@ -14014,9 +14076,10 @@ function svOneDownloadDocx(kind, scope){
   downloadDocx('survey_'+(kind==='사전'?'pre':(kind==='중간'?'mid':'post'))+'_report_'+(cids.length>1?'ALL':cids[0])+'_'+rpFileDate()+'.docx',
     svOneDocxBody(kind, cids));
 }
-/* ---- 사전+최종 통합 한 파일 (신설) — 사전이 앞, 최종이 새 쪽에서 시작 ---- */
+/* ---- 통합 한 파일 — 설문을 주차 순으로 모두(사전 → 중간 → 최종 · p3_core.js 의 순서 규칙). 둘째 설문부터 새 쪽에서 시작 ----
+   응답이 아직 없는 설문도 자리를 비우지 않고 그대로 넣습니다(문항은 나오고 응답수는 0) — 낱장과 같은 모양입니다. */
 function svAllDocxBody(cids){
-  return svOneDocxBody('사전', cids, false) + svOneDocxBody('최종', cids, true);
+  return svKinds().map(function(k, i){ return svOneDocxBody(k, cids, i>0); }).join('');
 }
 function svAllDownloadDocx(scope){
   if(!isProf()){ toast('교수만 받을 수 있습니다.'); return; }
@@ -14029,12 +14092,13 @@ function viewSurveyOne(){
   if(!isProf()) return '<div class="card"><div class="note r">⛔ 학생은 볼 수 없는 화면입니다.</div>'+
     '<button class="btn" onclick="go(\'home\')">홈으로</button></div>';
   var vis = visibleClasses();
-  var kind = (VIEW.p.kind==='최종')? '최종' : (VIEW.p.kind==='통합')? '통합' : (VIEW.p.kind==='중간' && svrSv('중간'))? '중간' : '사전';
+  var kinds = svKinds();     /* 🗂 주차 순 — 사전 · 중간 · 최종 (p3_core.js 의 순서 규칙) */
+  var kind = (VIEW.p.kind==='통합')? '통합' : (kinds.indexOf(VIEW.p.kind)>=0? VIEW.p.kind : kinds[0]);
   var cvid = VIEW.p.cid;
   var cids = (cvid==='ALL')? vis.slice() : ((cvid && vis.indexOf(cvid)>=0)? [cvid] : [myClass()]);
   var scopeVal = (cids.length>1)? 'ALL' : cids[0];
 
-  var kchips = [['통합','사전+최종 통합'],['사전','사전설문']].concat(svrSv('중간')? [['중간','중간설문']]:[]).concat([['최종','최종설문']]).map(function(k){
+  var kchips = [['통합', kinds.join('+')+' 통합']].concat(kinds.map(function(k){ return [k, k+'설문']; })).map(function(k){
     return '<button class="btn sm '+(kind===k[0]?'pri':'')+'" onclick="svOneGo(\''+k[0]+'\',\''+scopeVal+'\')">'+k[1]+'</button>'; }).join('');
   var cchips = (vis.length>1)? '<div class="btnrow" style="margin-top:6px">'+
     vis.map(function(c){ return '<button class="btn sm '+(cids.length===1&&cids[0]===c?'pri':'')+'" onclick="svOneGo(\''+kind+'\',\''+c+'\')">'+esc(clsFull(c))+'</button>'; }).join('')+
@@ -14044,15 +14108,15 @@ function viewSurveyOne(){
     '<div class="card noprint"><h3>설문 결과 출력물 <span class="muted">— A4 세로 · PDF·워드</span></h3>'+
     '<div class="btnrow">'+kchips+'</div>'+ cchips +
     '<div class="btnrow" style="margin-top:10px">'+
-      '<button class="btn pri" onclick="tlPrint()">🖨 인쇄 · PDF로 저장'+(kind==='통합'?' (2장)':'')+'</button>'+
-      '<button class="btn" onclick="'+(kind==='통합'? 'svAllDownloadDocx(\''+scopeVal+'\')' : 'svOneDownloadDocx(\''+kind+'\',\''+scopeVal+'\')')+'">📄 워드(.docx)로 받기'+(kind==='통합'?' (사전+최종)':'')+'</button>'+
+      '<button class="btn pri" onclick="tlPrint()">🖨 인쇄 · PDF로 저장'+(kind==='통합'?' (설문 '+kinds.length+'종)':'')+'</button>'+
+      '<button class="btn" onclick="'+(kind==='통합'? 'svAllDownloadDocx(\''+scopeVal+'\')' : 'svOneDownloadDocx(\''+kind+'\',\''+scopeVal+'\')')+'">📄 워드(.docx)로 받기'+(kind==='통합'?' ('+kinds.join('+')+')':'')+'</button>'+
       '<button class="btn" onclick="svrGo(\''+scopeVal+'\')">그래프 대시보드로</button>'+
       '<button class="btn" onclick="go(\'outputs\')">📄 출력물 허브</button>'+
     '</div>'+
-    '<div class="hint">지금 보이는 것: <b>'+(kind==='통합'?'사전+최종설문 통합':esc(kind)+'설문')+'</b> · '+esc(svrScopeName(cids))+'. 그래프·엑셀·사전↔최종 비교는 <b>[설문 결과]</b> 화면에 있습니다.</div>'+
+    '<div class="hint">지금 보이는 것: <b>'+(kind==='통합'? kinds.join('+')+'설문 통합' : esc(kind)+'설문')+'</b> · '+esc(svrScopeName(cids))+'. 그래프·엑셀·사전↔최종 비교는 <b>[설문 결과]</b> 화면에 있습니다.</div>'+
     '<div id="tlWarn"></div></div>';
   h += '<div class="a4wrap"><div class="a4scale">'+
-       (kind==='통합'? (svOneSheet('사전', cids)+svOneSheet('최종', cids)) : svOneSheet(kind, cids))+
+       (kind==='통합'? kinds.map(function(k){ return svOneSheet(k, cids); }).join('') : svOneSheet(kind, cids))+
        '</div></div>';
   setTimeout(tlFit, 0);
   return h + backBar();
@@ -14177,7 +14241,7 @@ function wpCells(def){
   else if(K==='research'){ act.push('가주제 조사 · 자료 제출'); res.push('조사 자료 제출물'); }
   else if(K==='finaltopic'){ act.push('최종 주제 1개 선정 · 1~2분 광고 콘티(스토리라인) 작성'); res.push('최종 주제 · 광고 콘티(스토리라인)'); }
   else if(K==='video'){ act.push('광고 영상 제작'); act.push(WK_R2+'주차 발표 평가 기준 안내(읽기)'); res.push('광고 영상 가편집본'); }
-  /* 🙅 O-0122 — 팀활동 주차는 학생 입력이 없습니다 → 결과물은 튜터링 일지(아래 def.tutor)뿐 */
+  /* 🙅 주차 재편 — 팀활동 주차는 학생 입력이 없습니다 → 결과물은 튜터링 일지(아래 def.tutor)뿐 */
   else if(K==='activity'){ act.push('수업 시간 팀 활동(학생 입력 없음)'); if(def.boost) act.push('영상 보강(필요 팀)'); }
   else if(K==='prep'){ act.push('수업 시간 팀 활동(학생 입력 없음)'); act.push('최종발표 평가기준 공개'); res.push('평가기준 공개'); }
   else if(K==='eval'){
@@ -14190,7 +14254,7 @@ function wpCells(def){
     if(def.intra) res.push('팀내 평가 결과');
   }
   else if(K==='notice'){
-    if(def.n===WK_MID){ act.push('중간고사 · 중간 설문'); res.push('중간고사 점수'); res.push('중간설문 응답'); }
+    if(def.n===WK_MID){ act.push('중간고사'); act.push('중간설문조사'); res.push('중간고사 점수'); res.push('중간설문 응답'); }
     else if(def.n===WK_TRIP){ act.push('현장견학'); res.push('팀별 견학 의견(견학 일지)'); }
     else act.push(def.full||def.title);
   }
@@ -14363,11 +14427,11 @@ function viewOutputs(){
     '<button class="btn" onclick="alGo(1)">주차별 낱장</button>');
 
   h += card('⑥ 설문 결과',
-    '사전(1주차)·최종(15주차)을 <b>한 파일에</b>. '+(svrSv('중간')? '중간('+svWeekOf('중간')+'주차)은 낱장으로. ':'')+'그래프·엑셀·사전↔최종 비교는 [설문 결과] 화면에.',
-    '<button class="btn pri" onclick="svOneGo(\'통합\',\''+cid+'\')">통합본 — 사전+최종 한 파일</button>'+
-    '<button class="btn" onclick="svOneGo(\'사전\',\''+cid+'\')">사전설문</button>'+
-    (svrSv('중간')? '<button class="btn" onclick="svOneGo(\'중간\',\''+cid+'\')">중간설문</button>':'')+
-    '<button class="btn" onclick="svOneGo(\'최종\',\''+cid+'\')">최종설문</button>'+
+    /* 🗂 설문은 주차 순(사전 · 중간 · 최종 — p3_core.js 의 순서 규칙). 통합본은 그 설문들을 모두 한 파일에 담습니다 */
+    svKinds().map(function(k){ return k+'('+svWeekOf(k)+'주차)'; }).join('·')+'을 <b>한 파일에</b>(설문마다 새 장). '+
+      '그래프·엑셀·사전↔최종 비교는 [설문 결과] 화면에.',
+    '<button class="btn pri" onclick="svOneGo(\'통합\',\''+cid+'\')">통합본 — '+svKinds().join('+')+' 한 파일</button>'+
+    svKinds().map(function(k){ return '<button class="btn" onclick="svOneGo(\''+k+'\',\''+cid+'\')">'+k+'설문</button>'; }).join('')+
     '<button class="btn" onclick="svrGo(\''+cid+'\')">설문 그래프·엑셀</button>');
 
   h += card('⑦ 현장견학 일지',
@@ -14698,7 +14762,7 @@ function svrNoteBox(sec, cids, forPrint){
 }
 
 /* ==========================================================================
-   4. 엑셀 — 시트 5장 (+ 중간 설문이 있으면 「중간설문_응답」 1장)
+   4. 엑셀 — 설문마다 응답 시트 1장(주차 순: 사전 · 중간 · 최종) + 집계 · 비교 · 미응답자
    ========================================================================== */
 function svrRespRows(kind, cids){
   var sv=svrSv(kind); if(!sv) return [['설문이 없습니다']];
@@ -14734,11 +14798,13 @@ function svrRespRows(kind, cids){
 function svrAggRows(cids){
   var head=['설문','절','문항번호','문항','구분','보기','응답수','평균','1점','2점','3점','4점','5점'];
   var r=[head];
-  [['사전',svrSv('사전')],['중간',svrSv('중간')],['최종',svrSv('최종')]].forEach(function(pair){
-    var kind=pair[0], sv=pair[1]; if(!sv) return;
+  svKinds().forEach(function(kind){          /* 🗂 주차 순 — 사전 · 중간 · 최종 (p3_core.js 의 순서 규칙) */
+    var sv=svrSv(kind); if(!sv) return;
     var rows=svrRows(sv,cids);
     svrQs(sv).forEach(function(q){
-      var label=String(q.text).replace(/\n/g,' ');
+      /* 문항 번호는 화면(대시보드 · 설문 만들기)과 같은 qNum() 으로 붙입니다 — 글에 번호가 들어 있는 문항(사전·최종의 일부)은
+         그대로, 번호가 따로 저장된 문항(중간설문 전부 · 사전·최종의 나머지)은 앞에 「n. 」을 붙입니다. 번호 없는 자유 의견은 그대로 */
+      var label=qNum(q)+String(q.text).replace(/\n/g,' ');
       var no=q.no? String(q.no) : ('자유'+(q.freeNo||''));
       if(q.type==='5점'){
         var parts = q.dual? [['현재','현재'],['수강전','수강전']] : [['(전체)','']];
@@ -14789,23 +14855,25 @@ function svrCmpRows(cids){
   return r;
 }
 function svrMissRows(cids){
-  var P=svrSv('사전'), Q=svrSv('최종'), M=svrSv('중간');
-  /* 🗳 중간설문 칸은 맨 뒤에 둡니다(앞의 여섯 칸은 그대로). 켜지 않은 반 학생은 「해당 없음」 — 미응답으로 세지 않습니다 */
-  var r=[['강좌','담당교수','이름','학번','사전설문','최종설문'].concat(M? ['중간설문']:[])];
+  /* 🗂 설문 칸은 주차 순(사전 · 중간 · 최종 — p3_core.js 의 순서 규칙)으로 놓습니다.
+     주차에 덧붙는 설문(중간)은 켜지 않은 반 학생을 「해당 없음」으로 적고 미응답으로 세지 않습니다 */
+  var ks=svKinds(), svs=ks.map(svrSv);
+  var r=[['강좌','담당교수','이름','학번'].concat(ks.map(function(k){ return k+'설문'; }))];
   svrStu(cids).forEach(function(s){
-    var a=svrDidAnswer(P,s), b=svrDidAnswer(Q,s);
-    var mOn = !!M && svrMidOn(s.classId), m = mOn? svrDidAnswer(M,s) : true;
-    if(a&&b&&m) return;
-    r.push([s.classId, classProf(s.classId), s.name, String(s.no), a?'제출':'미제출', b?'제출':'미제출']
-      .concat(M? [mOn? (m?'제출':'미제출') : '해당 없음'] : []));
+    var miss=false;
+    var cells=ks.map(function(k,i){
+      if(!svOnFor(k, s.classId)) return '해당 없음';
+      if(svrDidAnswer(svs[i], s)) return '제출';
+      miss=true; return '미제출';
+    });
+    if(!miss) return;
+    r.push([s.classId, classProf(s.classId), s.name, String(s.no)].concat(cells));
   });
   return r;
 }
 function svrSheets(cids){
-  var out=[ {name:'사전설문_응답',  rows:svrRespRows('사전', cids)} ];
-  if(svrSv('중간')) out.push({name:'중간설문_응답',  rows:svrRespRows('중간', cids)});
-  return out.concat([
-    {name:'최종설문_응답',  rows:svrRespRows('최종', cids)},
+  /* 🗂 응답 시트는 주차 순 — 사전 · 중간 · 최종. 그 뒤에 집계 · 비교 · 미응답자 */
+  return svKinds().map(function(k){ return {name:k+'설문_응답', rows:svrRespRows(k, cids)}; }).concat([
     {name:'문항별_집계',    rows:svrAggRows(cids)},
     {name:'사전최종_비교',  rows:svrCmpRows(cids)},
     {name:'미응답자',       rows:svrMissRows(cids)}
@@ -14865,7 +14933,7 @@ function svrRateBlock(cids, forPrint){
       '<td class="c"><b>'+post+'/'+tot+' '+pct(post,tot)+'%</b></td></tr>':'')+
     '</table></div>'+
     svrBar('사전설문', pre, tot||1, 'blue', pre+'명 ('+pct(pre,tot)+'%)')+
-    ((hasMid && midTot)? svrBar('중간설문', mid, midTot, 'gray', mid+'명 ('+pct(mid,midTot)+'%)') : '')+
+    ((hasMid && midTot)? svrBar('중간설문', mid, midTot, 'mid', mid+'명 ('+pct(mid,midTot)+'%)') : '')+
     svrBar('최종설문', post, tot||1, 'green', post+'명 ('+pct(post,tot)+'%)')+
     (hasMid? '<p class="q">중간설문은 설문을 켠 반만 셉니다. 문항별 결과는 [대시보드] 또는 [출력물]의 설문 결과에서 「중간」으로 보고, 원자료는 아래 내려받기에 있습니다.</p>':'')+
     (pre===0&&post===0? '<p class="q">아직 아무도 응답하지 않았습니다. 1주차 설문이 열리면 채워집니다.</p>':'')+
@@ -15007,9 +15075,7 @@ function svrDownBlock(cids){
       svrSheets(cids).map(function(s){ return esc(s.name); }).join(' · ')+'<br>'+
       '첫 줄은 머리글로 고정되고, <b>학번은 문자로</b> 들어가 앞자리가 지워지지 않습니다. 교번 칸은 없습니다.</div>'+
     '<div class="btnrow" style="margin-top:8px">'+
-      '<button class="btn" onclick="svrDoCsv(\'사전\')">사전 CSV</button>'+
-      (svrSv('중간')? '<button class="btn" onclick="svrDoCsv(\'중간\')">중간 CSV</button>':'')+
-      '<button class="btn" onclick="svrDoCsv(\'최종\')">최종 CSV</button>'+
+      svKinds().map(function(k){ return '<button class="btn" onclick="svrDoCsv(\''+k+'\')">'+k+' CSV</button>'; }).join('')+
     '</div>'+
     '<div class="hint">※ 엑셀이 안 열릴 때를 위해 CSV도 그대로 둡니다.</div>';
   /* 폰에서 내려받기가 막히는 경우를 위한 미리보기 표 */
@@ -15042,7 +15108,7 @@ function viewSvReport(){
   var cids=svrCids(), vis=visibleClasses();
   var h=topbar()+
     '<div class="card noprint"><h2>설문 결과</h2>'+
-    '<p class="q">1주차 사전설문 · '+(svrSv('중간')? svWeekOf('중간')+'주차 중간설문 · ':'')+'15주차 최종설문 — '+esc(svrScopeName(cids))+'</p>'+
+    '<p class="q">'+svKinds().map(function(k){ return svWeekOf(k)+'주차 '+k+'설문'; }).join(' · ')+' — '+esc(svrScopeName(cids))+'</p>'+
     (vis.length>1? '<div class="btnrow">'+
       vis.map(function(c){ return '<button class="btn sm'+(cids.length===1&&cids[0]===c?' pri':'')+
         '" onclick="svrGo(\''+c+'\')">'+esc(c)+'</button>'; }).join('')+
@@ -15073,7 +15139,7 @@ function viewSvPrint(){
     '<table class="tlmeta"><tr>'+
       '<td class="k">교과목</td><td class="v">바이오기초설계 (2026학년도 2학기)</td>'+
       '<td class="k">범위</td><td class="v">'+esc(svrScopeName(cids))+'</td></tr>'+
-    '<tr><td class="k">설문</td><td class="v">사전(1주차 '+esc(mdw(wkDate(1)))+') · '+(svrSv('중간')? '중간('+svWeekOf('중간')+'주차 '+esc(mdw(wkDate(svWeekOf('중간'))))+') · ':'')+'최종(15주차 '+esc(mdw(wkDate(15)))+')</td>'+
+    '<tr><td class="k">설문</td><td class="v">'+svKinds().map(function(k){ var wk=svWeekOf(k); return k+'('+wk+'주차 '+esc(mdw(wkDate(wk)))+')'; }).join(' · ')+'</td>'+
       '<td class="k">출력일</td><td class="v">'+esc(nowStr().slice(0,10))+'</td></tr>'+
     '</table></div>'+
     '<div class="svp">'+
@@ -16195,7 +16261,7 @@ function render(){
       case 'outputs':  h=viewOutputs(); break;    /* 📄 출력물 허브 (R13) */
       case 'introdoc': h=viewIntroDoc(); break;   /* 📄 강의소개·앱소개 유인물 미리보기 (2026-08-30) */
       case 'wplan':    h=viewWeeklyPlan(); break; /* 📄 주차별 계획 A4 1장 (R14) */
-      case 'svone':    h=viewSurveyOne(); break;  /* 📄 설문 결과 A4 (사전·최종) (R13) */
+      case 'svone':    h=viewSurveyOne(); break;  /* 📄 설문 결과 A4 (사전·중간·최종) (R13) */
       case 'exlog':    h=viewExcursion(); break;  /* 🚌 현장견학 일지 A4 (R13) */
       default:        h=viewLogin();
     }
@@ -16933,7 +16999,7 @@ window.__protoCheck = function(){
     ok('🔴 사전↔최종을 「짝 이름」으로 이음 (번호가 어긋나 있으므로)', pairOk,
        '사전14=최종13 AI_TOOLS · 사전15=최종14 AI_PAID · 사전18=최종17 AI_HABIT1 · 1~12=H01~H12 · 짝 없는 문항은 빈칸');
 
-    /* 11-9. 🔴 21번 문항 주차 표기 (2026-10-01 교수님 승인 O-0122): 「3·6·11」 → 「3·5·7·10·11」.
+    /* 11-9. 🔴 21번 문항 주차 표기 (2026-10-01 교수님 승인): 「3·6·11」 → 「3·5·7·10·11」.
              어긋남이 없어졌으므로 교수용 ⚠️ 표시도 없어야 하고, 학생·교수 어느 화면에도 옛 표기가 없어야 합니다. */
     var warnQ=qq.filter(function(q){return q.no===21;})[0];
     var stuScr=stuScr21;                       /* 제출 전에 그려 둔 「21번이 있는 쪽」 — 제출 뒤에는 문항을 그리지 않습니다 */
@@ -17031,7 +17097,7 @@ window.__protoCheck = function(){
     asStu(S2); VIEW={name:'week',p:{n:W}};
     var on=weekStudent(W, wdef(W));
     var onOk = wkSvOn('F2',W) && on.indexOf('수강 동의')>=0 && on.indexOf('이 주차는 앱에 제출할 것이 없습니다')<0 &&
-               hasSubmitted(S2,W)===false && studentBadge(W).t!=='▫️ 안내만' && todoBand().indexOf('중간 설문 — 미응답')>=0;
+               hasSubmitted(S2,W)===false && studentBadge(W).t!=='▫️ 안내만' && todoBand().indexOf(W+'주차 중간설문조사 — 미제출')>=0;
     asStu(S1); VIEW={name:'week',p:{n:W}};
     var other=weekStudent(W, wdef(W));
     var sepOk = !wkSvOn('F1',W) && other.indexOf('수강 동의')<0 && hasSubmitted(S1,W)===true && studentBadge(W).t==='▫️ 안내만';
@@ -17185,11 +17251,11 @@ window.__protoCheck = function(){
     var p3scr=weekProf(W, wdef(W));
     asProf('p2');
     var p2scr=weekProf(W, wdef(W));
-    var cardOk = p3scr.indexOf('중간설문 운영 현황')>=0 && p3scr.indexOf(W+'주차는 열려 있지만 이 반의 중간 설문은 꺼져 있습니다')>=0 &&
+    var cardOk = p3scr.indexOf('중간설문 운영 현황')>=0 && p3scr.indexOf(W+'주차는 열려 있지만 이 반의 중간설문은 꺼져 있습니다')>=0 &&
                  p3scr.indexOf('wkSvSet(\'F3\','+W+',true)')>=0 && p3scr.indexOf('꺼짐: 학생에게는 안내문만 보입니다')>=0 &&
                  p3scr.indexOf('설문을 켠 반이 없습니다')>=0 &&
-                 p2scr.indexOf('이 반의 중간 설문은 꺼져 있습니다')<0 && p2scr.indexOf('wkSvSet(\'F2\','+W+',false)')>=0 &&
-                 p2scr.indexOf('이 반 학생에게 중간 설문이 보이고 있습니다')>=0 && p2scr.indexOf('미응답자 명단')>=0 &&
+                 p2scr.indexOf('이 반의 중간설문은 꺼져 있습니다')<0 && p2scr.indexOf('wkSvSet(\'F2\','+W+',false)')>=0 &&
+                 p2scr.indexOf('이 반 학생에게 중간설문이 보이고 있습니다')>=0 && p2scr.indexOf('미응답자 명단')>=0 &&
                  p2scr.split('중간설문 운영 현황')[1].split('설문 만들기로')[0].indexOf(esc(sn(S2)))<0 &&   /* 낸 학생은 미응답자에 없음 */
                  p2scr.indexOf('공개하기를 눌러야 학생이 본인 점수를 봅니다')>=0 && p2scr.indexOf('저장하면 학생은 '+(W+1)+'주차')<0 &&
                  p2scr.indexOf('설문 만들기로')>=0 && profBadge(W).t.indexOf('설문 1/')>=0;
@@ -17198,8 +17264,8 @@ window.__protoCheck = function(){
 
     /* M-12. 주차 이름 — 「서면 평가」가 남지 않았는가 · 주차 종류(kind·key)는 그대로인가 */
     var wd=wdef(W);
-    ok('🗳 '+W+'주차 이름 「중간고사 · 중간 설문」 · 「서면 평가」 0건 · 주차 종류는 그대로(안내 주차 · 중간고사 연결)',
-       wd.full==='중간고사 · 중간 설문' && wd.title==='중간고사' && wd.kind==='notice' && wd.key==='mid' && wd.survey==='중간' &&
+    ok('🗳 '+W+'주차 이름 「중간고사 · 중간설문조사」 · 「서면 평가」 0건 · 주차 종류는 그대로(안내 주차 · 중간고사 연결)',
+       wd.full==='중간고사 · 중간설문조사' && wdef(1).full.indexOf('사전설문조사')>=0 && wdef(15).full.indexOf('최종설문조사')>=0 && wd.title==='중간고사' && wd.kind==='notice' && wd.key==='mid' && wd.survey==='중간' &&
        JSON.stringify(WEEKDEF).indexOf('서면')<0 && svWeekOf('중간')===W && svWeekOf('사전')===1 && svWeekOf('최종')===15,
        wd.full+' · kind '+wd.kind+' · key '+wd.key);
 
@@ -17217,8 +17283,114 @@ window.__protoCheck = function(){
        agg.length>50 && csvM.length===3 && csvM[0].length===55 &&
        oneM.indexOf('중간설문 결과')>=0 && oneM.indexOf('중간설문 ('+W+'주차')>=0 && oneM.indexOf('응답</td><td class="v">1 / ')>=0 &&
        rateM.indexOf('중간설문')>=0 && rateM.indexOf('꺼짐')>=0 &&
-       missM[0][6]==='중간설문' && !!f1row && f1row[6]==='해당 없음' && !!s2row && s2row[6]==='제출',
-       '시트 '+shM.length+'장 · 중간 원자료 '+(rr.length-1)+'명 × '+(rr[0].length-5)+'문항 · 집계 '+agg.length+'줄 · 미응답자 시트 중간 칸: F1 '+(f1row?f1row[6]:'-'));
+       missM[0].slice(4).join(',')==='사전설문,중간설문,최종설문' && !!f1row && f1row[5]==='해당 없음' && !!s2row && s2row[5]==='제출',
+       '시트 '+shM.length+'장 · 중간 원자료 '+(rr.length-1)+'명 × '+(rr[0].length-5)+'문항 · 집계 '+agg.length+'줄 · 미응답자 시트 중간 칸: F1 '+(f1row?f1row[5]:'-'));
+
+    /* M-14. 🗂 설문이 늘어서는 곳은 모두 주차 순(사전 → 중간 → 최종)인가
+       순서 규칙은 p3_core.js 의 svKinds · svList 한 곳에 있습니다 — 등록한 순서·id 순서(sv_1 · sv_25 · sv_mid)로 그리면
+       나중에 만든 중간 설문이 끝에 붙습니다. 화면·파일을 실제로 그려서 세 이름이 놓인 차례를 봅니다. */
+    function inOrder(s, a, b, c){ var i=s.indexOf(a), j=s.indexOf(b, i+1), k=s.indexOf(c, j+1); return i>=0 && j>i && k>j; }
+    var WANT='사전,중간,최종';
+    asProf('p2');
+    svPick=null; VIEW={name:'admin',p:{p:'survey'}}; var tabScr=admSurvey();
+    var tabOk = inOrder(tabScr, '>사전설문</button>', '>중간설문</button>', '>최종설문</button>') && svPick===pre.id &&
+                inOrder(tabScr, '<b>사전설문</b> (1주차)', '<b>중간설문</b> ('+W+'주차)', '<b>최종설문</b> (15주차)');
+    /* 탭을 누르면 그 설문의 문항이 나오는가 — 순서를 바꾸다 탭과 내용이 어긋나지 않게 */
+    var tabBody = svList().every(function(s){
+      svPick=s.id; var scr=admSurvey();
+      var q0=DB.get('questions', function(q){return q.surveyId===s.id;}).sort(function(a,b){return a.order-b.order;})[0];
+      return scr.indexOf('<h3>'+esc(s.title))>=0 && scr.indexOf(esc(String(q0.text).split('\n')[0]))>=0 &&
+             scr.indexOf('<button class="btn sm pri" onclick="svPick=\''+s.id+'\';render()">'+esc(s.kind)+'설문</button>')>=0;
+    });
+    svPick=null;
+    VIEW={name:'admin',p:{p:'dash'}}; var dashScr=admDash();
+    VIEW={name:'admin',p:{p:'down'}}; var downScr=admDown();
+    VIEW={name:'svreport',p:{cid:'ALL'}}; var repScr=viewSvReport();
+    VIEW={name:'outputs',p:{}}; var hubScr=viewOutputs();
+    VIEW={name:'svone',p:{kind:'사전',cid:'F2'}}; var oneScr=viewSurveyOne();
+    var aggK=[]; svrAggRows(['F2']).slice(1).forEach(function(r){ if(aggK.indexOf(r[0])<0) aggK.push(r[0]); });
+    var scrOk = inOrder(dashScr, '3-1. 사전설문 결과', '3-1. 중간설문 결과', '3-1. 최종설문 결과') &&
+                inOrder(downScr, '사전설문 원자료', '중간설문 원자료', '최종설문 원자료') &&
+                inOrder(downScr, '사전설문 결과 A4', '중간설문 결과 A4', '최종설문 결과 A4') &&
+                inOrder(repScr, '<th class="c">사전설문</th>', '<th class="c">중간설문</th>', '<th class="c">최종설문</th>') &&
+                inOrder(repScr, '>사전 CSV<', '>중간 CSV<', '>최종 CSV<') &&
+                repScr.indexOf('1주차 사전설문 · '+W+'주차 중간설문 · 15주차 최종설문')>=0 &&
+                inOrder(hubScr, '>사전설문</button>', '>중간설문</button>', '>최종설문</button>') &&
+                hubScr.indexOf('사전(1주차)·중간('+W+'주차)·최종(15주차)')>=0 &&
+                inOrder(oneScr, '>사전설문</button>', '>중간설문</button>', '>최종설문</button>');
+    var fileOk = shM.slice(0,3).join(',')==='사전설문_응답,중간설문_응답,최종설문_응답' && aggK.join(',')===WANT &&
+                 csvKeys().filter(function(k){return CSVDEF[k].sv;}).map(function(k){return CSVDEF[k].sv;}).join(',')===WANT;
+    /* 규칙 자체 — 저장된 순서가 뒤집혀도 주차 순 · 덧붙는 설문(중간)은 등록 전에는 나오지 않음 · 대상 반 판정 */
+    var keepSv=DB.d.surveys;
+    DB.d.surveys=keepSv.slice().reverse(); var revOk = svList().map(function(s){return s.kind;}).join(',')===WANT;
+    DB.d.surveys=keepSv.filter(function(s){return s.kind!=='중간';});
+    var noMidOk = svKinds().join(',')==='사전,최종' && svKinds(true).join(',')===WANT &&
+                  svrSheets(['F2']).length===5 && svrMissRows(['F2'])[0].length===6;
+    DB.d.surveys=keepSv;
+    var ruleOk = svKinds().join(',')===WANT && svList().map(function(s){return s.kind;}).join(',')===WANT && revOk && noMidOk &&
+                 svOnFor('사전','F3') && svOnFor('최종','F3') && !svOnFor('중간','F3') && svOnFor('중간','F2');
+    ok('🗂 설문이 늘어서는 곳은 모두 주차 순 — 사전 → 중간 → 최종 (설문 만들기 탭 · 대시보드 · 다운로드 · 설문 결과 · 엑셀 · 출력물)',
+       tabOk && tabBody && scrOk && fileOk && ruleOk,
+       '탭·설명 '+(tabOk?'○':'✗')+' · 탭마다 제 문항 '+(tabBody?'○':'✗')+' · 화면 6곳 '+(scrOk?'○':'✗')+' · 시트·집계·원자료 '+(fileOk?'○':'✗')+
+       ' · 규칙(저장 순서가 뒤집혀도 · 중간 미등록이면 빠짐) '+(ruleOk?'○':'✗'));
+    /* M-15. 🗂 중간설문이 「원래 있던 것처럼」 제자리에 있는가 — 통합본 · 주차 이름과 같은 꼴 · 문항 카드 · 응답률 막대 · 앱 소개 */
+    VIEW={name:'svone',p:{kind:'통합',cid:'F2'}}; var allScr=viewSurveyOne();
+    var allSheets=(allScr.match(/data-what="[^"]*"/g)||[]).join('|');
+    var allDocx=svAllDocxBody(['F2']);
+    var allOk = allSheets==='data-what="사전설문 결과"|data-what="중간설문 결과"|data-what="최종설문 결과"' &&
+                inOrder(allDocx, '사전설문 결과', '중간설문 결과', '최종설문 결과') &&
+                allScr.indexOf('사전+중간+최종 통합')>=0 && allScr.indexOf('(설문 3종)')>=0 && allScr.indexOf('(사전+중간+최종)')>=0 &&
+                hubScr.indexOf('통합본 — 사전+중간+최종 한 파일')>=0 && hubScr.indexOf('낱장으로')<0 &&
+                svRespText(svRespInfo('중간',['F3']))==='설문을 켠 반 없음' && svRespText(svRespInfo('중간',['F2'])).indexOf('1 / ')===0 &&
+                svRespText(svRespInfo('최종',['F3'])).indexOf('0 / ')===0;
+    /* 응답이 아직 없는 설문(최종)과 등록 전인 설문(중간)이 있어도 통합본이 그려지는가 */
+    DB.d.surveys=keepSv.filter(function(s){return s.kind!=='중간';});
+    VIEW={name:'svone',p:{kind:'통합',cid:'F2'}}; var all2=viewSurveyOne();
+    var all2Ok = (all2.match(/data-what="[^"]*"/g)||[]).join('|')==='data-what="사전설문 결과"|data-what="최종설문 결과"' &&
+                 all2.indexOf('사전+최종 통합')>=0 && all2.indexOf('(설문 2종)')>=0;
+    DB.d.surveys=keepSv;
+    /* 잠긴 문항 카드 — 한 줄짜리 문항은 제목 줄만, 둘째 줄이 있는 문항만 본문에 전문 */
+    svPick=mid.id; VIEW={name:'admin',p:{p:'survey'}}; var midCard=admSurvey(); svPick=null;
+    var nTwo=mq.filter(function(q){ return String(q.text).indexOf('\n')>=0; }).length;
+    var cardOk2 = (midCard.match(/<div style="white-space:pre-wrap">/g)||[]).length===nTwo && nTwo>0 && nTwo<mq.length &&
+                  (midCard.match(/class="acc"/g)||[]).length===mq.length && midCard.indexOf('고칠 수 없습니다.</div>')>=0 && midCard.indexOf('saveQ(')<0 &&
+                  (midCard.match(/· 🔒 /g)||[]).length===mq.length;      /* 척도·필수·짝 이름·잠금 줄은 문항마다 그대로 */
+    /* 이름의 꼴 — 주차별 계획 · 학생 홈 띠 · 앱 소개 · 응답률 막대 */
+    var wp9=wpCells(wdef(W)), wp15=wpCells(wdef(15));
+    var nameOk = wp9.act.join('|').indexOf('중간고사|중간설문조사')===0 && wp15.act.join('|').indexOf('기말고사|최종설문조사')===0 &&
+                 wp9.res.join('|')==='중간고사 점수|중간설문 응답' &&
+                 viewAbout().indexOf('사전·중간·최종 설문')>=0 &&
+                 rateM.indexOf('sbf mid')>=0 && rateM.indexOf('sbf gray')<0 &&
+                 [p2scr, p3scr, dashScr, repScr, hubScr, midCard].every(function(x){ return x.indexOf('중간 설문')<0; });
+    ok('🗂 중간설문이 제자리에 — 통합본 3장(사전 → 중간 → 최종) · 9주차 이름이 1·15주차와 같은 꼴 · 한 줄 문항은 제목 줄만 · 응답률 막대 · 앱 소개',
+       allOk && all2Ok && cardOk2 && nameOk,
+       '통합본 '+(allOk?'○':'✗')+' · 중간 등록 전에는 2장 '+(all2Ok?'○':'✗')+' · 문항 카드(전문을 보이는 문항 '+nTwo+'/'+mq.length+') '+(cardOk2?'○':'✗')+
+       ' · 이름·막대·소개 '+(nameOk?'○':'✗'));
+    /* M-16. 출력물의 문항 번호 · 설문 주차 활동기록의 「제출 창」 · 안내 글의 별표 */
+    var aggAll=svrAggRows(['F2']).slice(1);
+    function numOk(kind){
+      var sv=svrSv(kind), byNo={}; svrQs(sv).forEach(function(q){ byNo[q.no? String(q.no) : ('자유'+(q.freeNo||''))]=q; });
+      return aggAll.filter(function(r){ return r[0]===kind; }).every(function(r){
+        var q=byNo[r[2]]; if(!q) return false;
+        if(!q.no) return r[3]===String(q.text).replace(/\n/g,' ');                     /* 자유 의견 — 번호 없이 글 그대로 */
+        return r[3].indexOf(q.no+'. ')===0 && r[3].indexOf(q.no+'. '+q.no+'. ')<0;      /* 「n. 」 한 번만 */
+      });
+    }
+    var numAll = numOk('사전') && numOk('중간') && numOk('최종') &&
+                 aggAll.filter(function(r){ return r[0]==='중간'; })[0][3].indexOf('1. 강의를 듣는 수업보다')===0;
+    VIEW={name:'svone',p:{kind:'중간',cid:'F2'}}; var oneNum=viewSurveyOne();
+    var docNum=svOneDocxBody('중간',['F2'],false);
+    numAll = numAll && oneNum.indexOf('<td>1. 강의를 듣는 수업보다')>=0 && docNum.indexOf('1. 강의를 듣는 수업보다')>=0;
+    function winOf(cid2){ return alBlocks(W, cid2)[0].rows.filter(function(r){ return r[0]==='제출 창'; })[0][1]; }
+    var winOk = winOf('F2')==='중간설문 응답 (설문을 켠 동안)' && winOf('F3')==='앱 제출 없음 (안내만)' &&
+                alBlocks(1,'F2')[0].rows.filter(function(r){ return r[0]==='제출 창'; })[0][1]===wdef(1).win;
+    var starOk = [1,2,3].every(function(r){ return rubricTable(r).indexOf('**')<0; }) &&
+                 rbNoteHtml(RUBRIC_DRAFT[2].note).indexOf('<b>하나를 남기는 것</b>')>=0 &&
+                 rbNoteHtml(RUBRIC_DRAFT[3].note).indexOf('<b>한 것과 나온 것</b>')>=0 &&
+                 rbNoteHtml('<i>**a**</i>')==='&lt;i&gt;<b>a</b>&lt;/i&gt;';            /* 굵게만 — 다른 꼬리표는 글자로 남습니다 */
+    ok('🗂 출력물의 문항 번호가 세 설문 같은 꼴 · 설문을 켠 반의 9주차 활동기록 「제출 창」 · 안내 글에 별표(**)가 글자로 남지 않음',
+       numAll && winOk && starOk,
+       '문항 번호(집계 · A4 · 워드) '+(numAll?'○':'✗')+' · 제출 창: 켠 반 「'+winOf('F2')+'」 / 끈 반 「'+winOf('F3')+'」 '+(winOk?'○':'✗')+' · 별표 '+(starOk?'○':'✗'));
 
     /* 되돌리기 — 검사하며 만든 응답·동의·임시저장·스위치·변경 기록을 지우고 주차 상태를 되돌립니다 */
     DB.get('answers', function(a){return a.surveyId===mid.id || a.studentId===S2.id || a.studentId===S1.id;}).forEach(function(a){ DB.del('answers', a.id); });
@@ -17365,7 +17537,7 @@ window.__protoCheck = function(){
           try{ html=viewWeek(); }catch(e){ html='오류 '+e.message; }
           var hit=[];
           if(html.indexOf('ZZQ')>=0)                hit.push('튜터링 원문');
-          /* 🔴 2026-10-01 (O-0122) — 「이 주차에 교수 튜터링이 있다」는 안내는 이제 학생에게 보입니다(교수님 지시).
+          /* 🔴 2026-10-01 — 「이 주차에 교수 튜터링이 있다」는 안내는 이제 학생에게 보입니다(교수님 지시).
                 막는 것은 튜터링 「기록」(원문·교수 입력판·회차 제목)입니다. */
           if(html.indexOf('id="tu_t_')>=0 || /교수 튜터링 \d회차/.test(html)) hit.push('교수 튜터링 입력판');
           if(html.indexOf('>확인했습니다<')>=0)       hit.push('[확인했습니다] 버튼');
@@ -17742,7 +17914,7 @@ window.__protoCheck = function(){
   ok('슈퍼 관리자는 3개 강좌 수정 가능', canEdit('F1')&&canEdit('F2')&&canEdit('F3'), '단 변경 기록이 남습니다');
 
   /* ==========================================================================
-     10-B. 📅 주차 날짜 — 11/18 휴강 제외 · 10/7 수업 (2026-10-01 · O-0122 · 옛 13차 10/7 제외를 대체)
+     10-B. 📅 주차 날짜 — 11/18 휴강 제외 · 10/7 수업 (2026-10-01 · 옛 13차 10/7 제외를 대체)
      ========================================================================== */
   /* 10-B-1. 🔴 11/18 이 15주 어디에도 없는가 (16주차 result 는 날짜가 없어 제외) */
   var d15 = WEEKDEF.filter(function(w){ return w.kind!=='result'; }).map(function(w){ var r=wrow(w.n); return r?r.date:''; });
@@ -17769,11 +17941,11 @@ window.__protoCheck = function(){
               '2026-11-25','2026-12-02','2026-12-09'];
   var wrong = [];
   WANT.forEach(function(x,i){ if(d15[i]!==x) wrong.push((i+1)+'주차 '+d15[i]+'(맞는값 '+x+')'); });
-  /* 10-B-3b. 🔴 주차별 내용(제목)이 교수님 확정표와 한 줄씩 맞는가 (O-0122) */
+  /* 10-B-3b. 🔴 주차별 내용(제목)이 교수님 확정표와 한 줄씩 맞는가 */
   var TWANT = ['오리엔테이션','팀·가주제','팀활동1','중간발표1','팀활동2','팀활동3','팀활동4','중간발표2',
                '중간고사','팀활동5','팀활동6','현장견학','최종발표1','최종발표2','기말·설문','최종결과'];
   var twrong = TWANT.filter(function(x,i){ return !wdef(i+1) || wdef(i+1).title!==x; });
-  ok('🔴 주차별 제목이 교수님 확정표(O-0122)와 16줄 일치', twrong.length===0,
+  ok('🔴 주차별 제목이 교수님 확정표와 16줄 일치', twrong.length===0,
      twrong.length? '⛔ '+twrong.join(',') : '6 팀활동3 · 7 팀활동4 · 8 중간발표2 · 9 중간고사 · 10 팀활동5 · 11 팀활동6 · 12 현장견학 · 13 최종발표1');
   var attrOk = wdef(7).kind==='activity' && wdef(7).tutor===3 && !wdef(7).boost &&
                wdef(10).kind==='activity' && wdef(10).tutor===4 && wdef(10).boost===true &&   /* 결정 A: 영상 보강 10주차 */
@@ -17782,7 +17954,7 @@ window.__protoCheck = function(){
                PRES_WEEKS_ALL.join()==='4,8,13,14' && PRES_WEEKS.join()==='4,8,13,14';
   ok('🔴 팀활동4=활동·튜터3 · 팀활동5=활동·튜터4·영상보강 · 팀활동6=prep·튜터5 · 중간발표2=8주 round2·film', attrOk,
      '평가주차 '+PRES_WEEKS_ALL.join('·')+' · 중간고사 '+WK_MID+'주 · 견학 '+WK_TRIP+'주 · 마무리 '+WK_PREP+'주');
-  /* 10-B-3c. 🔴 회차 → 발표 주차 (O-0122 후속 — 옛 코드는 2회차를 [7]로 박아 두었습니다) */
+  /* 10-B-3c. 🔴 회차 → 발표 주차 (주차 재편 후속 — 옛 코드는 2회차를 [7]로 박아 두었습니다) */
   ok('🔴 roundWeeks — 1회차 [4] · 2회차 [8] · 3회차 [13,14] (WEEKDEF 에서 찾음)',
      roundWeeks(1).join()==='4' && roundWeeks(2).join()==='8' && roundWeeks(3).join()==='13,14',
      '1→['+roundWeeks(1)+'] · 2→['+roundWeeks(2)+'] · 3→['+roundWeeks(3)+']');
@@ -17843,7 +18015,7 @@ window.__protoCheck = function(){
      '표 안(12주 → 13주 사이)에 🚫 줄 + 표 아래 안내(13주차부터 밀림) — 옛 「10/7 보강」 문구 0건');
   SESS.acc=keepW.a; SESS.role=keepW.r; SESS.me=keepW.m; SESS.scope=keepW.sc; VIEW=keepW.v;
 
-  /* 10-B-8. 튜터링 회차 날짜가 새 값으로 따라왔는가 (회차·주차는 WEEKDEF 에서 자동으로 — O-0122: 3차=7주 10/7) */
+  /* 10-B-8. 튜터링 회차 날짜가 새 값으로 따라왔는가 (회차·주차는 WEEKDEF 에서 자동으로 — 주차 재편: 3차=7주 10/7) */
   var tuWant = {1:'2026-09-09',2:'2026-09-23',3:'2026-10-07',4:'2026-10-28',5:'2026-11-04'};
   var tuBad = tlRounds().filter(function(r){ return wrow(r.week).date !== tuWant[r.round]; });
   ok('튜터링 회차 날짜가 새 주차표를 따라옴', tuBad.length===0,
@@ -17856,7 +18028,7 @@ window.__protoCheck = function(){
   SESS.acc=DB.one('accounts','p2'); SESS.role='super'; SESS.me=null; SESS.scope='mine';
 
   /* 11-1. 튜터링 회차·주차 대응이 WEEKDEF 의 tutor 정의와 맞는가 (하드코딩 없이 자동으로).
-     🔴 현행(O-0122) 회차 1~5 · 주차 3·5·7·10·11. */
+     🔴 현행 회차 1~5 · 주차 3·5·7·10·11. */
   var RS=tlRounds();
   var expT = WEEKDEF.filter(function(w){return w.tutor;}).sort(function(a,b){return a.tutor-b.tutor;});
   ok('튜터링 회차·주차 대응이 WEEKDEF 와 맞음',
@@ -18080,9 +18252,11 @@ window.__protoCheck = function(){
 
   /* 12-12. 미응답자 시트는 미제출자만 담는가 */
   var miss=svrMissRows(SC14);
-  var bothDone=miss.slice(1).filter(function(r){ return r[4]==='제출' && r[5]==='제출'; });
-  ok('미응답자 시트에 「둘 다 제출」한 학생이 섞이지 않음', bothDone.length===0,
-     '독촉용 명단 '+(miss.length-1)+'명 (사전·최종 중 하나라도 미제출인 학생만)');
+  /* 칸은 머리글 이름으로 찾습니다 — 설문 칸이 주차 순(사전 · 중간 · 최종)이라 자리 번호가 고정이 아닙니다 */
+  var miPre=miss[0].indexOf('사전설문'), miPost=miss[0].indexOf('최종설문');
+  var bothDone=miss.slice(1).filter(function(r){ return r[miPre]==='제출' && r[miPost]==='제출' && r.indexOf('미제출')<0; });
+  ok('미응답자 시트에 「둘 다 제출」한 학생이 섞이지 않음', miPre===4 && miPost>miPre && bothDone.length===0,
+     '독촉용 명단 '+(miss.length-1)+'명 (그 학생의 반이 대상인 설문 중 하나라도 미제출인 학생만 · 설문 칸 '+miss[0].slice(4).join('·')+')');
 
   /* 12-13. 사전↔최종 비교가 「짝 이름」으로 이어지는가 (번호가 어긋나 있음) */
   var cmp=svrCmpRows(SC14);
