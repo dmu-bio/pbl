@@ -6803,6 +6803,10 @@ function presCanEdit(n){
 function presSave(n, ids, seenRev){
   if(!presCanEdit(n)) return {msg:'이 주차의 발표 순서를 정할 권한이 없습니다.'};
   var need = presNeed(n);
+  /* 🔴 4·8주차는 「내 강좌 순서」만 다룹니다 — 다른 강좌의 순서는 읽지도 지우지도 않습니다.
+        (전에는 그 주차 줄을 전부 지워, 슈퍼 관리자가 저장하면 다른 두 강좌의 순서까지 사라졌습니다)
+        13·14주차(합동)는 세 분이 한 표를 함께 쓰므로 지금처럼 그 주차 전부입니다. */
+  var joint = presJoint(n), mine = joint ? null : myClass();
   if(ids.length !== need)
     return {msg:'발표 팀은 정확히 '+need+'팀이어야 합니다. 지금 '+ids.length+'팀을 고르셨습니다.'};
   var seen = {};
@@ -6810,16 +6814,22 @@ function presSave(n, ids, seenRev){
     if(seen[ids[i]]) return {msg:'같은 팀을 두 번 고르셨습니다.'};
     seen[ids[i]] = 1;
     if(!team(ids[i])) return {msg:'없는 팀이 들어 있습니다.'};
+    if(!joint && team(ids[i]).classId !== mine) return {msg:'다른 강좌의 팀이 들어 있습니다. [되돌리기]를 누르고 다시 정해 주십시오.'};
   }
   var meta = presMeta(n);
   /* 🔴 내가 연 뒤에 남이 고쳤으면 덮어쓰지 않고 멈춥니다 */
   if(seenRev!==undefined && seenRev!==null && meta.rev !== seenRev)
     return {stale:true, msg:(meta.by||'다른 교수님')+'이 방금 배정을 고치셨습니다. 새로 고침 후 다시 정해 주세요.'};
 
-  var before = presList(n).map(function(x){ return x.team.classId+'-'+x.team.no; }).join(',');
+  var before = presList(n, mine).map(function(x){ return x.team.classId+'-'+x.team.no; }).join(',');
 
-  /* 이 주차 배정을 새로 씁니다 */
-  DB.get('assign', function(a){return a.n===n;}).forEach(function(a){ DB.del('assign', a.id); });
+  /* 이 주차 배정을 새로 씁니다 — 4·8주차는 내 강좌 팀의 줄만 지우고 다시 씁니다 */
+  DB.get('assign', function(a){
+    if(a.n!==n) return false;
+    if(joint) return true;
+    var t = team(a.teamId);
+    return !!t && t.classId===mine;
+  }).forEach(function(a){ DB.del('assign', a.id); });
   ids.forEach(function(tid, i){ DB.add('assign', {n:n, teamId:tid, order:i+1}); });
 
   /* 🔴 13주차를 정하면 나머지 12팀이 14주차로 자동 배정됩니다 (교수님 지시) */
@@ -6839,7 +6849,7 @@ function presSave(n, ids, seenRev){
   meta.at  = nowStr();
   DB.flush();
 
-  var after = presList(n).map(function(x){ return x.team.classId+'-'+x.team.no; }).join(',');
+  var after = presList(n, mine).map(function(x){ return x.team.classId+'-'+x.team.no; }).join(',');
   DB.log(n+'주차 발표 배정 변경',
     (before? '전: '+before+' → ':'처음 배정 · ')+'후: '+after + (auto? ' · 나머지 '+auto+'팀은 14주차로 자동 배정':''));
 
@@ -18599,6 +18609,61 @@ window.__protoCheck = function(){
     });
     ok('🔴 13·14주차 배정은 교수 3명 모두 가능 · 4·8주차는 자기 강좌', permBad.length===0,
        permBad.length? '⛔ '+permBad.join(' / ') : '세 분 모두 13·14주차 24팀을 정하고 고치실 수 있습니다');
+    /* 14-9b. 🔴 4·8주차 발표 순서 저장은 「내 강좌 줄만」 다시 씀 (2026-10-14)
+       전에는 그 주차 줄을 전부 지워, 슈퍼 관리자가 저장하면 다른 두 강좌의 순서까지 사라졌습니다.
+       ▸ 세 강좌 순서를 모두 넣어 두고 → 슈퍼·일반 교수 계정으로 차례로 저장 → 다른 강좌 줄(id·팀·순서)이 그대로인지 봅니다.
+       ▸ 끝나면 이 점검이 건드린 것(순서 줄 · 변경 기록 · 마지막 수정 표시)을 처음대로 돌려놓습니다. */
+    var prBad=[], prBad2=[], prSaves=0;
+    var prAuditKeep={}; DB.get('audit').forEach(function(a){ prAuditKeep[a.id]=1; });
+    var prMetaKeep=JSON.stringify(DB.d.settings.assignMeta||{});
+    [4, WK_R2].forEach(function(pn){
+      var prRows=DB.get('assign', function(a){return a.n===pn;}).map(function(a){return {n:a.n,teamId:a.teamId,order:a.order};});
+      DB.get('assign', function(a){return a.n===pn;}).forEach(function(a){ DB.del('assign', a.id); });
+      CIDS.forEach(function(c){
+        DB.get('teams', function(t){return t.classId===c;}).sort(function(a,b){return a.no-b.no;})
+          .forEach(function(t,i){ DB.add('assign',{n:pn, teamId:t.id, order:i+1}); });
+      });
+      var prSig=function(c){
+        return DB.get('assign', function(a){ var t=team(a.teamId); return a.n===pn && t && t.classId===c; })
+          .sort(function(a,b){return a.order-b.order;}).map(function(a){return a.id+':'+a.teamId+':'+a.order;}).join(',');
+      };
+      [['p2','super','F2'],['p1','prof','F1'],['p3','prof','F3']].forEach(function(px){
+        SESS.acc=DB.one('accounts',px[0]); SESS.role=px[1]; SESS.me=null; SESS.scope='mine';
+        var others=CIDS.filter(function(c){return c!==px[2];});
+        var keep=others.map(prSig).join('|');
+        var want=presPool(pn).map(function(t){return t.id;}).reverse();
+        var au0=DB.get('audit').length;
+        var r=presSave(pn, want, presMeta(pn).rev);
+        prSaves++;
+        var got=presList(pn, px[2]).map(function(x){return x.team.id;}).join(',');
+        var lg=String((DB.get('audit').slice(-1)[0]||{}).detail||'');
+        if(!r.ok) prBad.push(pn+'주차 '+px[2]+' 저장 실패');
+        if(others.map(prSig).join('|')!==keep) prBad.push(pn+'주차 '+px[2]+' 저장 뒤 다른 강좌 줄이 달라짐');
+        if(got!==want.join(',')) prBad.push(pn+'주차 '+px[2]+' 순서가 고른 대로가 아님');
+        if(DB.get('audit').length!==au0+1) prBad2.push(pn+'주차 '+px[2]+' 변경 기록이 1건이 아님');
+        if(lg.indexOf('전: '+px[2]+'-')!==0) prBad2.push(pn+'주차 '+px[2]+' 변경 기록의 「전」이 내 강좌가 아님');
+        others.forEach(function(c){ if(lg.indexOf(c+'-')>=0) prBad2.push(pn+'주차 '+px[2]+' 변경 기록에 '+c+' 팀이 적힘'); });
+      });
+      /* 다른 강좌 팀이 섞인 목록은 거부 — 줄도 그대로 */
+      SESS.acc=DB.one('accounts','p1'); SESS.role='prof'; SESS.me=null; SESS.scope='mine';
+      var prMix=presPool(pn).map(function(t){return t.id;});
+      var prOther=DB.get('teams', function(t){return t.classId==='F2';})[0];
+      if(prMix.length && prOther){
+        prMix[0]=prOther.id;
+        var keepAll=CIDS.map(prSig).join('|');
+        var rMix=presSave(pn, prMix, presMeta(pn).rev);
+        if(rMix.ok || String(rMix.msg).indexOf('다른 강좌')<0) prBad2.push(pn+'주차 다른 강좌 팀이 섞였는데 거부하지 않음');
+        if(CIDS.map(prSig).join('|')!==keepAll) prBad2.push(pn+'주차 거부했는데 줄이 바뀜');
+      }
+      DB.get('assign', function(a){return a.n===pn;}).forEach(function(a){ DB.del('assign', a.id); });
+      prRows.forEach(function(a){ DB.add('assign', a); });
+    });
+    DB.get('audit').filter(function(a){ return !prAuditKeep[a.id]; }).forEach(function(a){ DB.del('audit', a.id); });
+    DB.d.settings.assignMeta=JSON.parse(prMetaKeep); DB.flush();
+    ok('🔴 4·'+WK_R2+'주차 발표 순서 저장은 내 강좌 줄만 다시 씀 — 다른 강좌 순서가 그대로 남음 (슈퍼·일반 교수)', prBad.length===0,
+       prBad.length? '⛔ '+prBad.slice(0,3).join(' / ') : '두 주차 × 세 계정 '+prSaves+'번 저장 — 다른 두 강좌의 줄(id·팀·순서) 변화 0');
+    ok('🔴 4·'+WK_R2+'주차 저장에 다른 강좌 팀이 섞이면 거부 · 변경 기록에는 내 강좌 순서만', prBad2.length===0,
+       prBad2.length? '⛔ '+prBad2.slice(0,3).join(' / ') : '섞인 목록 → 거부(줄 변화 0) · 「전 → 후」에 다른 강좌 팀 표시 0');
 
     /* 14-10. 🔴 채점 권한 — 13·14주차만 다른 강좌 팀 허용 */
     SESS.acc=DB.one('accounts','p1'); SESS.role='prof'; SESS.scope='mine';    /* 성동은 = F1 */
