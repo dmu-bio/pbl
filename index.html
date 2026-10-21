@@ -4411,19 +4411,19 @@ function curWeek(){
      ▸ 고칠 수 없는 곳은 버튼을 「없애고」 왜 못 고치는지 한 줄 —
        눌리지 않는 버튼을 남겨 두면 학생이 계속 누르고, 결국 교수님께 전화합니다.
    ========================================================================== */
-var FIX_LOCKED = '마감되어 학생은 고칠 수 없습니다. 담당교수님께 말씀하세요.';
+var FIX_LOCKED = '이 주차가 닫혀 있어 학생은 고칠 수 없습니다. 담당교수님께 말씀하세요.';   /* 🟢 수정 E: 서버에는 「마감」 상태가 없고 열림/닫힘뿐이라 문구를 맞춤 */
 function dueLabel(n){ var due=wDue(n); if(!due) return ''; var p=String(due).split(' '); return mdw(p[0])+' '+(p[1]||''); }
-function canFix(n){ return wState(n)!=='마감'; }
+function canFix(n){ return wState(n)==='열림'; }      /* 🟢 수정 E(M3): 닫힌 주차에서는 수정 버튼을 그리지 않습니다(서버도 거부) */
 /* 화면 위쪽에 놓는 안내 */
 function fixNote(n){
   return canFix(n)
-    ? '<div class="note g">✏️ <b>낸 뒤에도 마감('+esc(dueLabel(n))+') 전까지 몇 번이든 고쳐 낼 수 있습니다.</b> [수정하기]를 누르세요.</div>'
+    ? '<div class="note g">✏️ <b>낸 뒤에도 '+(dueLabel(n)? '마감('+esc(dueLabel(n))+') 전까지' : '이 주차가 열려 있는 동안')+' 몇 번이든 고쳐 낼 수 있습니다.</b> [수정하기]를 누르세요.</div>'
     : '<div class="note">⬛ <b>'+FIX_LOCKED+'</b></div>';
 }
 /* 낸 칸 바로 밑에 붙이는 작은 줄 */
 function fixLine(n){
   return '<div class="muted">'+(canFix(n)
-    ? '마감('+esc(dueLabel(n))+') 전까지 몇 번이든 고쳐 낼 수 있습니다'
+    ? (dueLabel(n)? '마감('+esc(dueLabel(n))+') 전까지' : '이 주차가 열려 있는 동안')+' 몇 번이든 고쳐 낼 수 있습니다'
     : FIX_LOCKED)+'</div>';
 }
 /* 수정 버튼 — 앱 전체가 이 함수 하나로 그립니다 */
@@ -4994,8 +4994,8 @@ function viewWeek(){
   var locked = (w.state==='닫힘' && !previewOpen[n]);
   if(locked){
     head += '<div class="card" style="text-align:center">'+
-      '<h3>🔒 아직 열리지 않았습니다</h3>'+
-      '<p class="muted">'+n+'주차는 '+mdw(def.date)+'에 열립니다.</p>'+
+      '<h3>'+(def.date && def.date < nowStr().slice(0,10)? '🔒 닫힌 주차입니다' : '🔒 아직 열리지 않았습니다')+'</h3>'+
+      '<p class="muted">'+(def.date && def.date < nowStr().slice(0,10)? n+'주차는 '+mdw(def.date)+' 수업이 끝난 지난 주차라 닫혀 있습니다. 낸 내용을 고쳐야 하면 담당교수님께 말씀하세요.' : n+'주차는 '+mdw(def.date)+'에 열립니다.')+'</p>'+
       ((isProf()||(typeof PREVIEW!=='undefined'&&PREVIEW))? '<button class="btn pri" onclick="previewOpen['+n+']=true;render()">🔎 이 주차 화면 미리 보기</button>':'<p class="muted">담당교수님이 이 주차를 열면 볼 수 있습니다.</p>')+
       (canEdit(myClass())? ' <button class="btn" onclick="DB.set(\'weeks\',\'w'+n+'\',{state:\'열림\'});render()">이 주차 열기</button>':'')+
       '</div>' + pager(n);
@@ -10169,12 +10169,13 @@ function admWeekState(){
     (canEdit(myClass())? '<div class="btnrow" style="margin-top:8px">'+
       '<button class="btn" onclick="allWeeks(\'열림\')">전체 열기</button>'+
       '<button class="btn" onclick="allWeeks(\'닫힘\')">전체 닫기</button></div>':'')+
-    '<div class="note a">⚠️ 여기서는 열림/닫힘만 봅니다. 마감 시각이 지난 뒤의 저장은 데이터베이스가 거부합니다.</div></div>';
+    '<div class="note a">⚠️ 여기서는 <b>열림/닫힘</b>만 봅니다. <b>닫은 주차</b>에는 학생이 제출물·가주제·최종주제 같은 팀 자료와 평가를 더 저장할 수 없고(서버가 거부), 교수님의 교수평가 입력·점수 계산·출력물은 그대로 됩니다. 다시 열면 학생이 다시 고칠 수 있습니다.</div></div>';
   return h;
 }
 function cycleState(n){
   var w=wrow(n); if(!w) return;   /* 🛡️ 16주차 등 주차행이 없으면 조용히 무시 */
-  var nx = w.state==='닫힘'?'열림':(w.state==='열림'?'마감':'닫힘');
+  /* 🟢 수정 F (2026-10-22) — 서버는 열림/닫힘 두 값만 받습니다(weeks_state_check). 옛 「열림→마감」 순환은 서버가 거부했습니다 */
+  var nx = w.state==='열림' ? '닫힘' : '열림';
   DB.set('weeks', w.id, {state:nx}); DB.log('주차 상태 변경', n+'주차 '+w.state+'→'+nx); render();
 }
 function allWeeks(s){ var ws=WEEKDEF.filter(function(d){ return d.kind!=='result'; });   /* 16주차는 열고닫는 주차가 아님 */
@@ -10950,7 +10951,7 @@ var MK_ITEMS = [
 var MK_DEFAULT = {att:20, mid:10, fin:15, r1:10, r2:20, r3:25};
 function MK(){
   var s=DB.d.settings;
-  if(!s.marks){ s.marks={}; for(var k in MK_DEFAULT) s.marks[k]=MK_DEFAULT[k]; DB.flush(); }
+  if(!s.marks){ s.marks={}; for(var k in MK_DEFAULT) s.marks[k]=MK_DEFAULT[k]; if(isProf()) DB.flush(); }   /* 🟢 수정 C(L1): 읽기에서 학생이 서버 쓰기를 시도하지 않게 */
   return s.marks;
 }
 function mkSum(){ var m=MK(), s=0; MK_ITEMS.forEach(function(it){ s+=Number(m[it.k])||0; }); return s; }
@@ -10970,7 +10971,7 @@ function r1d(x){ return Math.round(x*10)/10; }
 var ABSRATE_DEFAULT = {unexcused:50, excused:100};
 function ABSRATE(){
   var s=DB.d.settings;
-  if(!s.absRate || typeof s.absRate!=='object'){ s.absRate={unexcused:50, excused:100}; DB.flush(); }
+  if(!s.absRate || typeof s.absRate!=='object'){ s.absRate={unexcused:50, excused:100}; if(isProf()) DB.flush(); }
   if(s.absRate.unexcused==null || isNaN(s.absRate.unexcused)) s.absRate.unexcused=50;
   if(s.absRate.excused==null   || isNaN(s.absRate.excused))   s.absRate.excused=100;
   return s.absRate;
@@ -11343,6 +11344,7 @@ function mkSave(k, cid){
   }finally{ DB.release(); }
   delete mkDraft[k];
   DB.log(mkLabel(k)+' 점수 입력', cid+' '+n+'명 저장'+(bad?(' · 범위를 벗어난 '+bad+'명은 저장하지 않음'):''));
+  discRefreshAfterMarks(cid, k);
   mkMsg = '✅ '+mkLabel(k)+' '+n+'명 저장했습니다 · '+nowStr()+(bad? ' ⚠️ 범위를 벗어난 '+bad+'명은 저장하지 않았습니다':'');
   render();
 }
@@ -11944,6 +11946,9 @@ function scOneSheet(cid, sid){
     var how;
     if(it.kind==='input'){
       how = it.typed? '담당교수가 직접 넣은 점수입니다.' : '<span class="dim">아직 입력되지 않았습니다</span>';
+    }else if(it.absent && it.absPending){
+      /* 🟢 수정 B (2026-10-22) — 결석했지만 교수가 아직 [확정]하지 않은 회차: absRatio·absScore 가 없어 NaN 이 찍히던 곳 */
+      how = '<span class="dim">결석('+(it.excused?'공결':'무단')+') — 담당교수가 점수를 확정하기 전입니다. 확정하면 여기에 반영됩니다.</span>';
     }else if(it.absent){
       var td=it.detail? r1d(it.detail.score):0;
       how = '결석('+(it.excused?'공결':'무단')+') — 팀 회차점수 '+td+'점 × '+r1d(it.absRatio)+'% → '+
@@ -12056,13 +12061,14 @@ function discLabel(key){
   return { r1:'1회차 발표평가 결과', r2:'2회차 발표평가 결과', r3:'3회차 발표평가 결과',
            mid:'중간고사 점수', fin:'기말고사 점수', result:'최종 결과' }[key] || key;
 }
-function discloseAll(){
+function discloseAll(){        /* 쓰는 쪽(공개 단추·예시 채우기)용 — 없으면 만듭니다 */
   var s = DB.d.settings;
   if(!s.disclose || typeof s.disclose!=='object') s.disclose = {};
   return s.disclose;
 }
 function discloseGet(cid, key){
-  var d = discloseAll()[cid];
+  /* 🟢 수정 C 보완 — 읽기만 할 때는 settings 에 빈 {} 를 만들지 않습니다(만들면 저장 때 서버의 공개 값을 빈 값으로 덮을 수 있음) */
+  var s = DB.d.settings, d = (s.disclose && typeof s.disclose==='object') ? s.disclose[cid] : null;
   return !!(d && d[key]);
 }
 function discloseSet(cid, key, on){
@@ -12075,9 +12081,97 @@ function discloseSet(cid, key, on){
 function discToggle(cid, key, on){
   if(!canEdit(cid)){ toast('다른 강좌라 바꿀 수 없습니다.'); return; }
   var want = (on===true || on==='true');
+  /* 🟢 수정 A (2026-10-22) — 공개하는 순간 「학생이 읽을 수 있는 표(pubResult)」에 결과를 복사해 둡니다.
+     학생은 서버에서 점수 표(marks·prof_eval·남의 평가)를 읽을 수 없어, 학생 기기에서 계산하면 비어 보였습니다.
+     닫을 때는 복사본도 지웁니다. */
+  if(want) discPublish(cid, key); else discUnpublish(cid, key);
   discloseSet(cid, key, want);
   toast(clsFull(cid)+' '+discLabel(key)+'을(를) '+(want?'학생에게 공개했습니다.':'미공개로 되돌렸습니다.'));
   render();
+}
+
+/* ==========================================================================
+   🟢 수정 A (2026-10-22, O-0599) — 학생용 「성적 공개」 결과를 학생이 읽을 수 있는 표에 복사해 둡니다
+   --------------------------------------------------------------------------
+   ▸ 왜: 서버 규칙상 학생은 marks(출석·시험)·prof_eval(교수평가)·남의 peer_team 을 읽을 수 없습니다.
+     학생 화면이 그 표로 계산하면 서버 방식(배포본)에서는 중간·기말 「입력 안 됨」, 순위 「채점 미완료」,
+     최종결과 「아직 없음·0점」으로 비어 보입니다(교내용 로컬 방식에서는 모두 보여 시험을 통과했었음).
+   ▸ 어떻게: 교수가 [학생에게 공개하기]를 누르는 순간, 그 교수 화면(모든 자료를 읽음)이 결과를 계산해
+     서버 표 pub_result 에 줄로 남깁니다. 학생은 「자기 반 순위표 줄」과 「본인 줄」만 읽습니다(서버 규칙).
+       · r1·r2·r3 : 반 전체 줄 하나(팀 번호·이름·총점·순위) · r3 는 3개 강좌 합동 순위
+       · mid·fin  : 학생마다 한 줄(본인 점수)
+       · result   : 학생마다 한 줄(6분야 점수·총점)
+   ▸ 점수를 고쳤으면 [최신 점수로 다시 반영]을 누릅니다(시험·출석 점수 저장은 공개 중이면 자동으로 다시 반영).
+   ▸ 교내용 로컬 방식(DBR.on=false)은 이전처럼 학생 화면이 직접 계산합니다 — 아래 쓰기 함수들은 아무 일도 하지 않습니다. */
+function discRemote(){ return (typeof DBR!=='undefined') && !!DBR.on; }
+function pubId(cid, key, sid){ return sid? 'pub_'+sid+'_'+key : 'pub_'+cid+'_'+key; }
+function pubOne(cid, key, sid){
+  return DB.one('pubResult', function(x){ return x.classId===cid && x.key===key && (sid? x.studentId===sid : !x.studentId); });
+}
+/* 줄 하나를 만들거나 고칩니다 — payload 의 칸은 서버 data 안에 그대로 들어갑니다 */
+function pubPut(cid, key, sid, payload){
+  var id = pubId(cid, key, sid), ex = DB.one('pubResult', id);
+  payload.at = nowStr();
+  if(ex) DB.set('pubResult', id, payload);
+  else { var row={id:id, classId:cid, studentId:(sid||null), key:key};
+         for(var k in payload) row[k]=payload[k];
+         DB.add('pubResult', row); }
+}
+function pubWipe(cid, key){
+  DB.get('pubResult', function(x){ return x.classId===cid && x.key===key; }).forEach(function(x){ DB.del('pubResult', x.id); });
+}
+function discPublish(cid, key){
+  if(!discRemote()) return;
+  DB.hold();
+  try{
+    if(key==='r1' || key==='r2' || key==='r3'){
+      var round = {r1:1, r2:2, r3:3}[key];
+      var rk = roundRanking(round, round===3 ? CIDS.slice() : [cid]);
+      pubPut(cid, key, null, {list: rk.map(function(x){
+        return {teamId:x.team.id, cls:x.team.classId, no:x.team.no, name:x.team.name,
+                score:Math.round(x.score*1000)/1000, rank:x.rank}; })});
+    }else if(key==='mid' || key==='fin'){
+      var full = mkFullOf(key);
+      liveStudents([cid]).forEach(function(s){ pubPut(cid, key, s.id, {v: markGet(s.id, key), full: full}); });
+    }else if(key==='result'){
+      var sum = mkSum();
+      liveStudents([cid]).forEach(function(s){
+        var r = studentScore(s);
+        pubPut(cid, key, s.id, {total:Math.round(r.total*1000)/1000, sum:sum,
+          teamNo: r.team? r.team.no : null, teamName: r.team? r.team.name : '',
+          missing: r.missing.map(function(m){ return m.label; }),
+          pen: r.pen||0, cut: Math.round((r.cut||0)*1000)/1000,
+          items: r.items.map(function(it){ return {label:it.label, where:it.where, full:it.full,
+                    got:Math.round(it.got*1000)/1000, typed:!!it.typed}; })});
+      });
+    }
+  }finally{ DB.release(); }
+}
+function discUnpublish(cid, key){ if(!discRemote()) return; DB.hold(); try{ pubWipe(cid, key); }finally{ DB.release(); } }
+function discRepublish(cid, key){
+  if(!canEdit(cid)){ toast('다른 강좌라 바꿀 수 없습니다.'); return; }
+  discPublish(cid, key); DB.log('성적 공개 다시 반영', cid+' · '+discLabel(key));
+  toast(clsFull(cid)+' '+discLabel(key)+'을(를) 최신 점수로 다시 반영했습니다.'); render();
+}
+/* 시험·출석 점수를 저장했을 때, 이미 공개 중인 결과가 있으면 같이 다시 반영합니다 */
+function discRefreshAfterMarks(cid, k){
+  if(!discRemote()) return;
+  if((k==='mid' || k==='fin') && discloseGet(cid,k)) discPublish(cid, k);
+  if(discloseGet(cid,'result')) discPublish(cid, 'result');
+}
+/* 교수 공개 카드에 「마지막 반영 시각」 */
+function pubAtOf(cid, key){
+  var at='';
+  DB.get('pubResult', function(x){ return x.classId===cid && x.key===key; }).forEach(function(x){ if(x.at && x.at>at) at=x.at; });
+  return at;
+}
+/* 학생 화면에서 읽는 쪽 — 순위표 줄을 roundRanking 과 같은 꼴로 */
+function pubRank(cid, key){
+  var row = pubOne(cid, key, null); if(!row || !row.list) return null;
+  return row.list.map(function(x){ return {team:{id:x.teamId, classId:x.cls, no:x.no, name:x.name}, score:x.score, rank:x.rank, done:true}; });
+}
+function discNotReady(what){
+  return '<div class="card"><h3>'+esc(what)+'</h3><div class="note a">⏳ 공개는 되었지만 결과를 아직 <b>불러오지 못했습니다.</b> 화면을 새로 고쳐 보시고, 계속 안 보이면 담당교수님께 알려 주세요.</div></div>';
 }
 
 /* ---- 교수 공개 컨트롤 카드 — 강좌마다 한 줄 ---- */
@@ -12090,15 +12184,18 @@ function discloseControlCard(key, label, desc){
     h += '<div class="hr"></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
       '<b>'+esc(clsFull(cid))+'</b>'+
       '<span class="bg '+(on?'green':'gray')+'">'+(on?'✅ 공개됨':'⬜ 미공개')+'</span>'+
+      (on && discRemote() && pubAtOf(cid,key)? '<span class="muted">마지막 반영 '+esc(pubAtOf(cid,key))+'</span>':'')+
       '<span style="flex:1"></span>'+
       (canEdit(cid)
-        ? '<button class="btn sm '+(on?'':'pri')+'" onclick="discToggle(\''+cid+'\',\''+key+'\','+(on?'false':'true')+')">'+
+        ? (on && discRemote()? '<button class="btn sm" onclick="discRepublish(\''+cid+'\',\''+key+'\')">최신 점수로 다시 반영</button>':'')+
+          '<button class="btn sm '+(on?'':'pri')+'" onclick="discToggle(\''+cid+'\',\''+key+'\','+(on?'false':'true')+')">'+
             (on?'공개 닫기':'학생에게 공개하기')+'</button>'
         : '<span class="muted">'+esc(roLabel(cid))+'</span>')+
       '</div>';
   });
   h += '<div class="note">기본은 <b>미공개</b>입니다. 점수를 확인하신 뒤 [학생에게 공개하기]를 누르면 학생 화면에 나타납니다. '+
-       '언제든 다시 닫을 수 있습니다. 미완성·오류 결과가 학생에게 먼저 새는 것을 막기 위한 장치입니다.</div></div>';
+       '언제든 다시 닫을 수 있습니다. 미완성·오류 결과가 학생에게 먼저 새는 것을 막기 위한 장치입니다.<br>'+
+       '공개하는 순간의 결과가 학생 화면에 복사됩니다 — 그 뒤 점수를 고쳤으면 [최신 점수로 다시 반영]을 누르세요.</div></div>';
   return h;
 }
 
@@ -12156,7 +12253,8 @@ function stRoundResultCard(round, key){
 
   var joint = (round===3);
   var cids = joint ? CIDS.slice() : [cid];
-  var rk = roundRanking(round, cids);
+  var rk = discRemote()? pubRank(cid, key) : roundRanking(round, cids);
+  if(!rk) return discNotReady(label);
   var mine = null;
   rk.forEach(function(x){ if(x.team.id===t.id) mine=x; });
 
@@ -12191,7 +12289,12 @@ function stExamCard(key, label){
   var me = SESS.me; if(!me) return '';
   var cid = me.classId;
   if(!discloseGet(cid, key)) return discPendingCard('본인 '+label+' 점수');
-  var v = markGet(me.id, key), full = mkFullOf(key);
+  var v, full;
+  if(discRemote()){
+    var prow = pubOne(cid, key, me.id);
+    if(!prow) return discNotReady('본인 '+label+' 점수');
+    v = (prow.v==null? null : Number(prow.v)); full = prow.full;
+  }else{ v = markGet(me.id, key); full = mkFullOf(key); }
   return '<div class="card"><h3>📢 본인 '+esc(label)+' 점수</h3>'+
     (v==null
       ? '<div class="note a">아직 점수가 <b>입력되지 않았습니다.</b> 담당교수님이 입력하면 여기에 나타납니다.</div>'
@@ -12206,7 +12309,16 @@ function stFinalResult(){
   if(!me) return '<div class="card"><div class="note a">학생 정보가 없습니다. 다시 로그인해 주세요.</div></div>';
   var cid = me.classId;
   if(!discloseGet(cid, 'result')) return discPendingCard('최종 결과');
-  var r = studentScore(me), sum = mkSum();
+  var r, sum;
+  if(discRemote()){
+    var frow = pubOne(cid, 'result', me.id);
+    if(!frow) return discNotReady('최종 결과');
+    sum = frow.sum;
+    r = {total:frow.total, pen:frow.pen||0, cut:frow.cut||0,
+         team: frow.teamNo!=null? {no:frow.teamNo, name:frow.teamName} : null,
+         missing: (frow.missing||[]).map(function(l){ return {label:l}; }),
+         items: (frow.items||[]).map(function(i){ return {label:i.label, where:i.where, full:i.full, got:i.got, typed:i.typed}; })};
+  }else{ r = studentScore(me); sum = mkSum(); }
   var body = r.items.map(function(it){
     return '<tr><td class="nw"><b>'+esc(it.label)+'</b> <span class="muted">'+esc(it.where)+'</span></td>'+
       '<td class="num">'+it.full+'</td>'+
@@ -12278,7 +12390,7 @@ var INTRA_DEFAULT = {
 };
 function IN(){
   var s=DB.d.settings;
-  if(!s.intra){ s.intra={}; for(var k in INTRA_DEFAULT) s.intra[k]=INTRA_DEFAULT[k]; DB.flush(); }
+  if(!s.intra){ s.intra={}; for(var k in INTRA_DEFAULT) s.intra[k]=INTRA_DEFAULT[k]; if(isProf()) DB.flush(); }
   return s.intra;
 }
 function intraTweak(k, d){
@@ -12518,7 +12630,7 @@ function intraNoticeText(){
   return '이 수업의 발표평가('+WK_R1+'주차·'+WK_R2+'주차·13-14주차)는 교수평가 40% + 학생 동료평가 60%로 매깁니다.\n'+
     '동료평가는 「팀간 평가」이며, 받은 평가가 5건 이상이면 가장 높은 점수 1개와 가장 낮은 점수 1개를 빼고 평균을 냅니다.\n\n'+
     '이와 별도로 같은 팀원끼리 하는 「팀내 평가」를 받습니다. 팀내 평가에서 '+
-    '우리 팀 평균의 '+Math.round(c.t3*100)+'%에 못 미치는 평가를 세 회차 가운데 '+c.minRounds+'회 이상 받으면, '+
+    '우리 팀 평균의 '+Math.round(c.t2*100)+'%에 못 미치는 평가를 세 회차 가운데 '+c.minRounds+'회 이상 받으면, '+   /* 🟢 수정 E: 실제 판정 문턱(intraBand의 t2)과 같은 값 */
     '그 학생은 동료평가 점수에서 최대 '+c.r5+'%까지 감점될 수 있습니다.\n'+
     '· 판정은 절대 점수가 아니라 「우리 팀 평균 대비 비율」로 합니다. 팀 전체가 서로 높게 주어도 비율은 달라지지 않습니다.\n'+
     '· 나를 평가한 사람이 '+c.minEv+'명 미만인 회차는 판정에 넣지 않습니다.\n'+
@@ -13221,7 +13333,7 @@ function alBlocks(n, cid){
         return [alTeamLabel(t), alDash(t.meaning),
           ms.map(function(m){ return alSn(m.st)+(isTeamCreator(t,m.st)?' ★':''); }).join('\n')];
       }) : [['—','아직 팀이 없습니다','']]});
-    out.push({t:'가주제 3개', type:'table', head:['팀','가주제','한 줄 설명'], w:[1800,3200,4638],
+    out.push({t:'가주제 목록', type:'table', head:['팀','가주제','한 줄 설명'], w:[1800,3200,4638],
       rows: (function(){
         var r=[];
         teams.forEach(function(t){
@@ -13290,7 +13402,12 @@ function alBlocks(n, cid){
   /* 6. 평가 주차 (4·8·13·14) */
   if(def.kind==='eval'){
     var rd=def.round;
-    var asg=DB.get('assign', function(a){ return a.n===n; }).sort(function(a,b){ return a.order-b.order; });
+    /* 🟢 수정 E — 4·8주차는 강좌별 평가라 이 강좌 팀의 발표 순서만 봅니다(13·14주차는 3개 강좌 합동이라 그대로) */
+    var asg=DB.get('assign', function(a){
+      if(a.n!==n) return false;
+      if(def.joint) return true;
+      var tt=DB.one('teams', a.teamId); return !!tt && tt.classId===cid;
+    }).sort(function(a,b){ return a.order-b.order; });
     out.push({t:'발표 순서', type:'table', head:['순서','팀','강좌','담당교수'], w:[1200,4238,1800,2400],
       rows: asg.length? asg.map(function(a){
         var t=DB.one('teams', a.teamId);
@@ -13519,6 +13636,9 @@ function scDocxClassBody(cid){
     dxP('학생 '+ss.length+'명 · 총점 만점 '+sum+'점'+(sum!==100? ' ⚠️ 배점 합계가 '+sum+'점입니다':''),
         {sz:18, align:'center', color:'444444', rule:true, after:120})+
     rpDemoWarnDocx();
+  /* 🟢 수정 E — A4 점수표(scClassSheet)와 같은 「확정 전 중간 출력본」 경고 */
+  if(!(mkComplete(cid) && sum===100)) out += dxP('⚠️ 아직 모든 점수가 입력되지 않았습니다 — 확정 전 중간 출력본입니다. 「—」는 미입력 항목입니다.',
+        {sz:16, color:'8A1010', after:100});
 
   var head = ['번호','이름 (학번)']
     .concat(MK_ITEMS.map(function(it){ return it.short+'\n('+mkFullOf(it.k)+')'; }))
@@ -13538,6 +13658,16 @@ function scDocxClassBody(cid){
 /* ---- 학생 개인 한 장 — 🔒 그 학생 본인 점수만 ---- */
 function scCalcTextPlain(it){
   if(it.kind==='input') return it.typed? '담당교수가 직접 입력한 점수입니다.' : '아직 입력되지 않았습니다.';
+  /* 🟢 수정 B (2026-10-22) — 결석·평가 미완료 분기(A4 점수표 scOneSheet 와 같은 설명) */
+  if(it.absent && it.absPending) return '결석('+(it.excused?'공결':'무단')+') — 담당교수가 점수를 확정하기 전입니다. 확정하면 여기에 반영됩니다.';
+  if(it.absent){
+    return '결석('+(it.excused?'공결':'무단')+') — 팀 회차점수 '+(it.detail? r1d(it.detail.score):0)+'점 × '+r1d(it.absRatio)+'% → '+
+      r1d(it.absScore)+'점(100점 기준) × '+it.full+' ÷ 100 = '+r1d(it.got)+'점'+(it.absOver? ' (교수가 값을 직접 조정)':'');
+  }
+  if(it.miss){
+    return '평가 미완료(동료평가 미제출) — 팀 회차점수 '+(it.detail? r1d(it.detail.score):0)+'점 × '+r1d(it.missRatio)+'% → '+
+      r1d(it.missScore)+'점(100점 기준) × '+it.full+' ÷ 100 = '+r1d(it.got)+'점'+(it.missOver? ' (교수가 값을 직접 조정)':'');
+  }
   var d = it.detail;
   if(!d || !d.done) return '아직 점수가 없습니다'+(d&&d.lack? ' — '+d.lack : '')+'.';
   var s = '팀 점수 '+r1d(d.score)+'점(100점 기준) × '+it.full+' ÷ 100\n'+
@@ -13614,36 +13744,51 @@ function scDownloadAllOnesDocx(cid){
    · 100점 기준값은 괄호로 병기합니다. */
 function rpFull(k){ return Number(MK()[k])||0; }
 function rpConv(v100, k){ return (v100==null)? null : v100/100*rpFull(k); }
+/* 🟢 수정 E — 이 팀·회차에 「교수가 직접/초안으로 넣은 값」이나 「평균으로 보충한 값」(data.manual)이 섞여 있으면 잠정 */
+function rpProvisional(teamId, round){
+  return !!(DB.one('profEval', function(x){ return x.teamId===teamId && x.round===round && x.manual; }) ||
+            DB.one('peerTeam', function(x){ return x.teamId===teamId && x.round===round && x.manual; }));
+}
 function teamScoreRows(cid){
   var g = calcGrades(cid);
+  var prevTotal=null, prevRank=0;
   return g.rows.map(function(r, i){
+    /* 완전 동점(반올림 0.1점 총점이 같음)은 같은 순위로 — 공동 표기 */
+    var rank = (i>0 && prevTotal!=null && r.total>0 && Math.abs(r.total-prevTotal)<1e-9) ? prevRank : (i+1);
+    var tied = (i>0 && rank===prevRank);
+    prevTotal = r.total; prevRank = rank;
     var by = { r1:null, r2:null, r3:null };
     (r.rounds||[]).forEach(function(rd){ if(rd.key && (rd.key in by)) by[rd.key] = (rd.done? rd.score : null); });
     var c1=rpConv(by.r1,'r1'), c2=rpConv(by.r2,'r2'), c3=rpConv(by.r3,'r3');
     var presSum = (c1||0)+(c2||0)+(c3||0);                     /* 환산 합계 (채점된 회차만) */
     var presFull = (by.r1!=null? rpFull('r1'):0)+(by.r2!=null? rpFull('r2'):0)+(by.r3!=null? rpFull('r3'):0);
-    return { rank:i+1, t:r.t, r1:by.r1, r2:by.r2, r3:by.r3,
+    return { rank:rank, tied:tied, t:r.t, r1:by.r1, r2:by.r2, r3:by.r3,
              c1:c1, c2:c2, c3:c3, presSum:presSum, presFull:presFull,
+             prov:{r1:rpProvisional(r.t.id,1), r2:rpProvisional(r.t.id,2), r3:rpProvisional(r.t.id,3)},
              prof:r.prof, peer:r.peer, total100:r.total };
+  }).map(function(x, i, arr){
+    /* 앞뒤 중 하나라도 같은 순위면 공동 */
+    x.tied = arr.some(function(y, j){ return j!==i && y.rank===x.rank; });
+    return x;
   });
 }
 /* 발표 3회 배점 합 (기본 55) — 표 머리글에 씁니다 */
 function rpPresMax(){ return rpFull('r1')+rpFull('r2')+rpFull('r3'); }
 /* 환산값 표시 — 값(만점) 병기. 100기준을 괄호로 */
-function rpConvCell(cv, v100){
+function rpConvCell(cv, v100, prov){
   if(cv==null) return '-';
-  return r1d(cv)+'<br><span class="dim">'+rpNum(v100)+'/100</span>';
+  return r1d(cv)+'<br><span class="dim">'+rpNum(v100)+'/100'+(prov?' · 잠정':'')+'</span>';
 }
 /* ---- A4 한 장 ---- */
 function teamScoreSheet(cid){
   var rows = teamScoreRows(cid);
   var f1=rpFull('r1'), f2=rpFull('r2'), f3=rpFull('r3'), pmax=rpPresMax();
   var body = rows.map(function(x){
-    return '<tr><td class="c"><b>'+x.rank+'</b></td>'+
+    return '<tr><td class="c"><b>'+x.rank+'</b>'+(x.tied?'<br><span class="dim">공동</span>':'')+'</td>'+
       '<td class="nm">'+esc(x.t.no+'팀 「'+x.t.name+'」')+'</td>'+
-      '<td class="num">'+rpConvCell(x.c1,x.r1)+'</td>'+
-      '<td class="num">'+rpConvCell(x.c2,x.r2)+'</td>'+
-      '<td class="num">'+rpConvCell(x.c3,x.r3)+'</td>'+
+      '<td class="num">'+rpConvCell(x.c1,x.r1,x.prov.r1)+'</td>'+
+      '<td class="num">'+rpConvCell(x.c2,x.r2,x.prov.r2)+'</td>'+
+      '<td class="num">'+rpConvCell(x.c3,x.r3,x.prov.r3)+'</td>'+
       '<td class="num">'+r1d(x.prof)+'</td><td class="num">'+r1d(x.peer)+'</td>'+
       '<td class="num tot"><b>'+r1d(x.presSum)+'</b><br><span class="dim">/'+x.presFull+'</span></td></tr>';
   }).join('');
@@ -13666,6 +13811,8 @@ function teamScoreSheet(cid){
       '· 회차 환산 = 회차 팀 점수(100점 기준) ÷ 100 × 그 회차 배점. 회차 팀 점수는 <b>교수평가 40% + 동료평가(팀간) 60%</b>입니다.<br>'+
       '· 「교수 평균」·「동료 평균」은 세 회차를 <b>배점으로 가중</b>한 100점 기준 참고값입니다.<br>'+
       '· 「발표 합계」 = 채점이 끝난 회차의 환산 점수를 더한 값(만점 '+pmax+'점 = '+f1+'+'+f2+'+'+f3+'). 채점이 덜 찬 회차는 「-」로 두고 합계·만점에서 뺐습니다.<br>'+
+      '· 「순위」는 채점이 끝난 회차를 배점으로 가중한 평균(100점 기준) 순이라, 「발표 합계」(환산 점수 합)와 다른 기준입니다. 완전 동점이면 같은 순위로 「공동」이라 적습니다.<br>'+
+      (rows.some(function(x){ return x.prov.r1||x.prov.r2||x.prov.r3; })? '· 「잠정」 = 교수가 직접·초안으로 넣은 점수나 평균으로 보충한 평가가 섞여 있어 아직 확정 전인 값입니다.<br>':'')+
       '· 🔒 이 표에는 개별 학생 점수·평가자 신원이 들어 있지 않습니다.</div>'+
     scFoot(cid, '팀 '+rows.length+'개 · 이 표는 「팀」 점수입니다(학생 개인 총점은 개인 점수표)')+
     '</div></div>';
@@ -13682,16 +13829,17 @@ function teamScoreDocxBody(cid){
     rpDemoWarnDocx();
   var head = ['순위','팀','발표1\n/'+f1,'발표2\n/'+f2,'최종발표\n/'+f3,'교수\n평균/100','동료\n평균/100','발표 합계\n/'+pmax];
   var w = [700, 2500, 950,950,1050, 900,900, 1050];
-  function cv(cv0, v100){ return (cv0==null)? '-' : (r1d(cv0)+' ('+rpNum(v100)+')'); }
+  function cv(cv0, v100, prov){ return (cv0==null)? '-' : (r1d(cv0)+' ('+rpNum(v100)+')'+(prov?' 잠정':'')); }
   var body = rows.map(function(x){
-    return [String(x.rank), x.t.no+'팀 「'+x.t.name+'」', cv(x.c1,x.r1), cv(x.c2,x.r2), cv(x.c3,x.r3),
+    return [String(x.rank)+(x.tied?' (공동)':''), x.t.no+'팀 「'+x.t.name+'」', cv(x.c1,x.r1,x.prov.r1), cv(x.c2,x.r2,x.prov.r2), cv(x.c3,x.r3,x.prov.r3),
             String(r1d(x.prof)), String(r1d(x.peer)), r1d(x.presSum)+' /'+x.presFull];
   });
   out += dxTable(head, body.length? body : [['-','채점된 팀이 아직 없습니다','-','-','-','-','-','-']], w,
     {sz:15, align:{0:'center',2:'right',3:'right',4:'right',5:'right',6:'right',7:'right'}});
   out += dxP('· 발표1·발표2·최종발표는 실제 배점으로 환산한 점수입니다(괄호 안이 100점 기준). 회차 환산 = 회차 팀 점수 ÷ 100 × 배점.', {sz:15, color:'444444', before:60, after:20});
   out += dxP('· 회차 팀 점수는 교수평가 40% + 동료평가(팀간) 60%. 교수·동료 평균은 배점 가중 100점 기준 참고값입니다.', {sz:15, color:'444444', after:20});
-  out += dxP('· 「발표 합계」는 채점이 끝난 회차의 환산 점수 합(만점 '+pmax+'). 🔒 개별 학생 점수·평가자 신원은 들어 있지 않습니다. 등급이 아닙니다.', {sz:15, color:'444444', after:40});
+  out += dxP('· 「발표 합계」는 채점이 끝난 회차의 환산 점수 합(만점 '+pmax+'). 순위는 회차를 배점으로 가중한 평균(100점 기준) 순이라 다른 기준이며, 완전 동점은 공동 순위입니다. 🔒 개별 학생 점수·평가자 신원은 들어 있지 않습니다. 등급이 아닙니다.', {sz:15, color:'444444', after:20});
+  if(rows.some(function(x){ return x.prov.r1||x.prov.r2||x.prov.r3; })) out += dxP('· 「잠정」 = 교수가 직접·초안으로 넣은 점수나 평균으로 보충한 평가가 섞여 있어 확정 전인 값입니다.', {sz:15, color:'444444', after:40});
   out += rpFootDocx(clsFull(cid)+' 팀 점수표');
   return out;
 }
@@ -13723,7 +13871,8 @@ function evalSummaryData(round, cid){
       profMean: p? p.mean : null, profN: p? p.n : 0,
       peerMean: q.n? q.mean : null, peerN: q.n, peerTrimmed: !!q.trimmed,
       intraMean: ir.teamMean, intraN: intraN,
-      score: s100, conv: (s100==null? null : s100/100*full) };
+      score: s100, conv: (s100==null? null : s100/100*full),
+      prov: rpProvisional(t.id, round) };
   });
 }
 /* ---- 루브릭 양식(무엇을 어떤 기준으로 평가했나) — 3종 (교수·팀간·팀내) ----
@@ -13773,7 +13922,7 @@ function evalSummarySheet(round, cid){
   var data = evalSummaryData(round, cid);
   var full = rpRoundFull(round);
   var body = data.map(function(x){
-    return '<tr><td class="nm">'+esc(x.t.no+'팀 「'+x.t.name+'」')+'</td>'+
+    return '<tr><td class="nm">'+esc(x.t.no+'팀 「'+x.t.name+'」')+(x.prov? '<br><span class="dim">잠정</span>':'')+'</td>'+
       '<td class="num">'+rpNum(x.profMean)+'<br><span class="dim">교수 '+x.profN+'명</span></td>'+
       '<td class="num">'+rpNum(x.peerMean)+'<br><span class="dim">'+x.peerN+'건'+(x.peerTrimmed?'·절사':'')+'</span></td>'+
       '<td class="num">'+rpNum(x.intraMean)+'<br><span class="dim">제출 '+x.intraN+'</span></td>'+
@@ -13793,6 +13942,7 @@ function evalSummarySheet(round, cid){
       '· 「발표점수」는 <b>실제 배점 '+full+'점으로 환산</b>한 값입니다(작은 글씨가 100점 기준). 환산 = (교수 40% + 팀간 60%) ÷ 100 × '+full+'.<br>'+
       '· 동료(팀간)는 평가자 한 사람의 총점을 한 건으로 놓고, 5건 이상이면 최고 1·최저 1을 뺀 <b>절사평균</b>입니다.<br>'+
       '· <b>동료(팀내)는 참고값</b>입니다 — 팀 점수에 넣지 않습니다(무임승차 감점 판단에만 씁니다). 위 표는 팀 <b>평균</b>이고, 학생별 값은 아래에 있습니다.<br>'+
+      (data.some(function(x){ return x.prov; })? '· 「잠정」 = 교수가 직접·초안으로 넣은 점수나 평균으로 보충한 평가가 섞여 있어 아직 확정 전인 팀입니다.<br>':'')+
       '· 🔒 누가 누구에게 몇 점을 줬는지(평가자 신원)는 어디에도 없습니다. 교수 전용 내부 자료입니다.</div>'+
     evalIntraHTML(round, cid)+
     '<div class="scnote" style="margin-top:10px"><b>■ 이 회차에 사용한 평가 루브릭</b> — 무엇을 어떤 기준으로 평가했는지</div>'+
@@ -13831,7 +13981,7 @@ function evalSummaryDocxBody(round, cid, pg){
   var head = ['팀','교수평가\n/100·40%','동료(팀간)\n/100·60%','동료(팀내)\n/100·참고','발표점수\n/'+full+'(환산)'];
   var w = [3038, 1600, 1700, 1600, 1700];
   var body = data.map(function(x){
-    return [x.t.no+'팀 「'+x.t.name+'」',
+    return [x.t.no+'팀 「'+x.t.name+'」'+(x.prov?' (잠정)':''),
       rpNum(x.profMean)+' (교수 '+x.profN+'명)',
       rpNum(x.peerMean)+' ('+x.peerN+'건'+(x.peerTrimmed?'·절사':'')+')',
       rpNum(x.intraMean)+' (제출 '+x.intraN+')',
@@ -13840,7 +13990,8 @@ function evalSummaryDocxBody(round, cid, pg){
   out += dxTable(head, body.length? body : [['팀이 없습니다','-','-','-','-']], w,
     {sz:15, align:{1:'right',2:'right',3:'right',4:'right'}});
   out += dxP('· 발표점수는 실제 배점 '+full+'점으로 환산했습니다(괄호가 100점 기준). 동료(팀간)는 5건 이상이면 최고 1·최저 1을 뺀 절사평균입니다.', {sz:15, color:'444444', before:60, after:20});
-  out += dxP('· 동료(팀내)는 참고값이며 팀 점수에 넣지 않습니다(위 표는 팀 평균). 🔒 누가 누구에게 몇 점을 줬는지(평가자 신원)는 어디에도 없습니다.', {sz:15, color:'444444', after:40});
+  out += dxP('· 동료(팀내)는 참고값이며 팀 점수에 넣지 않습니다(위 표는 팀 평균). 🔒 누가 누구에게 몇 점을 줬는지(평가자 신원)는 어디에도 없습니다.', {sz:15, color:'444444', after:20});
+  if(data.some(function(x){ return x.prov; })) out += dxP('· 「잠정」 = 교수가 직접·초안으로 넣은 점수나 평균으로 보충한 평가가 섞여 있어 아직 확정 전인 팀입니다.', {sz:15, color:'444444', after:40});
 
   /* 팀내 동료평가 — 학생별 받은 점수 (평가자 익명) */
   out += dxP('팀내 동료평가 — 학생별 받은 점수 (100점 기준 · 팀 평균 대비 배율 · 🔒 평가자 익명)',
@@ -13952,7 +14103,7 @@ function viewReports(){
   var t = VIEW.p.t || 'team';                                  /* team · r1 · r2 · r3 · rall */
   if(['team','r1','r2','r3','rall'].indexOf(t)<0) t='team';
 
-  var kinds = [['team','팀 점수표'],['rall','발표평가 3회차 통합'],['r1','발표평가1'],['r2','발표평가2'],['r3','최종발표평가']];
+  var kinds = [['team','팀 점수표'],['rall','발표평가 3회차 통합'],['r1','중간발표평가1'],['r2','중간발표평가2'],['r3','최종발표평가']];
   var chips = kinds.map(function(k){
     return '<button class="btn sm '+(t===k[0]?'pri':'')+'" onclick="rpGo(\''+k[0]+'\',\''+cid+'\')">'+esc(k[1])+'</button>'; }).join('');
   var clschips = vis.length>1 ? '<div class="btnrow" style="margin-top:6px">'+vis.map(function(c){
@@ -14247,10 +14398,10 @@ function viewExcursion(){
 function wpCells(def){
   var act=[], res=[], K=def.kind;
   if(K==='survey'){ act.push('오리엔테이션 · 평가방식 안내'); act.push('사전설문조사'); res.push('사전설문 응답'); }
-  else if(K==='team'){ act.push('팀 구성(팀명·의미)'); act.push('가주제 3개 선정'); act.push('KOSAC 소개'); res.push('팀 편성표'); res.push('가주제 3개'); }
+  else if(K==='team'){ act.push('팀 구성(팀명·의미)'); act.push('가주제 정하기(자유 목록)'); act.push('KOSAC 소개'); res.push('팀 편성표'); res.push('가주제 목록'); }
   else if(K==='research'){ act.push('가주제 조사 · 자료 제출'); res.push('조사 자료 제출물'); }
   else if(K==='finaltopic'){ act.push('최종 주제 1개 선정 · 1~2분 광고 콘티(스토리라인) 작성'); res.push('최종 주제 · 광고 콘티(스토리라인)'); }
-  else if(K==='video'){ act.push('광고 영상 제작'); act.push(WK_R2+'주차 발표 평가 기준 안내(읽기)'); res.push('광고 영상 가편집본'); }
+  else if(K==='video'){ act.push('광고 영상 제작'); act.push(WK_R2+'주차 발표 평가 기준 안내(읽기)'); res.push('(앱 밖 산출물) 광고 영상 가편집본'); }
   /* 🙅 주차 재편 — 팀활동 주차는 학생 입력이 없습니다 → 결과물은 튜터링 일지(아래 def.tutor)뿐 */
   else if(K==='activity'){ act.push('수업 시간 팀 활동(학생 입력 없음)'); if(def.boost) act.push('영상 보강(필요 팀)'); }
   else if(K==='prep'){ act.push('수업 시간 팀 활동(학생 입력 없음)'); act.push('최종발표 평가기준 공개'); res.push('평가기준 공개'); }
@@ -14259,9 +14410,10 @@ function wpCells(def){
     act.push(lbl+' 발표 · 평가');
     if(def.film) act.push('KOSAC(광고영상) 제출');
     if(def.joint) act.push('3개 강좌 합동');
-    if(def.intra) act.push('팀내 평가');
-    res.push((def.round===3?'최종발표평가':('발표평가'+def.round))+' 점수(교수·동료)');
-    if(def.intra) res.push('팀내 평가 결과');
+    var hasIntra = (!def.joint || def.intra);      /* 🟢 수정 E: 평가 화면(p6_eval)과 같은 조건 — 4·8·14주차 */
+    if(hasIntra) act.push('팀내 평가');
+    res.push((def.round===3?'최종발표평가':('중간발표평가'+def.round))+' 점수(교수·동료)');
+    if(hasIntra) res.push('팀내 평가 결과');
   }
   else if(K==='notice'){
     if(def.n===WK_MID){ act.push('중간고사'); act.push('중간설문조사'); res.push('중간고사 점수'); res.push('중간설문 응답'); }
@@ -14416,14 +14568,14 @@ function viewOutputs(){
   h += card('② 성적 — 점수표',
     '학생 개인 총점(출석·시험·발표 포함)과 강좌 전체 명부. 발표평가는 <b>실제 배점으로 환산</b>해 표시합니다.',
     '<button class="btn pri" onclick="go(\'score\',{cid:\''+cid+'\'})">강좌 점수표 (전체 명부 1장)</button>'+
-    '<button class="btn" onclick="scDownloadAllOnesDocx(\''+cid+'\')">개인 점수표 25명 묶음(워드)</button>'+
+    '<button class="btn" onclick="scDownloadAllOnesDocx(\''+cid+'\')">개인 점수표 강좌 전체 묶음(워드)</button>'+
     '<button class="btn" onclick="go(\'reports\',{t:\'team\',cid:\''+cid+'\'})">팀 점수표</button>');
 
   h += card('③ 평가 — 발표평가 정리표',
     '회차별 교수평가·동료평가(팀간·팀내) + <b>학생별 팀내 받은 점수</b> + 그 회차에 쓴 <b>루브릭(평가 기준)</b>까지 함께.',
     '<button class="btn pri" onclick="go(\'reports\',{t:\'rall\',cid:\''+cid+'\'})">통합본 — 3회차 한 파일</button>'+
-    '<button class="btn" onclick="go(\'reports\',{t:\'r1\',cid:\''+cid+'\'})">발표평가1</button>'+
-    '<button class="btn" onclick="go(\'reports\',{t:\'r2\',cid:\''+cid+'\'})">발표평가2</button>'+
+    '<button class="btn" onclick="go(\'reports\',{t:\'r1\',cid:\''+cid+'\'})">중간발표평가1</button>'+
+    '<button class="btn" onclick="go(\'reports\',{t:\'r2\',cid:\''+cid+'\'})">중간발표평가2</button>'+
     '<button class="btn" onclick="go(\'reports\',{t:\'r3\',cid:\''+cid+'\'})">최종발표평가</button>');
 
   h += card('④ 교수 튜터링 일지',
@@ -15617,6 +15769,8 @@ var TBL = {
   intraPenalty : { db:'intra_penalty', cols:[['studentId','student_id'],['rate','rate'],['ratio','ratio'],['reason','reason']] },
   gradeRule    : { db:'grade_rule',    cols:[['classId','class_id'],['profW','prof_w'],['peerW','peer_w']] },
   gradeResult  : { db:'grade_result',  cols:[['teamId','team_id'],['total','total'],['rank','rank']] },
+  /* 📢 수정 A(2026-10-22) — 성적 공개 결과 복사본(학생이 읽는 표). 서버 표 pub_result 가 있어야 합니다(없어도 앱은 안 깨짐: loadAll 안전장치) */
+  pubResult    : { db:'pub_result',    cols:[['classId','class_id'],['studentId','student_id'],['key','key']] },
   audit        : { db:'audit',         cols:[] },
   access       : { db:'access',        cols:[] }
 };
@@ -15774,9 +15928,8 @@ var DBR = {
     /* settings 는 표가 아니라 값 덩어리라 줄 단위로 못 나눕니다 — 여기서 통째로 올립니다.
        (DB.flush 가 __settings 줄로 넣어 둡니다) */
     if(job.t==='__settings'){
-      p=this.call('/rest/v1/settings?id=eq.main', {method:'PATCH',
-        headers:this.mix(this.hdr(true), {Prefer:'return=minimal'}),
-        body:JSON.stringify(job.row)});
+      /* 🟢 수정 C (2026-10-22) — 통째로 덮지 않고 「내가 바꾼 칸」만 서버의 최신 값에 합쳐 저장합니다 */
+      p=this.settingsMerge(job);
     }else{
       var def=TBL[job.t];
       if(!def){ this.q.shift(); this.saveQ(); this.busy=false; return this.pump(); }
@@ -15805,6 +15958,72 @@ var DBR = {
       self.busy=false;
       self.onJobErr(job, err);
     });
+  },
+
+  /* ---- 🟢 수정 C (2026-10-22) — 운영 설정(settings) 합쳐 저장 ----------------------------------
+     [문제] 예전에는 화면에 있던 settings 전체를 서버에 덮어썼습니다. 오래 열어 둔 화면에서 아무 설정이나
+        바꾸면, 그 사이 다른 교수가 바꾼 칸(성적 공개·배점·감점 기준·발표 순서의 판 번호)이 옛 값으로 되돌아갔습니다.
+     [고침] 마지막으로 서버와 맞춘 사본(_base)과 지금 화면을 견주어 「바뀐 칸의 길」만 뽑고(settingsDiff),
+        저장할 때 서버의 최신 settings 를 한 번 받아 그 위에 그 칸만 얹어 올립니다(settingsMerge).
+        · 같은 칸을 두 교수가 동시에 바꾸면 나중에 저장한 쪽이 이깁니다(칸 단위).
+        · 받아서 얹어 올리는 사이(수십 ms)에 다른 교수가 저장하면 그 한 번은 덮일 수 있습니다 — 예전의
+          「화면을 연 뒤 내내」 보다 훨씬 좁은 틈입니다.
+        · 학생 기기는 설정을 서버에 쓰지 않습니다(읽기만) — 쓰기는 교수 권한뿐이라 헛된 저장 시도를 막습니다. */
+  clone: function(o){ return (o===undefined)? undefined : JSON.parse(JSON.stringify(o)); },
+  isObj: function(x){ return x!==null && typeof x==='object' && !Array.isArray(x); },
+  /* base → cur 에서 바뀐 칸 목록: [{path:[...], val}] 또는 [{path:[...], del:true}] (배열·값은 통째로 한 칸) */
+  settingsDiff: function(base, cur, path, out){
+    var self=this, k; path=path||[]; out=out||[];
+    base = self.isObj(base)? base : {}; cur = self.isObj(cur)? cur : {};
+    for(k in cur) if(cur.hasOwnProperty(k) && cur[k]!==undefined){
+      if(!base.hasOwnProperty(k)){ out.push({path:path.concat(k), val:self.clone(cur[k]), add:true}); }
+      else if(self.isObj(cur[k]) && self.isObj(base[k])){ self.settingsDiff(base[k], cur[k], path.concat(k), out); }
+      else if(JSON.stringify(cur[k])!==JSON.stringify(base[k])){ out.push({path:path.concat(k), val:self.clone(cur[k])}); }
+    }
+    for(k in base) if(base.hasOwnProperty(k) && (!cur.hasOwnProperty(k) || cur[k]===undefined)){
+      out.push({path:path.concat(k), del:true});
+    }
+    return out;
+  },
+  settingsApply: function(obj, patch){
+    var self=this;
+    patch.forEach(function(it){
+      var o=obj, i;
+      for(i=0;i<it.path.length-1;i++){
+        if(!self.isObj(o[it.path[i]])) { if(it.del) return; o[it.path[i]]={}; }
+        o=o[it.path[i]];
+      }
+      var last=it.path[it.path.length-1];
+      if(it.del) delete o[last];
+      else if(it.add && self.isObj(it.val) && self.isObj(o[last])){      /* 새로 생긴 칸이 서버에 이미 있으면(다른 교수가 먼저 만듦) 통째로 덮지 않고 합칩니다 */
+        self.settingsApply(o[last], self.settingsDiff({}, it.val).map(function(x){ x.path=[x.path[0]].concat(x.path.slice(1)); return x; }));
+      }
+      else o[last]=self.clone(it.val);
+    });
+    return obj;
+  },
+  settingsMerge: function(job){
+    var self=this, tries=0;
+    var patch = job.patch;
+    if(!patch){      /* 옛 형식(통째 저장)으로 줄 서 있던 것 — 마지막 사본과 견줘 바뀐 칸만 뽑습니다 */
+      patch = self.settingsDiff(self._base||{}, (job.row&&job.row.data)||{});
+    }
+    if(!patch.length) return Promise.resolve(null);
+    function attempt(){
+      return self.call('/rest/v1/settings?select=data&id=eq.main', {headers:self.hdr(false)}).then(function(rows){
+        var latest = (rows && rows[0] && rows[0].data) || {};
+        var merged = self.settingsApply(self.clone(latest), patch);
+        if(JSON.stringify(merged)===JSON.stringify(latest)) return null;     /* 이미 같은 값 */
+        return self.call('/rest/v1/settings?id=eq.main', {method:'PATCH',
+          headers:self.mix(self.hdr(true), {Prefer:'return=representation'}),
+          body:JSON.stringify({data:merged})}).then(function(res){
+            if(res && res.length) return null;
+            /* 0줄이 바뀌었다 = 쓸 권한이 없거나 줄이 없음 → 조용히 지나가지 않고 실패로 남깁니다 */
+            throw {kind:'server', status:403, msg:'settings 저장이 반영되지 않았습니다(권한 또는 줄 없음)'};
+          });
+      });
+    }
+    return attempt();
   },
 
   /* ---- 저장 실패를 한 곳에서 처리 ----------------------------------------
@@ -15970,7 +16189,7 @@ var DBR = {
                아직 없더라도 이 표 하나 때문에 전체 시작(Promise.all)이 깨지지 않게, 이 표만 빈 채로 넘어갑니다.
                (저장을 시도하면 DBR.failed 에 쌓여 사람이 보게 되므로 「조용히 사라지는」 사고는 아닙니다.)
                ⛔ 다른 표는 그대로 크게 실패하게 둡니다 — 그래야 진짜 문제를 놓치지 않습니다. */
-            if(t==='excursion'){ return {t:t, rows:[]}; }
+            if(t==='excursion' || t==='pubResult'){ return {t:t, rows:[]}; }
             throw err;
           });
     })).then(function(list){
@@ -15980,6 +16199,7 @@ var DBR = {
         .then(function(s){
           if(s && s[0] && s[0].data) d.settings = s[0].data;
           DB.d = d;
+          self._base = self.clone(d.settings||{});          /* 🟢 수정 C — 서버와 맞춘 설정 사본(바뀐 칸을 가려내는 기준) */
           /* 🔴 팀원 「본인」이 서버에 team_id 를 남기려면, reconcile 이 메모리를 덮기 전에
              「서버가 지금 아는 team_id」를 적어 둡니다. syncSelfTeam 이 이 값과 members 를
              견주어 「서버엔 없던 것을 새로 쓸 때에만」 다시 받게 합니다(무한 재로딩 방지). */
@@ -16011,7 +16231,7 @@ var DBR = {
   useSnap: function(){
     try{
       var raw=localStorage.getItem(this.SNAPKEY);
-      if(raw){ DB.d=JSON.parse(raw); this.ready=true; return true; }
+      if(raw){ DB.d=JSON.parse(raw); this.ready=true; this._base=this.clone((DB.d&&DB.d.settings)||{}); return true; }
     }catch(e){}
     return false;
   },
@@ -16201,12 +16421,17 @@ var DBR = {
     /* 운영 설정 한 줄만 올립니다 — 표들은 이미 줄 단위로 올라갔습니다.
        ⚠️ DB.add 는 안에서 flush 를 부릅니다. 그때마다 설정을 올리면 저장 한 번에
           쓸데없는 통신이 한 번씩 더 붙습니다 — 실제로 바뀐 때만 보냅니다. */
-    if(DB.d && DB.d.settings){
-      var now = JSON.stringify(DB.d.settings);
-      if(now !== DBR._lastSet){
-        DBR._lastSet = now;
-        DBR.q.push({op:'update', t:'__settings', id:'main', row:{data:DB.d.settings}});
-        DBR.saveQ(); DBR.pump();
+    if(DB.d && DB.d.settings && DBR._base){
+      if(DBR._role==='student'){
+        /* 학생은 설정을 서버에 쓰지 않습니다(읽기 전용) — 기본값을 메모리에 채웠을 뿐이면 그대로 둡니다 */
+        DBR._base = DBR.clone(DB.d.settings);
+      }else{
+        var patch = DBR.settingsDiff(DBR._base, DB.d.settings);
+        if(patch.length){
+          DBR.settingsApply(DBR._base, patch);        /* 보낼 것으로 잡힌 칸은 「서버와 맞춘 것」으로 칩니다 */
+          DBR.q.push({op:'update', t:'__settings', id:'main', patch:patch});
+          DBR.saveQ(); DBR.pump();
+        }
       }
     }
     try{ localStorage.setItem(DBR.SNAPKEY, JSON.stringify(DB.d)); }catch(e){}
