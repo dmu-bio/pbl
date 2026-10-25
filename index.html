@@ -591,6 +591,7 @@ tr.alt td{background:#f7f9fb}
 .ib-stat,.ib-conf,.ib-cf{word-break:keep-all}
 .ib-nm{white-space:nowrap}
 .ib-h{margin:-2px 0 4px}
+.wgrid .wbtn .w4 .bg{white-space:normal;max-width:100%;line-height:1.35}
 .ib-bar .btn{flex:1 1 auto}
 .ib-bar .btn.pri{flex:2 1 120px}
 .ib-prev{background:var(--soft);border:1px dashed var(--dim);border-radius:8px;padding:10px 12px;margin-top:10px}
@@ -4606,11 +4607,11 @@ function studentBadge(n){
   /* 🗳 설문이 붙은 안내 주차(9주차) — 우리 반 스위치가 켜져 있으면 아래 「낼 것이 있는 주차」와 같이 봅니다 */
   if(def.kind==='notice' && !(SESS.me && wkSvOn(SESS.me.classId, n))) return {t:'▫️ 안내만', c:'gray'};
   /* 🙅 2026-10-01 — 6·7·10·11주차는 앱에 낼 것이 없습니다. 「해야 함·오늘까지」로 재촉하지 않습니다 */
-  /* 🗒 10주차(아이디어 보드 초안) — 선택 입력이라 재촉하지 않는 회색. 집계(hasSubmitted·진행 격자)는 그대로 「입력 없음」. 11주차는 입력 없음 */
+  /* 🗒 10주차(아이디어 보드 초안) — 제출·점수에 반영되지 않는 팀 활동이라 재촉하지 않는 회색. 집계(hasSubmitted·진행 격자)는 그대로 「입력 없음」. 11주차는 입력 없음 */
   if(typeof ibOn==='function' && ibOn() && noInputWeek(def) && def.ib){
     if(w.state==='닫힘') return {t:'🔒 잠김', c:'gray'};
     if(def.ib){ var _tm=teamOf(SESS.me), _rw=_tm? ibRowOf(_tm.id) : null;
-      return ibStat(_rw)==='done' ? {t:'✅ 보드 필수 3칸', c:'green'} : {t:'✏️ 보드 초안(선택)', c:'gray'}; }
+      return ibStat(_rw)==='done' ? {t:'✅ 보드 필수 3칸', c:'green'} : {t:'✏️ 보드 초안', c:'gray'}; }
   }
   if(noInputWeek(def)) return w.state==='닫힘' ? {t:'🔒 잠김', c:'gray'} : {t:'▫️ 입력 없음', c:'gray'};
   /* 🔴 16주차 「최종결과」 — 낼 것이 없는 결과 확인 주차. 공개 여부로 뱃지를 나눕니다 */
@@ -7508,7 +7509,7 @@ function weekProf(n, def){
     var _ibView = (typeof ibOn==='function' && ibOn() && (def.ib || n===WK_PREP));   /* 11주차에서는 10주차 초안을 읽기만 합니다 */
     h = '<div class="note g">✅ <b>이 주차는 학생이 앱에 꼭 입력·제출할 것이 없습니다.</b> '+
     '수업 시간 팀 활동'+(def.boost? ' · <b>영상 보강(필요 팀)</b>' : '')+(def.tutor? ' · 아래 <b>교수 튜터링 '+def.tutor+'회차</b>를 팀별로 기록하시면 됩니다.' : '입니다.')+
-    (_ib? ' 학생이 정리한 <b>아이디어 보드 초안</b>(선택 입력)은 아래에서 모아 보며, 진행률·미제출 집계에서는 빠집니다.'
+    (_ib? ' 학생이 정리한 <b>아이디어 보드 초안</b>(제출·점수에 반영되지 않는 팀 활동)은 아래에서 모아 보며, 진행률·미제출 집계에서는 빠집니다.'
         : ' 학생 화면에도 「입력할 것 없음」으로 보이며, 진행률·미제출 집계에서 빠집니다.')+
     ((_ibView && !_ib)? ' 학생이 10주차에 정리한 아이디어 보드 초안은 아래에서 읽기만 할 수 있습니다(11주차 수업은 최종본 검토와 KOSAC 제출).' : '')+'</div>' +
     (_ibView? profIdeaBoardPanel(cids, n) : '') + h;
@@ -8277,7 +8278,7 @@ function tuTopicBlock(t, n, def){
     return '<b>최종 주제</b> '+esc(fin.title)+' '+
       (fin.ok? '<span class="bg green">✅ 승인</span>':'<span class="bg amber">승인 대기</span>')+
       (fin.summary? '<div class="muted" style="max-height:130px;overflow-y:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5">'+esc(String(fin.summary))+'</div>':'')+
-      '<div class="muted">이 주차 제출 '+(a? '<span class="bg green">✅ 냈음</span>':'<span class="bg gray">⬛ 아직</span>')+'</div>';
+      ((def && noInputWeek(def))? '' : '<div class="muted">이 주차 제출 '+(a? '<span class="bg green">✅ 냈음</span>':'<span class="bg gray">⬛ 아직</span>')+'</div>');   /* 입력 없는 주차(10·11)에는 「제출」 줄을 보이지 않습니다 */
   }
   /* 🔴 2026-09-09 — 조사 대상(3개)을 보여 줍니다. 4개↑ 미선택이면 「선택 전」으로 안내 */
   var all=teamTopics(t.id);
@@ -10488,7 +10489,7 @@ function admWeekState(){
     /* 🔴 날짜·상태를 정하는 표는 실제 수업 15주차만 — 16주차(kind:'result')는 날짜가 없는 결과확인 주차라 제외 */
     WEEKDEF.filter(function(d){ return d.kind!=='result'; }).map(function(d){ var w=wrow(d.n)||{};
       return '<tr><td class="c">'+d.n+'</td><td>'+esc(d.title)+'</td><td>'+mdw(wkDate(d.n))+'</td><td class="muted">'+esc(wDue(d.n)||'-')+'</td>'+
-        '<td>'+(d.win==='수업시간'?'<span class="bg red">🔴 수업시간</span>':(noInputWeek(d)?'<span class="muted">'+((typeof ibOn==='function'&&ibOn()&&d.ib)?'선택 입력: 아이디어 보드 초안':'학생 입력 없음')+'</span>':esc(d.win||'-')))+'</td>'+
+        '<td>'+(d.win==='수업시간'?'<span class="bg red">🔴 수업시간</span>':(noInputWeek(d)?'<span class="muted">'+((typeof ibOn==='function'&&ibOn()&&d.ib)?'팀 활동: 아이디어 보드 초안(점수 미반영)':'학생 입력 없음')+'</span>':esc(d.win||'-')))+'</td>'+
         '<td class="c"><span class="bg '+(w.state==='열림'?'green':(w.state==='마감'?'gray':'gray'))+'">'+w.state+'</span> '+
         (canEdit(myClass())? '<button class="btn sm" onclick="cycleState('+d.n+')">바꾸기</button>':'')+'</td></tr>'+
         weekSkipRow(d.n, 5); }).join('')+
@@ -10789,7 +10790,7 @@ function admWeekMaster(){
         '<td><input type="date" id="wm_d_'+d.n+'" value="'+esc(wkDate(d.n))+'"></td>'+
         '<td style="width:90px"><input type="time" id="wm_o_'+d.n+'" value="'+esc(w.open)+'"></td>'+
         '<td><input type="text" id="wm_u_'+d.n+'" value="'+esc(wDue(d.n))+'"></td>'+
-        '<td>'+(noInputWeek(d)?'<span class="muted">'+((typeof ibOn==='function'&&ibOn()&&d.ib)?'선택 입력: 아이디어 보드 초안':'학생 입력 없음')+'</span>':esc(d.win||'-'))+'</td>'+
+        '<td>'+(noInputWeek(d)?'<span class="muted">'+((typeof ibOn==='function'&&ibOn()&&d.ib)?'팀 활동: 아이디어 보드 초안(점수 미반영)':'학생 입력 없음')+'</span>':esc(d.win||'-'))+'</td>'+
         '<td class="c"><button class="btn sm pri" onclick="saveWM('+d.n+')">저장</button></td></tr>'+
         weekSkipRow(d.n, 5); }).join('')+
     '</table></div>'+ weekSkipNote() +
@@ -13604,7 +13605,7 @@ function alBlocks(n, cid){
     ['활동', def.full],
     ['강좌', cid+(tlRoom(cid)? ' ('+tlRoom(cid)+')':'')+' · 담당교수 '+classProf(cid)],
     /* 🗳 설문이 붙은 안내 주차(9주차) — 이 강좌가 설문을 켰으면 「앱 제출 없음」이 아닙니다(아래 「응답 현황」과 같은 판정) */
-    ['제출 창', def.win? def.win : (noInputWeek(def)? ((typeof ibOn==='function' && ibOn() && def.ib)? '꼭 낼 것 없음 · 선택 입력: 아이디어 보드 초안(앱, 팀별)' : '학생 입력 없음 (수업 시간 팀 활동)')
+    ['제출 창', def.win? def.win : (noInputWeek(def)? ((typeof ibOn==='function' && ibOn() && def.ib)? '제출 없음 · 팀 활동: 아이디어 보드 초안(앱 입력, 팀별, 점수 미반영)' : '학생 입력 없음 (수업 시간 팀 활동)')
       : ((def.kind==='notice' && def.survey && wkSvOn(cid, n) && DB.one('surveys', function(x){ return x.kind===def.survey; }))
           ? def.survey+'설문 응답 (설문을 켠 동안)' : '앱 제출 없음 (안내만)'))],
     ['마감', wDue(n) || '—'],
@@ -13965,12 +13966,14 @@ var IB_SAVING = false;
 var IB_FILTER = 'all', IB_CLS = '';
 
 function ibOn(){ return !!(IDEA_BOARD_ON && IB_WEEK); }
+/* 11/4 수업일 전까지(수업일 포함)만 「11/4에는 앱이 아니라 PowerPoint 파일을 가져와요」를 보입니다 — 11/5부터는 숨김(양식 카드 자체는 유지) */
+function ibBefore11(){ return !!WK_PREP && protoToday() <= wkDate(WK_PREP); }
 /* 초안 주차가 아직 안 열렸고 수업일 전이면 true — 홈 양식 카드에 「초안 칸은 N/N 수업에서 열려요」를 붙이는 때 */
 function ibBeforeOpen(){ return !!IB_WEEK && wState(IB_WEEK)!=='열림' && protoToday() <= wkDate(IB_WEEK); }
 /* 「이 주차는 앱에 입력하거나 제출할 것이 없습니다」 초록 띠가 아래 입력 카드와 모순되지 않게 10·11주차에서만 바꿉니다 */
 function ibNote(h){
   return h.replace('이 주차는 앱에 입력하거나 제출할 것이 없습니다.',
-    '이 주차에는 꼭 낼 것이 없습니다. 아래 「아이디어 보드 초안」은 팀이 함께 정리하는 선택 입력입니다.');
+    '이 주차에는 제출할 것이 없습니다. 아래 「아이디어 보드 초안」은 수업 시간 팀 활동으로 함께 정리해요(점수에는 반영되지 않아요).');
 }
 function ibStr(v){ return v==null ? '' : String(v); }
 function ibFd(k){ for(var i=0;i<IB_FIELDS.length;i++) if(IB_FIELDS[i].k===k) return IB_FIELDS[i]; return null; }
@@ -14052,7 +14055,7 @@ function ibFormCard(compact){
   var d11 = md(wkDate(WK_PREP));
   return '<div class="card" id="ibFormCard"><h3>📄 KOSAC 아이디어 보드 양식</h3>'+
     '<p class="muted">'+(compact? '' : 'KOSAC(대학생 광고 공모전)에 낼 ')+'아이디어 보드 양식입니다. 앱의 「아이디어 보드 초안」 글을 이 양식(PowerPoint)에 옮겨 <b>보드 최종안(PDF 1장)</b>을 만드세요. '+
-    '<b>'+esc(d11)+'(11주차)에는 앱이 아니라 PowerPoint 파일을 가져와요.</b></p>'+
+    (ibBefore11()? '<b>'+esc(d11)+'(11주차)에는 앱이 아니라 PowerPoint 파일을 가져와요.</b>' : '')+'</p>'+
     '<div class="btnrow"><a class="btn pri" href="'+IB_FORM.pptx+'" download>양식 내려받기 (.pptx)</a>'+
     '<a class="btn" href="'+IB_FORM.pdf+'" target="_blank" rel="noopener">미리보기 (PDF)</a></div>'+
     '<p class="muted" style="margin-top:6px">폰에서 열리지 않으면 컴퓨터에서 받아 쓰세요. 양식 파일은 1장이 빈 양식, 2장이 작성 예시예요(제출은 1장만 PDF로).</p>'+
@@ -14115,14 +14118,14 @@ function ibCard(n){
   var fin=DB.one('topics', function(x){ return x.teamId===t.id && x.kind==='최종'; });
   var d11=md(wkDate(WK_PREP));
   h+='<p class="muted">KOSAC(대학생 광고 공모전)에 낼 아이디어 보드의 <b>글 내용을 팀이 함께 정리하는 곳</b>이에요. 팀원 누구나 쓰고 고칠 수 있고 팀 전체에 보여요. 교수님도 팀별로 모아 봅니다. '+
-     '여기 쓰는 것은 제출이 아니에요. <b>이번 주에 아래 양식(PowerPoint)으로 최종안을 만들어 '+esc(d11)+' 수업에 가져오세요.</b> '+esc(d11)+'에는 앱이 아니라 PowerPoint 파일을 가져와요.</p>';
+     '여기 쓰는 것은 제출이 아니에요. '+(ibBefore11()? '<b>이번 주에 아래 양식(PowerPoint)으로 최종안을 만들어 '+esc(d11)+' 수업에 가져오세요.</b> '+esc(d11)+'에는 앱이 아니라 PowerPoint 파일을 가져와요.' : '<b>아래 양식(PowerPoint)으로 최종안을 만드세요.</b>')+'</p>';
   h+='<div class="note b">우리 팀 <b>'+t.no+'팀 「'+esc(t.name)+'」</b>'+(fin? ' · 최종 주제 「'+esc(fin.title)+'」':'')+'<br><span class="muted">양식의 「팀명」 칸은 KOSAC 접수 때 적는 팀명과 같은지 확인하세요.</span></div>';
   h+='<div class="ib-stat" id="ibStat"><span id="ibStatTxt">'+ibStatLine(row)+'</span><span class="sp"></span>'+
      '<button type="button" class="btn sm" onclick="ibRefresh(\''+t.id+'\')">팀원이 고친 내용 새로 보기</button>'+
      (ed? '<button type="button" class="btn sm pri" id="ibSaveTop" onclick="ibSave(\''+t.id+'\')">'+(row?'수정 저장하기':'저장하기')+'</button>' : '')+'</div>';
   h+='<div id="ibConf"></div>';
   if(!ed) h+='<div class="note">⬛ <b>10주차가 닫혀 있어 더 고칠 수 없어요.</b> 쓴 내용은 그대로 보고 복사할 수 있어요. 고쳐야 하면 교수님께 말씀하세요.</div>';
-  h+='<p class="muted" style="margin:8px 0 2px"><b>양식의 1~5번 칸이 아래에 모두 있어요.</b> 그중 규정상 꼭 필요한 칸은 <b>1 인사이트 · 2 아이디어 · 5 기대효과</b> 세 칸이고, 나머지는 권장이에요. 한 칸만 써도 저장돼요.</p>';
+  h+='<p class="muted" style="margin:8px 0 2px"><b>양식에는 1 인사이트~5 기대효과 칸이 모두 있어요.</b> 그중 규정상 꼭 필요한 칸은 <b>1 인사이트 · 2 아이디어 · 5 기대효과</b> 세 칸이고, 나머지는 권장이에요. 한 칸만 써도 저장돼요.</p>';
   h+='<div class="muted" id="ibProgT"></div><div class="ib-prog"><i id="ibProg"></i></div>';
   h+='<div class="ib-grp">기본 정보</div>';
   ['title','track','theme'].forEach(function(k){ h+=ibFieldHtml(ibFd(k), cur[k], ed); });
@@ -14469,7 +14472,7 @@ function profIdeaBoardPanel(cids, viewN){
       var cnt=(f.max && !empty)? ' <span class="muted">· '+ibEff(txt)+'/'+f.max+'자</span>'+(ibEff(txt)>f.max?' <span class="bg red">초과</span>':'') : '';
       var reqMiss = empty && f.req;
       body+='<div class="ib-fld"><div class="k">'+ibLabelHtml(f)+(f.req?' <span class="req">필수</span>':'')+cnt+'</div>'+
-        '<div class="v'+(empty? (reqMiss?' miss':' none'):'')+'">'+(empty? (reqMiss? '비어 있음 — 필수 칸' : '아직 쓰지 않았습니다') : esc(txt))+'</div></div>';
+        '<div class="v'+(empty? (reqMiss?' miss':' none'):'')+'">'+(empty? (reqMiss? '비어 있음 — 필수 칸' : (f.k==='track'? '부문 미선택' : '아직 쓰지 않았습니다')) : esc(txt))+'</div></div>';
     });
     if(x.warn.length) body+='<div class="ib-warn" style="margin-top:6px">⚠️ '+x.warn.map(function(w){ return esc((ibFd(w.k).label.replace(/\s+/g,' '))+': ‘'+w.w+'’'); }).join(' · ')+'</div>';
     h+=acc(title, false, body);
@@ -14485,13 +14488,13 @@ function ibOutBlocks(cid, teams){
   var out=[], rows=[], sum=[];
   teams.forEach(function(t){
     var x=ibInfo(t), v=x.v, label=alTeamLabel(t);
-    sum.push([label, x.n+'명', ibStatText(x.st, x.row).replace(/^[^\s]+\s/,''), x.track? ibTrackName(x.track):'미선택',
+    sum.push([label, x.n+'명', ibStatText(x.st, x.row).replace(/^[^\s]+\s/,''), x.track? ibTrackName(x.track):'부문 미선택',
               (x.saved? alDash(x.saved.editor) : '—')+(x.saved&&x.saved.at? ' · '+x.saved.at : ''),
               x.over.length? '양식 한 장 초과 위험' : (x.warn.length? '경고(학교·이름·주소)' : '—')]);
     if(x.st==='none'){ rows.push([label, '아직 작성하지 않았습니다']); return; }
     var txt=IB_FIELDS.map(function(f){
       var s=ibCopyText(f.k, v);
-      return '【'+f.label.replace(/\s+/g,' ')+'】 '+(s.trim()? s : '(비어 있음)');
+      return '【'+f.label.replace(/\s+/g,' ')+'】 '+(s.trim()? s : (f.k==='track'? '부문 미선택' : '(비어 있음)'));
     }).join('\n');
     rows.push([label, txt]);
   });
@@ -14506,7 +14509,7 @@ function ibCsvRows(cids){
   ibTeamsOf(cids).forEach(function(t){
     var x=ibInfo(t), v=x.v;
     r.push([t.classId, classProf(t.classId), t.no, t.name, x.n, ibStatText(x.st, x.row).replace(/^[^\s]+\s/,''),
-      v.title, x.track? ibTrackName(x.track):'미선택', ibCopyText('theme', v), v.insight, v.idea, v.background, v.plan, v.effect,
+      v.title, x.track? ibTrackName(x.track):'부문 미선택', ibCopyText('theme', v), v.insight, v.idea, v.background, v.plan, v.effect,
       x.saved? (x.saved.editor||''):'', x.saved? (x.saved.at||''):'',
       x.over.map(function(k){ return ibFd(k).label.replace(/\s+/g,' '); }).join(' · '),
       x.warn.map(function(w){ return ibFd(w.k).label.replace(/\s+/g,' ')+':'+w.w; }).join(' · ')]);
@@ -14523,7 +14526,7 @@ function ibPeek(teamId){
         (x.saved&&x.saved.editor? ' <span class="muted">'+ibNm(x.saved.editor)+' · '+esc(x.saved.at||'')+'</span>' : '');
   if(x.st==='none') return h+'<div class="muted">아직 작성하지 않았습니다.</div>';
   h+='<div style="'+box+'">'+IB_FIELDS.map(function(f){ var s=ibCopyText(f.k, v);
-      return '<b>'+ibLabelHtml(f)+'</b> '+(s.trim()? esc(s) : '<span class="muted">(비어 있음)</span>'); }).join('\n')+'</div>';
+      return '<b>'+ibLabelHtml(f)+'</b> '+(s.trim()? esc(s) : '<span class="muted">'+(f.k==='track'? '부문 미선택' : '(비어 있음)')+'</span>'); }).join('\n')+'</div>';
   return h;
 }
 
@@ -15348,7 +15351,7 @@ function wpCells(def){
   else if(K==='finaltopic'){ act.push('최종 주제 1개 선정 · 1~2분 광고 콘티(스토리라인) 작성'); res.push('최종 주제 · 광고 콘티(스토리라인)'); }
   else if(K==='video'){ act.push('광고 영상 제작'); act.push(WK_R2+'주차 발표 평가 기준 안내(읽기)'); res.push('(앱 밖 산출물) 광고 영상 가편집본'); }
   /* 🙅 주차 재편 — 팀활동 주차는 학생 입력이 없습니다 → 결과물은 튜터링 일지(아래 def.tutor)뿐 */
-  else if(K==='activity'){ act.push(def.ib&&typeof ibOn==='function'&&ibOn()? '수업 시간 팀 활동 · 아이디어 보드 초안 작성(선택 입력)' : '수업 시간 팀 활동(학생 입력 없음)'); if(def.boost) act.push('영상 보강(필요 팀)'); if(def.ib&&typeof ibOn==='function'&&ibOn()) res.push('아이디어 보드 초안(앱 입력, 글)'); }
+  else if(K==='activity'){ act.push(def.ib&&typeof ibOn==='function'&&ibOn()? '수업 시간 팀 활동 · 아이디어 보드 초안 작성(제출·점수에 반영되지 않음)' : '수업 시간 팀 활동(학생 입력 없음)'); if(def.boost) act.push('영상 보강(필요 팀)'); if(def.ib&&typeof ibOn==='function'&&ibOn()) res.push('아이디어 보드 초안(앱 입력, 글)'); }
   else if(K==='prep'){ act.push('수업 시간 팀 활동(학생 입력 없음)'); if(typeof ibOn==='function'&&ibOn()) act.push('최종본(PowerPoint) 검토 · KOSAC 제출(수업 시간, 앱 입력 없음)'); act.push('최종발표 평가기준 공개'); res.push('평가기준 공개'); }
   else if(K==='eval'){
     var lbl = def.round===1?'중간발표1' : def.round===2?'중간발표2' : (def.n===13?'최종발표1':'최종발표2');
