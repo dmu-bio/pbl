@@ -591,6 +591,8 @@ tr.alt td{background:#f7f9fb}
 .ib-stat,.ib-conf,.ib-cf{word-break:keep-all}
 .ib-nm{white-space:nowrap}
 .ib-h{margin:-2px 0 4px}
+.ib-forms .btn{flex:1 1 auto;min-width:0;white-space:normal}
+@media(max-width:480px){.ib-forms .btn.pri{flex:1 1 100%}}
 .wgrid .wbtn .w4 .bg{white-space:normal;max-width:100%;line-height:1.35}
 .ib-bar .btn{flex:1 1 auto}
 .ib-bar .btn.pri{flex:2 1 120px}
@@ -5016,10 +5018,16 @@ function todoBand(){
 
 function viewHome(){
   var h = topbar() + todoBand() + (typeof ibFormCard==='function'? ibFormCard(false) : '') + '<div class="card"><h3>주차</h3>'+ weekGrid() +
-    '<p class="muted" style="margin-top:8px">'+(DB.d.__demo
-      ? '<b>예시 데이터</b>가 채워져 있어 「오늘」을 <b>4주차 수업일(9/16)</b>로 가정했습니다.'
-      : '지금은 <b>1주차 수업일(8/26)</b> 기준입니다. 2주차부터는 「닫힘」이지만')+
-      ((isProf()||(typeof PREVIEW!=='undefined'&&PREVIEW))? ' 눌러 들어가면 <b>미리 보기</b>로 화면을 보실 수 있습니다.':' 아직 열리지 않은 주차는 담당교수님이 열면 보입니다.')+'</p></div>';
+    '<p class="muted" style="margin-top:8px">'+(function(){
+      /* 🔴 배포본(IS_DEPLOY)은 「실제 오늘」을 씁니다(protoToday) — 「8/26」·「9/16」 가정 문구는 교내 시제품에서만 맞습니다 */
+      var dep=(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY), pv=(isProf()||(typeof PREVIEW!=='undefined'&&PREVIEW));
+      if(DB.d.__demo) return (dep? '<b>예시 데이터</b>가 채워져 있고 「오늘」은 <b>실제 오늘('+mdw(protoToday())+')</b> 기준입니다.'
+                                  : '<b>예시 데이터</b>가 채워져 있어 「오늘」을 <b>4주차 수업일(9/16)</b>로 가정했습니다.')
+                           + (pv? ' 눌러 들어가면 <b>미리 보기</b>로 화면을 보실 수 있습니다.':' 아직 열리지 않은 주차는 담당교수님이 열면 보입니다.');
+      if(dep) return pv? '닫힌 주차는 눌러 들어가면 <b>미리 보기</b>로 화면을 보실 수 있습니다.' : '아직 열리지 않은 주차는 담당교수님이 열면 보입니다.';
+      return '지금은 <b>1주차 수업일(8/26)</b> 기준입니다. 2주차부터는 「닫힘」이지만'
+           + (pv? ' 눌러 들어가면 <b>미리 보기</b>로 화면을 보실 수 있습니다.':' 아직 열리지 않은 주차는 담당교수님이 열면 보입니다.');
+    })()+'</p></div>';
   if(!isProf()){
     var t=teamOf(SESS.me);
     h += '<div class="card"><h3>내 정보 · 우리 팀</h3><div class="kv">'+
@@ -6754,7 +6762,7 @@ function saveActivity(tid,n){
    ▸ 다만 「최종발표 평가 기준(3회차 루브릭)」 공개는 입력이 아니라 학생이 봐야 할 정보라 그대로 둡니다. */
 function stPrep(){
   var h = stTitleOnly(WK_PREP, '팀 활동 6',
-    '최종발표를 앞둔 마무리 활동 시간입니다. 최종본(PowerPoint) 검토와 KOSAC 제출은 수업 시간에 합니다.');
+    '최종발표를 앞둔 마무리 활동 시간입니다. 최종본(양식 파일) 검토와 KOSAC 제출은 수업 시간에 합니다.');
   /* 🗒 아이디어 보드 초안은 10주차에만 씁니다 — 11주차는 앱에서 입력할 것이 없습니다(2026-10-25 교수님 정정) */
   var open = DB.get('rubrics', function(r){return r.round===3 && r.openAt;});
   if(open.length){
@@ -7507,7 +7515,7 @@ function weekProf(n, def){
   if(noInputWeek(def)){
     var _ib = (typeof ibOn==='function' && ibOn() && def.ib);                         /* 🗒 10주차 초안(학생이 쓰는 주차) */
     var _ibView = (typeof ibOn==='function' && ibOn() && (def.ib || n===WK_PREP));   /* 11주차에서는 10주차 초안을 읽기만 합니다 */
-    h = '<div class="note g">✅ <b>이 주차는 학생이 앱에 꼭 입력·제출할 것이 없습니다.</b> '+
+    h = '<div class="note g">✅ <b>이 주차는 학생이 앱에 제출할 것이 없습니다.</b> '+
     '수업 시간 팀 활동'+(def.boost? ' · <b>영상 보강(필요 팀)</b>' : '')+(def.tutor? ' · 아래 <b>교수 튜터링 '+def.tutor+'회차</b>를 팀별로 기록하시면 됩니다.' : '입니다.')+
     (_ib? ' 학생이 정리한 <b>아이디어 보드 초안</b>(제출·점수에 반영되지 않는 팀 활동)은 아래에서 모아 보며, 진행률·미제출 집계에서는 빠집니다.'
         : ' 학생 화면에도 「입력할 것 없음」으로 보이며, 진행률·미제출 집계에서 빠집니다.')+
@@ -13919,7 +13927,7 @@ function viewActLog(){
    🗒 10주차 「아이디어 보드 초안」 (2026-10-25 신설 · 설계안 design_v3.md · 지시대장 O-0620 계열)
    --------------------------------------------------------------------------
    ▸ 교수님 지시: 학생들이 10주차에 관련된 내용의 초안을 팀별로 앱에 작성할 수 있게.
-     10주차(10/28) 수업에서 팀이 보드에 쓸 글을 정리하고, 일주일 동안 앱에서 양식(PowerPoint)을 내려받아
+     10주차(10/28) 수업에서 팀이 보드에 쓸 글을 정리하고, 일주일 동안 앱에서 양식 파일(PowerPoint·Word·한글)을 내려받아
      최종안을 만들어 11주차(11/4)에 가져온다. 앱 초안은 그 사이를 잇는 「글 내용 작성 칸」입니다.
    ▸ 저장 = activity 표(기존 범용 팀-주차 표)에 팀당 1줄: week=10(IB_WEEK) · kind:'ideaboard' · id 'ib_<teamId>'.
        서버 표·정책·SQL 변경 없음. 쓰기 가능 여부는 서버가 「그 줄의 주차(10주차)가 열림」인지로 정합니다
@@ -13929,14 +13937,14 @@ function viewActLog(){
        (번호와 이름 사이 공백 둘 — 양식 그대로).
    ▸ 출품 주제는 글을 쓰는 칸이 아니라 KOSAC 시행요강의 「부문별 주제 2개 중 1개」를 고르는 칸입니다.
    ▸ 규정 필수는 1 인사이트 · 2 아이디어 · 5 기대효과. 나머지는 권장. 저장은 한 칸만 써도 됩니다(초안).
-   ▸ 영상 규격 · AI 사용 표기 · 대표 이미지는 앱 입력에서 뺐습니다(PowerPoint 양식에서만).
+   ▸ 영상 규격 · AI 사용 표기 · 대표 이미지는 앱 입력에서 뺐습니다(양식 파일에서만).
    ▸ 학교·학과·이름·URL 은 막지 않고 경고만 합니다(저장은 됩니다).
    ▸ 스위치 IDEA_BOARD_ON = false 로 끄면 학생 카드·뱃지·교수 모아보기·출력 블록이 모두 사라집니다(후보와 같은 화면).
    ⛔ 학생 화면 글에는 「교수님」만 씁니다.
    ========================================================================== */
 var IDEA_BOARD_ON = true;
 var IB_WEEK  = wkOf(function(d){ return !!d.ib; });          /* 초안을 쓰는 주차(10) */
-var IB_FORM  = { pptx:'idea_board_form_v3.pptx', pdf:'idea_board_form_v3.pdf' };   /* 양식 정적 파일(앱과 같은 폴더) — 바뀌면 이 표만 고칩니다 */
+var IB_FORM  = { pptx:'idea_board_form_v3.pptx', docx:'idea_board_form_v3.docx', hwpx:'idea_board_form_v3.hwpx', pdf:'idea_board_form_v3.pdf' };   /* 양식 정적 파일(앱과 같은 폴더) — 바뀌면 이 표만 고칩니다 */
 var IB_NL    = 20;     /* 줄바꿈 하나를 20자로 셉니다(양식 칸에서 줄바꿈이 차지하는 자리) */
 
 /* 칸 표 — label 은 양식 글자 그대로. max = PowerPoint 양식 칸에 들어가는 분량(2026-10-25 PowerPoint 실측, 줄바꿈 여유 포함) */
@@ -13966,7 +13974,7 @@ var IB_SAVING = false;
 var IB_FILTER = 'all', IB_CLS = '';
 
 function ibOn(){ return !!(IDEA_BOARD_ON && IB_WEEK); }
-/* 11/4 수업일 전까지(수업일 포함)만 「11/4에는 앱이 아니라 PowerPoint 파일을 가져와요」를 보입니다 — 11/5부터는 숨김(양식 카드 자체는 유지) */
+/* 11/4 수업일 전까지(수업일 포함)만 「11/4에는 앱이 아니라 양식 파일을 가져와요」를 보입니다 — 11/5부터는 숨김(양식 카드 자체는 유지) */
 function ibBefore11(){ return !!WK_PREP && protoToday() <= wkDate(WK_PREP); }
 /* 초안 주차가 아직 안 열렸고 수업일 전이면 true — 홈 양식 카드에 「초안 칸은 N/N 수업에서 열려요」를 붙이는 때 */
 function ibBeforeOpen(){ return !!IB_WEEK && wState(IB_WEEK)!=='열림' && protoToday() <= wkDate(IB_WEEK); }
@@ -14054,11 +14062,13 @@ function ibFormCard(compact){
   if(!ibOn()) return '';
   var d11 = md(wkDate(WK_PREP));
   return '<div class="card" id="ibFormCard"><h3>📄 KOSAC 아이디어 보드 양식</h3>'+
-    '<p class="muted">'+(compact? '' : 'KOSAC(대학생 광고 공모전)에 낼 ')+'아이디어 보드 양식입니다. 앱의 「아이디어 보드 초안」 글을 이 양식(PowerPoint)에 옮겨 <b>보드 최종안(PDF 1장)</b>을 만드세요. '+
-    (ibBefore11()? '<b>'+esc(d11)+'(11주차)에는 앱이 아니라 PowerPoint 파일을 가져와요.</b>' : '')+'</p>'+
-    '<div class="btnrow"><a class="btn pri" href="'+IB_FORM.pptx+'" download>양식 내려받기 (.pptx)</a>'+
-    '<a class="btn" href="'+IB_FORM.pdf+'" target="_blank" rel="noopener">미리보기 (PDF)</a></div>'+
-    '<p class="muted" style="margin-top:6px">폰에서 열리지 않으면 컴퓨터에서 받아 쓰세요. 양식 파일은 1장이 빈 양식, 2장이 작성 예시예요(제출은 1장만 PDF로).</p>'+
+    '<p class="muted">'+(compact? '' : 'KOSAC(대학생 광고 공모전)에 낼 ')+'아이디어 보드 양식입니다. <b>PowerPoint·Word·한글 중 편한 프로그램으로 받아 쓰세요.</b> 앱의 「아이디어 보드 초안」 글을 이 양식에 옮겨 <b>보드 최종안</b>을 만들고, 어느 형식이든 마지막에 <b>보드 1장만 PDF로 저장해 제출</b>합니다(양식 파일은 1장이 빈 양식, 2장이 작성 예시예요). '+
+    (ibBefore11()? '<b>'+esc(d11)+'(11주차)에는 앱이 아니라 양식 파일을 가져와요.</b>' : '')+'</p>'+
+    '<div class="btnrow ib-forms"><a class="btn pri" href="'+IB_FORM.pptx+'" download>PowerPoint(.pptx)</a>'+
+    '<a class="btn" href="'+IB_FORM.docx+'" download>Word(.docx)</a>'+
+    '<a class="btn" href="'+IB_FORM.hwpx+'" download>한글(.hwpx)</a>'+
+    '<a class="btn" href="'+IB_FORM.pdf+'" target="_blank" rel="noopener">미리보기(PDF)</a></div>'+
+    '<p class="muted" style="margin-top:6px">폰에서 열리지 않으면 컴퓨터에서 받아 쓰세요.</p>'+
     (ibBeforeOpen()? '<div class="note a">⏳ 앱의 「아이디어 보드 초안」 칸은 <b>'+esc(md(wkDate(IB_WEEK)))+' 수업에서 열려요.</b> 그전에는 양식만 미리 받아 볼 수 있어요.</div>' : '')+'</div>';
 }
 
@@ -14118,7 +14128,7 @@ function ibCard(n){
   var fin=DB.one('topics', function(x){ return x.teamId===t.id && x.kind==='최종'; });
   var d11=md(wkDate(WK_PREP));
   h+='<p class="muted">KOSAC(대학생 광고 공모전)에 낼 아이디어 보드의 <b>글 내용을 팀이 함께 정리하는 곳</b>이에요. 팀원 누구나 쓰고 고칠 수 있고 팀 전체에 보여요. 교수님도 팀별로 모아 봅니다. '+
-     '여기 쓰는 것은 제출이 아니에요. '+(ibBefore11()? '<b>이번 주에 아래 양식(PowerPoint)으로 최종안을 만들어 '+esc(d11)+' 수업에 가져오세요.</b> '+esc(d11)+'에는 앱이 아니라 PowerPoint 파일을 가져와요.' : '<b>아래 양식(PowerPoint)으로 최종안을 만드세요.</b>')+'</p>';
+     '여기 쓰는 것은 제출이 아니에요. '+(ibBefore11()? '<b>이번 주에 아래 양식 파일(PowerPoint·Word·한글)로 최종안을 만들어 '+esc(d11)+' 수업에 가져오세요.</b> '+esc(d11)+'에는 앱이 아니라 양식 파일을 가져와요.' : '<b>아래 양식 파일(PowerPoint·Word·한글)로 최종안을 만드세요.</b>')+'</p>';
   h+='<div class="note b">우리 팀 <b>'+t.no+'팀 「'+esc(t.name)+'」</b>'+(fin? ' · 최종 주제 「'+esc(fin.title)+'」':'')+'<br><span class="muted">양식의 「팀명」 칸은 KOSAC 접수 때 적는 팀명과 같은지 확인하세요.</span></div>';
   h+='<div class="ib-stat" id="ibStat"><span id="ibStatTxt">'+ibStatLine(row)+'</span><span class="sp"></span>'+
      '<button type="button" class="btn sm" onclick="ibRefresh(\''+t.id+'\')">팀원이 고친 내용 새로 보기</button>'+
@@ -14132,7 +14142,7 @@ function ibCard(n){
   h+='<div class="ib-grp">보드 내용 <span class="muted" style="font-weight:400">· 글자 수는 양식 한 장에 들어가는 분량이에요(줄을 바꾸면 글자 '+IB_NL+'자만큼으로 계산해요)</span></div>';
   ['insight','idea','background','plan','effect'].forEach(function(k){ h+=ibFieldHtml(ibFd(k), cur[k], ed); });
   h+='<div id="ibWarn"></div>';
-  h+='<div class="note" style="margin-top:12px">영상 규격 · AI 사용 표기 · 대표 이미지는 <b>내려받은 양식(PowerPoint)</b>에서 채워요.</div>';
+  h+='<div class="note" style="margin-top:12px">영상 규격 · AI 사용 표기 · 대표 이미지는 <b>내려받은 양식 파일</b>에서 채워요.</div>';
   h+='<div id="ibCopyPrev"></div>';
   h+='<div class="ib-barw" id="ibBarW"><div class="ib-bar" id="ibBar">'+
      (ed? '<button type="button" class="btn" onclick="ibDraftKeep(\''+t.id+'\')">💾 임시저장</button>' : '')+
@@ -14210,6 +14220,11 @@ function ibTrackPick(){
 }
 function ibDraftKeep(tid, silent){
   if(d5Preview()) return;
+  if(silent && IB_SAVING) return;                       /* 저장 중에 늦게 도는 자동 임시저장은 건너뜁니다 */
+  if(silent){                                           /* 바뀐 것이 없으면(저장 직후 등) 임시저장본을 남기지 않고 표시도 지웁니다 */
+    var cur0=ibRead(), b0=IB_BASE[tid]||ibVals(null), same=IB_KEYS.every(function(k){ return ibStr(cur0[k])===ibStr(b0[k]); });
+    if(same){ d5Clear('ib', tid); var m0=$('ibDraftMark'); if(m0) m0.innerHTML=''; return; }
+  }
   d5Save('ib', tid, {v:ibRead(), b:(IB_BASE[tid]||ibVals(null))});   /* 기준(b)도 함께 — 다시 열었을 때 「내가 고친 칸」만 되살리고 그 사이 팀원이 고친 칸은 덮지 않기 위해 */
   var d=d5Load('ib', tid), el=$('ibDraftMark');
   if(el) el.innerHTML='💾 <b>임시저장됨</b> '+esc((d&&d.at)||nowStr())+' <span class="muted">(아직 저장 전 · 이 기기에만)</span>';
@@ -14325,6 +14340,7 @@ function ibSave(tid){
   var mine=ibRead();
   if(!ibFillInfo(mine).any && !ibRowOf(tid)){ toast('쓴 내용이 없어요. 한 칸이라도 쓰고 저장하세요.'); return; }
   IB_SAVING=true;
+  if(_ibTimer){ clearTimeout(_ibTimer); _ibTimer=null; }   /* 입력 뒤 700ms 자동 임시저장이 저장 직후에 되살아나지 않게 */
   ibBtns(true);
   ibMark('⏳ <b>저장 중…</b>','busy');
   var fail=function(msg){ IB_SAVING=false; ibBtns(false); ibMark('⚠️ <b>저장하지 못했어요</b> — '+esc(msg),'err'); toast('저장하지 못했어요. 이 기기에는 임시저장돼 있어요.'); ibDraftKeep(tid, true); };
@@ -14350,6 +14366,7 @@ function ibSave(tid){
     ibWaitDrain(function(ok){
       if(!ok){ fail('서버에 보내는 중이에요. 연결을 확인한 뒤 다시 눌러 주세요'); return; }
       IB_SAVING=false; ibBtns(false, '수정 저장하기');
+      if(_ibTimer){ clearTimeout(_ibTimer); _ibTimer=null; }
       d5Clear('ib', tid);
       var dm=$('ibDraftMark'); if(dm) dm.innerHTML='';
       IB_BASE[tid]=ibVals(ibRowOf(tid));
@@ -14388,7 +14405,7 @@ function ibCopy(k){
   ibClip(s, '「'+f.label.replace(/\s+/g,' ')+'」 칸을 복사했어요. 양식의 같은 칸에 붙여 넣으세요.');
 }
 function ibAllText(v){
-  return IB_FIELDS.map(function(f){ var s=ibCopyText(f.k, v); return '■ '+f.label+'\n'+(s.trim()? s : '(아직 안 씀)'); }).join('\n\n');
+  return IB_FIELDS.map(function(f){ var s=ibCopyText(f.k, v); return '■ '+f.label+'\n'+(s.trim()? s : (f.k==='track'? '부문 미선택' : '(아직 안 씀)')); }).join('\n\n');
 }
 function ibCopyAll(){
   var t=teamOf(SESS.me); if(!t) return;
@@ -14477,7 +14494,7 @@ function profIdeaBoardPanel(cids, viewN){
     if(x.warn.length) body+='<div class="ib-warn" style="margin-top:6px">⚠️ '+x.warn.map(function(w){ return esc((ibFd(w.k).label.replace(/\s+/g,' '))+': ‘'+w.w+'’'); }).join(' · ')+'</div>';
     h+=acc(title, false, body);
   });
-  h+='<p class="muted" style="margin-top:8px">⚠️ 경고 검사는 알려진 낱말(학교·학과·교수·팀원 이름)과 인터넷 주소만 찾으며 다른 학교 이름 등은 못 찾습니다. 글자 수 기준은 PowerPoint 양식 칸(줄바꿈 '+IB_NL+'자)입니다.</p>';
+  h+='<p class="muted" style="margin-top:8px">⚠️ 경고 검사는 알려진 낱말(학교·학과·교수·팀원 이름)과 인터넷 주소만 찾으며 다른 학교 이름 등은 못 찾습니다. 글자 수 기준은 양식 칸(PowerPoint로 실측, 줄바꿈 '+IB_NL+'자)입니다.</p>';
   return h+'</div>';
 }
 
@@ -15352,7 +15369,7 @@ function wpCells(def){
   else if(K==='video'){ act.push('광고 영상 제작'); act.push(WK_R2+'주차 발표 평가 기준 안내(읽기)'); res.push('(앱 밖 산출물) 광고 영상 가편집본'); }
   /* 🙅 주차 재편 — 팀활동 주차는 학생 입력이 없습니다 → 결과물은 튜터링 일지(아래 def.tutor)뿐 */
   else if(K==='activity'){ act.push(def.ib&&typeof ibOn==='function'&&ibOn()? '수업 시간 팀 활동 · 아이디어 보드 초안 작성(제출·점수에 반영되지 않음)' : '수업 시간 팀 활동(학생 입력 없음)'); if(def.boost) act.push('영상 보강(필요 팀)'); if(def.ib&&typeof ibOn==='function'&&ibOn()) res.push('아이디어 보드 초안(앱 입력, 글)'); }
-  else if(K==='prep'){ act.push('수업 시간 팀 활동(학생 입력 없음)'); if(typeof ibOn==='function'&&ibOn()) act.push('최종본(PowerPoint) 검토 · KOSAC 제출(수업 시간, 앱 입력 없음)'); act.push('최종발표 평가기준 공개'); res.push('평가기준 공개'); }
+  else if(K==='prep'){ act.push('수업 시간 팀 활동(학생 입력 없음)'); if(typeof ibOn==='function'&&ibOn()) act.push('최종본(양식 파일) 검토 · KOSAC 제출(수업 시간, 앱 입력 없음)'); act.push('최종발표 평가기준 공개'); res.push('평가기준 공개'); }
   else if(K==='eval'){
     var lbl = def.round===1?'중간발표1' : def.round===2?'중간발표2' : (def.n===13?'최종발표1':'최종발표2');
     act.push(lbl+' 발표 · 평가');
