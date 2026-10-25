@@ -10011,7 +10011,7 @@ var DEMO = {
             at:'2026-09-23 11:2'+ti, editor:ed});
         });
       });
-      /* 🗒 10주차 「아이디어 보드 초안」 예시 — 팀마다 상태를 달리해(완성·작성 중·경고·빈 줄·미작성·부문 미정·길이 초과) 교수 화면·출력물을 눌러 보시게 합니다 */
+      /* 🗒 10주차 「아이디어 보드 초안」 예시 — 팀마다 상태를 달리해(완성·작성 중·경고·빈 줄·미작성·부문 미선택·길이 초과) 교수 화면·출력물을 눌러 보시게 합니다 */
       if(typeof ibOn==='function' && ibOn()){
         var IBL=function(n,s){ var o=''; while(o.length<n) o+=s; return o.slice(0,n); };
         CIDS.forEach(function(cid){
@@ -10029,7 +10029,7 @@ var DEMO = {
               effect:'이 아이디어가 이루어지면 달라지는 점을 적은 가상의 문장입니다.'};
             var row=null;
             if(ti===0) row=full;                                                    /* 필수 완성 · 아이디어영상 */
-            else if(ti===1) row={title:'작성 중인 가상 작품', track:'', theme:'', insight:'가상 팀이 아직 쓰는 중인 기획 의도입니다.', idea:'', background:'', plan:'', effect:''};   /* 작성 중 · 부문 미정 */
+            else if(ti===1) row={title:'작성 중인 가상 작품', track:'', theme:'', insight:'가상 팀이 아직 쓰는 중인 기획 의도입니다.', idea:'', background:'', plan:'', effect:''};   /* 작성 중 · 부문 미선택 */
             else if(ti===2){ row=JSON.parse(JSON.stringify(full)); row.insight='우리 동양미래 학생들이 영상(https://youtu.be/abc123)을 보고 문제를 알게 되었습니다.'; }  /* 경고(학교·주소) */
             else if(ti===3){ row=JSON.parse(JSON.stringify(full)); row.insight=IBL(300,'긴글을쓰면양식칸을넘을수있어요 '); row.plan=IBL(320,'길게쓴실행방안문장입니다 '); }   /* 양식 초과 위험 */
             else if(ti===4) row={title:'', track:'', theme:'', insight:'', idea:'', background:'', plan:'', effect:''};   /* 빈 줄 */
@@ -13953,9 +13953,8 @@ var IB_REQ = ['insight','idea','effect'];
 var IB_KEYS = IB_FIELDS.map(function(f){ return f.k; });
 var IB_TRACKS = [
   {v:'creative', t:'크리에이티브영상', sub:'영상 60초 이내'},
-  {v:'idea',     t:'아이디어영상',     sub:'영상 2분 이내 · 가로형'},
-  {v:'',         t:'아직 못 정함',     sub:''}
-];
+  {v:'idea',     t:'아이디어영상',     sub:'영상 2분 이내 · 가로형'}
+];      /* 2택 1 — 「아직 못 정함」은 없습니다(부문은 10/28 팀 활동에서 정함). 고르지 않은 상태('')는 「부문 미선택」일 뿐 선택지가 아닙니다 */
 /* KOSAC 2026 시행요강 「대회주제」 — 부문별 2개 중 한 가지(KOSAC_2026_rules_official.pdf 3쪽). 접수 화면(11/2 오픈)과 다르면 이 표만 고칩니다 */
 var IB_THEMES = {
   creative: {'1':"'세상 모든 것이 식지 않도록' 배민 [브랜드 미션] 영상 제작", '2':'2030 소비 일상에 변화를 준 배민 [커머스]의 브랜드 필름'},
@@ -14063,7 +14062,7 @@ function ibFormCard(compact){
 /* ---- 학생 카드 ---- */
 function ibThemeHtml(track, theme, ed){
   if(track!=='creative' && track!=='idea')
-    return '<div class="muted">먼저 위의 <b>출품 부문</b>을 고르세요. 부문마다 고를 수 있는 주제가 달라요.</div>';
+    return '<div class="muted">먼저 <b>부문</b>을 골라 주세요. 부문마다 고를 수 있는 주제가 달라요.</div>';
   var h='<div class="radios">';
   ['1','2'].forEach(function(n){
     h+='<label class="chk"><input type="radio" name="ib_theme" value="'+n+'"'+(theme===n?' checked':'')+(ed?'':' disabled')+
@@ -14082,7 +14081,7 @@ function ibFieldHtml(f, v, ed){
         h+='<label class="chk"><input type="radio" name="ib_track" value="'+t.v+'"'+(v===t.v?' checked':'')+(ed?'':' disabled')+
            ' onchange="ibTrackPick()"> <span>'+esc(t.t)+(t.sub?' <span class="muted">· '+esc(t.sub)+'</span>':'')+'</span></label>';
       });
-      h+='</div><div class="ib-note-r">부문을 잘못 고르면 <b>실격 처리돼요(부문은 바꿀 수 없어요)</b>. 영상 길이를 보고 정한 뒤 교수님께 확인받으세요.</div>';
+      h+='</div><div class="ib-note-r"><b>이번 팀 활동에서 부문을 정해요.</b> 부문을 잘못 고르면 <b>실격 처리돼요(부문은 바꿀 수 없어요)</b>. 영상 길이를 보고 정한 뒤 교수님께 확인받으세요.</div>';
     }else{
       h+='<div id="ibf_theme">'+ibThemeHtml(ibTrackNow, ibCurThemeInit, ed)+'</div>';
     }
@@ -14272,7 +14271,7 @@ function ibShowConflict(tid, latest, mine, conf){
   var h='<div class="ib-conf"><b>⚠️ '+ibNm(who)+'님이 방금 같은 칸을 고쳤어요.</b> 칸마다 어느 글을 쓸지 고른 뒤 다시 [저장하기]를 누르세요.';
   conf.forEach(function(k){
     var f=ibFd(k);
-    var sh=function(v){ return f.pick==='track'? (ibTrackName(v)||'아직 못 정함') : (f.pick==='theme'? (ibThemeText(mine.track, v)||'(비어 있음)') : (ibStr(v)||'(비어 있음)')); };
+    var sh=function(v){ return f.pick==='track'? (ibTrackName(v)||'(고르지 않음)') : (f.pick==='theme'? (ibThemeText(mine.track, v)||'(비어 있음)') : (ibStr(v)||'(비어 있음)')); };
     h+='<div class="ib-cf" id="ibcf_'+k+'"><div><b>'+ibLabelHtml(f)+'</b></div>'+
        '<div class="ib-cfb"><span class="muted">팀원 글</span><div>'+esc(sh(latest[k]))+'</div></div>'+
        '<div class="ib-cfb"><span class="muted">내 글</span><div>'+esc(sh(mine[k]))+'</div></div>'+
@@ -14435,8 +14434,8 @@ function profIdeaBoardPanel(cids, viewN){
     return '<button type="button" class="ib-chip'+(on?' on':'')+(extra?' '+extra:'')+'" onclick="ibFilterSet(\''+(on?'all':key)+'\')">'+label+' <b>'+n+'</b></button>';
   }
   h+='<div class="ib-chips">'+chip('done','✅ 필수 완성',c.done)+chip('wip','✍️ 작성 중',c.wip)+chip('none','⬜ 미작성',c.none)+
-     chip('notrack','🟡 부문 미정',c.notrack,'y')+chip('over','📏 양식 초과 위험',c.over,'r')+chip('warn','⚠️ 경고',c.warn,'r')+'</div>';
-  h+='<div class="muted">'+(cls||'전체 강좌')+' '+c.all+'팀 중'+(IB_FILTER!=='all'? ' · 「'+({done:'필수 완성',wip:'작성 중',none:'미작성',notrack:'부문 미정',over:'양식 초과 위험',warn:'경고'}[IB_FILTER])+'」만 보는 중 (한 번 더 누르면 전체)':'')+'</div>';
+     chip('notrack','🟡 부문 미선택',c.notrack,'y')+chip('over','📏 양식 초과 위험',c.over,'r')+chip('warn','⚠️ 경고',c.warn,'r')+'</div>';
+  h+='<div class="muted">'+(cls||'전체 강좌')+' '+c.all+'팀 중'+(IB_FILTER!=='all'? ' · 「'+({done:'필수 완성',wip:'작성 중',none:'미작성',notrack:'부문 미선택',over:'양식 초과 위험',warn:'경고'}[IB_FILTER])+'」만 보는 중 (한 번 더 누르면 전체)':'')+'</div>';
   if(cs.length>1){
     h+='<div class="ib-cls"><span class="seg"><button type="button" class="'+(cls?'':'on')+'" onclick="ibClsSet(\'\')">전체</button>'+
        cs.map(function(x){ return '<button type="button" class="'+(cls===x?'on':'')+'" onclick="ibClsSet(\''+x+'\')">'+esc(x)+'</button>'; }).join('')+'</span></div>';
@@ -14452,7 +14451,7 @@ function profIdeaBoardPanel(cids, viewN){
   else if(!list.length) h+='<p class="muted">조건에 맞는 팀이 없습니다.</p>';
   list.forEach(function(x){
     var t=x.t, v=x.v, row=x.row;
-    var tr = x.track ? '<span class="ib-track">'+esc(ibTrackName(x.track))+'</span>' : '<span class="ib-track none">부문 미정</span>';
+    var tr = x.track ? '<span class="ib-track">'+esc(ibTrackName(x.track))+'</span>' : '<span class="ib-track none">부문 미선택</span>';
     var chips='<span class="bg '+(x.st==='done'?'green':'gray')+'">'+ibStatText(x.st,row)+'</span> '+tr;
     if(x.over.length) chips+=' <span class="bg red">📏 양식 한 장 초과 위험</span>';
     if(x.warn.length) chips+=' <span class="bg red">⚠️ 경고</span>';
@@ -14486,7 +14485,7 @@ function ibOutBlocks(cid, teams){
   var out=[], rows=[], sum=[];
   teams.forEach(function(t){
     var x=ibInfo(t), v=x.v, label=alTeamLabel(t);
-    sum.push([label, x.n+'명', ibStatText(x.st, x.row).replace(/^[^\s]+\s/,''), x.track? ibTrackName(x.track):'미정',
+    sum.push([label, x.n+'명', ibStatText(x.st, x.row).replace(/^[^\s]+\s/,''), x.track? ibTrackName(x.track):'미선택',
               (x.saved? alDash(x.saved.editor) : '—')+(x.saved&&x.saved.at? ' · '+x.saved.at : ''),
               x.over.length? '양식 한 장 초과 위험' : (x.warn.length? '경고(학교·이름·주소)' : '—')]);
     if(x.st==='none'){ rows.push([label, '아직 작성하지 않았습니다']); return; }
@@ -14507,7 +14506,7 @@ function ibCsvRows(cids){
   ibTeamsOf(cids).forEach(function(t){
     var x=ibInfo(t), v=x.v;
     r.push([t.classId, classProf(t.classId), t.no, t.name, x.n, ibStatText(x.st, x.row).replace(/^[^\s]+\s/,''),
-      v.title, x.track? ibTrackName(x.track):'', ibCopyText('theme', v), v.insight, v.idea, v.background, v.plan, v.effect,
+      v.title, x.track? ibTrackName(x.track):'미선택', ibCopyText('theme', v), v.insight, v.idea, v.background, v.plan, v.effect,
       x.saved? (x.saved.editor||''):'', x.saved? (x.saved.at||''):'',
       x.over.map(function(k){ return ibFd(k).label.replace(/\s+/g,' '); }).join(' · '),
       x.warn.map(function(w){ return ibFd(w.k).label.replace(/\s+/g,' ')+':'+w.w; }).join(' · ')]);
@@ -14520,7 +14519,7 @@ function ibPeek(teamId){
   var x=ibInfo(t), v=x.v;
   var box='max-height:240px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px;margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5';
   var h='<b>📝 아이디어 보드 초안</b> <span class="bg '+(x.st==='done'?'green':'gray')+'">'+ibStatText(x.st,x.row)+'</span> '+
-        (x.track? '<span class="ib-track">'+esc(ibTrackName(x.track))+'</span>' : '<span class="ib-track none">부문 미정</span>')+
+        (x.track? '<span class="ib-track">'+esc(ibTrackName(x.track))+'</span>' : '<span class="ib-track none">부문 미선택</span>')+
         (x.saved&&x.saved.editor? ' <span class="muted">'+ibNm(x.saved.editor)+' · '+esc(x.saved.at||'')+'</span>' : '');
   if(x.st==='none') return h+'<div class="muted">아직 작성하지 않았습니다.</div>';
   h+='<div style="'+box+'">'+IB_FIELDS.map(function(f){ var s=ibCopyText(f.k, v);
