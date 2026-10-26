@@ -3959,7 +3959,7 @@ var SEED = {
       /* 🔴 안내문의 날짜도 주차표에서 가져옵니다 — 손으로 적으면 주차가 밀릴 때 안 따라옵니다 */
       /* ⚠️ 순서를 바꾸지 않습니다 — id(nt_N)가 순번이라, 순서가 바뀌면 서버 시드(seedContent)가 중복을 올립니다 */
       [[WK_MID,'시험 안내','일시: '+mdw(wdef(WK_MID).date)+' 2교시 · 장소: '+room+' · 범위: 1~'+(WK_MID-1)+'주차 강의 내용 · 준비물: 필기구, 학생증'],
-       [WK_TRIP,'견학 안내','집합: '+mdw(wdef(WK_TRIP).date)+' 09:00 학교 정문 · 교통: 전세버스 · 준비물: 학생증, 편한 신발'],
+       [WK_TRIP,'견학 안내','집합: '+mdw(wdef(WK_TRIP).date)+' 08:00까지 (인원 점검 08:00~08:30) · 출발: 08:30 · 집합 장소·준비물은 추후 안내'],
        [15,'기말고사 안내','일시: '+mdw(wdef(15).date)+' 2교시 · 장소: '+room+' · 범위: '+WK_MID+'~14주차 · 준비물: 필기구, 학생증']]
       .forEach(function(x){
         d.weekNotice.push({id:nid('nt'),classId:cid,n:x[0],title:x[1],body:x[2],file:'안내문.pdf'});
@@ -6645,7 +6645,8 @@ function stExcursion(){
          (mine.edited?' · 수정함':'')+'</div>';
   }
   if(canFix(WK_TRIP)){
-    h += '<label class="f">현장견학 일지 <span class="req">*</span> <span class="lim">500자</span></label>'+
+    h += '<label class="f">현장견학 일지 <span class="req">*</span> <span class="lim">몇 문장이면 충분합니다</span></label>'+
+      '<div class="muted" style="margin:0 0 6px;font-size:12.5px;opacity:.75">이런 것을 적어 보세요 · 가장 인상 깊었던 장면 · 우리 팀 작품과 이어지는 것 · 교실에서 상상한 것과 다르게 보인 것</div>'+
       '<textarea id="excText" placeholder="예) ○○기업의 배양 공정을 직접 보니 수업에서 배운 스케일업이 이해되었다.">'+
         esc(mine? (mine.text||'') : '')+'</textarea>'+
       '<div class="btnrow" style="margin-top:8px">'+
