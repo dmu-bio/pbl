@@ -10267,8 +10267,9 @@ function localModeBar(){
   if(typeof DBCONF==='undefined' || DBCONF.mode!=='local') return '';
   if(typeof PREVIEW!=='undefined' && PREVIEW) return '';
   if(!DBCONF.url || !DBCONF.key) return '';        /* 서버 정보가 없는 시험본은 처음부터 로컬 전용이라 돌아갈 곳이 없습니다 */
-  return '이 기기에만 저장되는 연습 상태입니다. 서버에는 저장되지 않아 다른 사람에게 보이지 않습니다.'+
-    '<button onclick="backToServerMode()">서버로 돌아가기</button>';
+  return '이 기기에만 저장되는 연습 상태입니다. 다른 사람에게는 보이지 않습니다.'+
+    '<button onclick="backToServerMode()">원래 화면으로 돌아가기</button>'+
+    '<div style="font-weight:400;font-size:12px">돌아간 뒤에도 이 기기에서 연습한 자료는 지워지지 않고 남습니다.</div>';
 }
 /* 띠는 화면 영역(#app) 밖 맨 위에 두어, 어느 화면에서든 스크롤해도 늘 보이게 합니다(서버 접속 안내 띠 dbBar 와 같은 자리) */
 function localModeBarSync(){
