@@ -85,6 +85,16 @@ a{color:var(--blue)}
   margin-left:10px;background:#fff;color:#7c2d12;border:0;border-radius:6px;padding:4px 12px;
   font-size:13px;font-weight:700;cursor:pointer;font-family:inherit
 }
+/* 이 기기에만 저장되는 연습(로컬) 모드일 때 늘 보이는 띠 */
+#localModeBar{
+  background:#b45309;color:#fff;padding:8px 12px;font-size:14px;font-weight:700;
+  text-align:center;line-height:1.5;word-break:keep-all;position:fixed;top:0;left:0;right:0;z-index:9998;border-bottom:2px solid #7c2d12
+}
+#localModeBarSpacer{display:block}
+#localModeBar button{
+  margin-left:10px;background:#fff;color:#7c2d12;border:0;border-radius:6px;padding:5px 12px;
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit
+}
 
 /* ===== 상단바 ===== */
 .topbar{
@@ -514,7 +524,7 @@ tr.alt td{background:#f7f9fb}
      (210−24=186mm · 297−26=271mm — 화면 미리보기와 같은 값). */
   @page{ size:A4 portrait; margin:13mm 12mm; }
   html,body{background:#fff !important}
-  #protoBar,#previewBar,#toast,#modal,.noprint{display:none !important}
+  #protoBar,#previewBar,#localModeBar,#localModeBarSpacer,#toast,#modal,.noprint{display:none !important}
   /* ⚠️ 아래 「인쇄본만 남기기」는 인쇄 화면(body.printsheet)에서만 겁니다.
      화면 전체에 걸면 교수님이 다른 화면에서 Ctrl+P를 누르셨을 때 백지가 나옵니다. */
   body.printsheet>*{display:none !important}
@@ -5483,7 +5493,7 @@ function svScrollTo(sel){
     var y=el.getBoundingClientRect().top + (window.pageYOffset||document.documentElement.scrollTop||0) - GAP;
     window.scrollTo(0, Math.max(0, Math.round(y)));
     var top=el.getBoundingClientRect().top, cover=0;
-    ['dbBar','previewBar','protoBar'].forEach(function(id){
+    ['dbBar','previewBar','localModeBar','protoBar'].forEach(function(id){
       var b=document.getElementById(id); if(!b || !b.offsetHeight) return;
       var r=b.getBoundingClientRect();
       if(r.top<=1 && r.bottom>cover && r.bottom>top-1) cover=r.bottom;     /* 맨 위에 붙어서 그곳을 덮고 있는 띠만 */
@@ -10243,6 +10253,41 @@ function previewClear(){
       toast('예시 데이터를 지웠습니다 — 처음 상태로 되돌렸습니다.');
       render();
   });
+}
+
+/* ==========================================================================
+   🧷 「이 기기에만 저장되는 연습 상태」 띠 (2026-11-14)
+   --------------------------------------------------------------------------
+   ▸ 주소 끝 ?db=local 을 한 번 열면 그 기기는 계속 로컬 모드로 기억됩니다(교수의 연습·시험용 기능은 그대로).
+     그 사실을 모르고 저장하면 서버에 안 남으므로, 로컬 모드인 동안은 모든 화면 맨 위에 띠를 늘 보여 주고
+     [서버로 돌아가기] 한 번으로 풀 수 있게 합니다.
+   ▸ 서버 모드(평소)에서는 아무것도 그려지지 않습니다. ?demo=1 미리보기는 자체 띠가 있어 이 띠를 쓰지 않습니다.
+   ========================================================================== */
+function localModeBar(){
+  if(typeof DBCONF==='undefined' || DBCONF.mode!=='local') return '';
+  if(typeof PREVIEW!=='undefined' && PREVIEW) return '';
+  if(!DBCONF.url || !DBCONF.key) return '';        /* 서버 정보가 없는 시험본은 처음부터 로컬 전용이라 돌아갈 곳이 없습니다 */
+  return '이 기기에만 저장되는 연습 상태입니다. 서버에는 저장되지 않아 다른 사람에게 보이지 않습니다.'+
+    '<button onclick="backToServerMode()">서버로 돌아가기</button>';
+}
+/* 띠는 화면 영역(#app) 밖 맨 위에 두어, 어느 화면에서든 스크롤해도 늘 보이게 합니다(서버 접속 안내 띠 dbBar 와 같은 자리) */
+function localModeBarSync(){
+  var inner=localModeBar(), el=document.getElementById('localModeBar'), sp=document.getElementById('localModeBarSpacer');
+  if(!inner){ if(el&&el.parentNode) el.parentNode.removeChild(el); if(sp&&sp.parentNode) sp.parentNode.removeChild(sp); return; }
+  if(!el){
+    el=document.createElement('div'); el.id='localModeBar'; el.setAttribute('role','status');
+    sp=document.createElement('div'); sp.id='localModeBarSpacer';          /* 띠가 화면 위에 떠 있는 만큼 본문을 아래로 밀어 줍니다 */
+    document.body.insertBefore(sp, document.body.firstChild); document.body.insertBefore(el, sp);
+    window.addEventListener('resize', function(){ var e=document.getElementById('localModeBar'), q=document.getElementById('localModeBarSpacer'); if(e&&q) q.style.height=e.offsetHeight+'px'; });
+  }
+  if(el.innerHTML!==inner) el.innerHTML=inner;
+  sp.style.height=el.offsetHeight+'px';
+}
+function backToServerMode(){
+  try{ localStorage.setItem(DBMODE_KEY, 'remote'); }catch(e){}
+  /* 주소에 ?db=local 이 남아 있으면 다시 로컬로 돌아가므로 주소에서 뺍니다 */
+  function strip(x){ return String(x||'').replace(/([?&#])db=(?:local|remote)(?:&|$)/,'$1').replace(/[?&#]$/,''); }
+  location.replace(location.pathname + strip(location.search) + strip(location.hash));
 }
 
 /* ==========================================================================
@@ -17492,6 +17537,7 @@ function render(){
   /* 🧪 미리보기 모드면 화면 맨 위에 굵은 띠를 상시 붙입니다 (?demo=1 일 때만) */
   if(typeof previewBar==='function'){ var _pv=previewBar(); if(_pv) h = _pv + h; }
 
+
   /* 🏁 배포본은 깔끔한 푸터(제목만) · 교내용은 개발정보 유지 */
   if(typeof IS_DEPLOY!=='undefined' && IS_DEPLOY)
     h += '<div class="footnote">바이오기초설계 · 2026학년도 2학기</div>';
@@ -17502,6 +17548,7 @@ function render(){
   /* 🖨 인쇄 화면일 때만 「인쇄하면 그 종이만 남기기」 규칙이 걸립니다 (12·14차) */
   document.body.className = (VIEW.name==='tulog'||VIEW.name==='svprint'||VIEW.name==='score'||VIEW.name==='actlog'||VIEW.name==='reports'||VIEW.name==='svone'||VIEW.name==='exlog'||VIEW.name==='wplan') ? 'printsheet' : '';
   $('app').innerHTML = h;
+  if(typeof localModeBarSync==='function') localModeBarSync();   /* 🧷 로컬(이 기기에만 저장) 모드면 띠를 늘 보여 줍니다 */
 }
 
 /* ==========================================================================
