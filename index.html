@@ -4201,7 +4201,11 @@ function teamNoNext(cid){
   return mx+1;
 }
 /* 학생이 팀을 고칠 수 있는 때 — 만든 사람이고, 교수 승인 전이고, 2주차가 마감되지 않았을 때 */
+/* 🔒 O-0897(2026-11-17) — 팀 구성(팀원 추가·삭제·해체·새 팀 만들기)은 담당교수님만 합니다(서버 정책 mem_ins·mem_del 도 같은 규칙).
+   팀 이름·뜻 고치기(teamNameEditable)는 그대로입니다. 되돌릴 때는 false 로 바꾸고 서버 rollback.sql 을 함께 실행하세요. */
+var TEAM_BY_PROF = true;
 function teamEditable(t, st){
+  if(TEAM_BY_PROF) return false;
   if(!isTeamCreator(t, st)) return false;
   if(t.ok) return false;
   return wState(2)!=='마감';
@@ -5097,7 +5101,10 @@ function viewWeek(){
    (w.notice? '<div class="note b"><b>[안내]</b> '+esc(w.notice)+'</div>':'')+
    '</div>';
 
-  var locked = (w.state==='닫힘' && !previewOpen[n]);
+  /* 🔒 O-0897(2026-11-17) — 이미 수업이 끝난 주차(4·8주차 등)를 평가 마감으로 닫아도 「보기」는 그대로 둡니다.
+     (아직 안 열린 미래 주차만 잠금 화면) */
+  var pastClosed = !!(w.state==='닫힘' && def.date && def.date < nowStr().slice(0,10));
+  var locked = (w.state==='닫힘' && !previewOpen[n] && !pastClosed);
   if(locked){
     head += '<div class="card" style="text-align:center">'+
       '<h3>'+(def.date && def.date < nowStr().slice(0,10)? '🔒 닫힌 주차입니다' : '🔒 아직 열리지 않았습니다')+'</h3>'+
@@ -5107,7 +5114,8 @@ function viewWeek(){
       '</div>' + pager(n);
     return head;
   }
-  if(w.state==='닫힘') head += '<div class="note a">🔎 <b>미리 보기</b> — 실제로는 아직 닫혀 있는 주차입니다.</div>';
+  if(w.state==='닫힘' && pastClosed) head += '<div class="note">🔒 이 주차는 <b>마감되어 닫혀 있습니다.</b> 낸 것은 읽기 전용으로 남습니다. 고칠 것이 있으면 담당교수님께 말씀하세요.</div>';
+  else if(w.state==='닫힘') head += '<div class="note a">🔎 <b>미리 보기</b> — 실제로는 아직 닫혀 있는 주차입니다.</div>';
   if(w.state==='마감') head += noInputWeek(def) ? '<div class="note">⬛ 지난 주차입니다.</div>'
                                               : '<div class="note">⬛ 이 주차는 마감되었습니다 ('+esc(wDue(n))+'). 낸 것은 읽기 전용으로 남습니다.</div>';
 
@@ -5852,6 +5860,7 @@ function stTeam(){
   var st = DB.one('students', SESS.me.id) || SESS.me;   /* 방금 바뀐 값을 다시 읽습니다 */
   SESS.me = st;
   var t = teamOf(st);
+  if(!t && TEAM_BY_PROF) return '<div class="card"><h3>[1단계] 우리 팀</h3><div class="note a">아직 소속된 팀이 없습니다. 팀 구성은 <b>담당교수님</b>이 합니다. 담당교수님께 말씀하세요.</div></div>';
   if(!t) return stTeamMake(st, null);
   if(teamEditOpen && teamEditable(t, st)) return stTeamMake(st, t);
   if(teamNameOpen && teamNameEditable(t, st)) return stTeamNameEdit(t, st);
@@ -5885,15 +5894,15 @@ function stMyTeam(t, st){
        만든 사람에게는 그 옆에 팀원까지 바꾸는 [팀 수정하기]·[팀 해체]를 함께 둡니다. */
     h += '<div class="btnrow" style="margin-top:8px">'+
       fixBtn('teamNameOpenEdit()','팀명 수정')+
-      (mine
+      ((mine && !TEAM_BY_PROF)
         ? fixBtn('teamOpenEdit()','팀 수정하기')+
           '<button class="btn dan" onclick="stTeamDisband(\''+t.id+'\')">팀 해체</button>'
         : '')+
       '</div>'+
-      (mine
+      ((mine && !TEAM_BY_PROF)
         ? '<div class="muted">팀 <b>이름·뜻</b>은 <b>[팀명 수정]</b>으로, 팀원까지 바꾸려면 <b>[팀 수정하기]</b>로 — <b>교수 승인 전까지</b> 몇 번이든 수정할 수 있습니다.</div>'+
           '<p class="muted">※ 팀원 추가·삭제와 팀 해체는 <b>팀을 만든 사람</b>만 할 수 있습니다. 팀 이름은 <b>팀원 누구나</b> 고칠 수 있습니다.</p>'
-        : '<div class="muted"><b>[팀명 수정]</b>으로 팀 이름과 뜻을 <b>교수 승인 전까지</b> 고칠 수 있습니다(팀원 누구나). 팀원 추가·삭제는 <b>팀을 만든 사람</b>이 합니다.</div>');
+        : '<div class="muted"><b>[팀명 수정]</b>으로 팀 이름과 뜻을 <b>교수 승인 전까지</b> 고칠 수 있습니다(팀원 누구나). '+(TEAM_BY_PROF? '팀원 추가·삭제는 <b>담당교수님</b>이 합니다.' : '팀원 추가·삭제는 <b>팀을 만든 사람</b>이 합니다.')+'</div>');
   else
     /* 🔴 9차 — 못 고치는 곳에는 버튼을 두지 않고 「왜 못 고치는지」를 적습니다 */
     h += '<div class="muted">'+(
@@ -7179,6 +7188,7 @@ function stEval(n, def){
   if(!evalLoaded){ evalDraftLoad(); evalLoaded = true; }
   var D = (typeof RUBRIC_DRAFT !== 'undefined' && RUBRIC_DRAFT[def.round]) || {};
   var h = '';
+  var evClosed = (wState(n)==='닫힘');   /* 🔒 O-0897 — 닫힌 주차는 평가를 더 낼 수 없습니다(서버 app_round_open 이 같은 규칙). 낸 것은 보입니다 */
 
   /* ── [0] 이 주차 운영 안내 ──────────────────────────────────────────
      ⛔ 교수님 지시: "각 주차에 직접 학생이 파일을 제출하는 건 만들 필요 없어. 따로 받을 예정"
@@ -7233,6 +7243,8 @@ function stEval(n, def){
               return '<td class="c">' + (pp ? pp.score : '-') + '</td>';
             }).join('') + '<td class="c"><b>' + sum + '</b></td></tr>';
         }).join('') + '</table></div>';
+    }else if(evClosed){
+      h += '<div class="note a">🔒 <b>이 회차 평가는 마감되었습니다.</b> 제출 '+cnt+'/'+list.length+'팀 — 더 낼 수 없습니다. 못 낸 평가가 있으면 담당교수님께 말씀하세요.</div>';
     }else{
       /* 🔴 12팀을 한 화면에 늘어놓지 않습니다 — 한 팀씩. 아직 안 낸 팀부터 보여 줍니다. */
       var idx = evalCursor[n];
@@ -7303,6 +7315,10 @@ function stEval(n, def){
     mates.forEach(function(m, i){
       if(stM[m.st.id] === 1){
         h += '<div class="acc"><div class="hd"><span>▸ ' + esc(sn(m.st)) + '</span><span class="sp"></span><span class="bg green">🔒 제출 완료</span></div></div>';
+        return;
+      }
+      if(evClosed){
+        h += '<div class="acc"><div class="hd"><span>▸ ' + esc(sn(m.st)) + '</span><span class="sp"></span><span class="bg gray">🔒 마감</span></div></div>';
         return;
       }
       var body =
