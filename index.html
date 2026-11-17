@@ -17393,9 +17393,20 @@ var DBR = {
     var tabs=['surveys','questions','rubrics','weekNotice'];   /* 순서 중요: surveys 먼저(questions 가 가리킴) */
     var jobs=[];
     tabs.forEach(function(t){
-      var have={}; (DB.d[t]||[]).forEach(function(r){ have[r.id]=1; });
+      /* 🔴 id 만 보지 않고 「자연키」도 함께 봅니다 (2026-11-17) —
+         평가 기준(회차|종류|순서)·안내문(강좌|주차)이 서버에 이미 다른 id 로 있으면 건너뜁니다.
+         시드 id 는 순번(rb_N·nt_N)이라 항목 수가 바뀌면 밀리는데, 서버에는 옛·다른 id 로 들어가 있어
+         id 만 보면 같은 내용이 한 번 더 올라가 3회차 평가 기준이 겹쳐 보입니다. */
+      var nk=function(r){
+        if(t==='rubrics')    return r.round+'|'+r.kind+'|'+r.order;
+        if(t==='weekNotice') return r.classId+'|'+r.n;
+        return null;
+      };
+      var have={}, haveK={}; (DB.d[t]||[]).forEach(function(r){ have[r.id]=1; var k=nk(r); if(k) haveK[k]=1; });
       (seed[t]||[]).forEach(function(r){
-        if(!have[r.id]){
+        var k=nk(r);
+        if(!have[r.id] && !(k && haveK[k])){
+          if(k) haveK[k]=1;
           if(!DB.d[t]) DB.d[t]=[];
           DB.d[t].push(r);                              /* 화면이 바로 쓰도록 메모리에도 넣습니다 */
           jobs.push({op:'insert', t:t, id:r.id, row:self.toDb(t,r)});
