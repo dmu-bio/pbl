@@ -4792,8 +4792,9 @@ var APP = {
       go('login'); toast('학기 시작 직전 상태로 되돌렸습니다.');
     });
   },
-  confirm:function(msg, yes){
+  confirm:function(msg, yes, yesLabel){
     $('modalMsg').textContent = msg;
+    $('modalYes').textContent = yesLabel || '진행';       /* 제출 확인창만 [제출] — 나머지는 그대로 [진행] */
     $('modal').style.display='flex';
     $('modalYes').onclick=function(){ $('modal').style.display='none'; yes(); };
   },
@@ -7269,7 +7270,7 @@ function stEval(n, def){
         }).join('') + '</div>';
 
       if(cxState === 1){
-        h += '<div class="note g">🔒 <b>' + esc(cx.classId + '-' + cx.no + ' 「' + cx.name + '」') + '</b>은 이미 제출하여 <b>더는 고칠 수 없습니다.</b></div>';
+        h += '<div class="note g">🔒 <b>' + esc(cx.classId + '-' + cx.no + ' 「' + cx.name + '」') + '</b>은 <b>제출 완료 · 수정 불가</b>입니다. 이미 제출하여 더는 고칠 수 없습니다.</div>';
       }else{
         h += '<div class="acc" style="padding:12px">' +
           '<div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap">' +
@@ -7314,7 +7315,7 @@ function stEval(n, def){
       '<div class="note a"><b>⚠️ 제출하면 수정할 수 없습니다.</b> 점수는 [임시저장]으로 저장해 두었다가 마지막에 제출하세요.</div>';
     mates.forEach(function(m, i){
       if(stM[m.st.id] === 1){
-        h += '<div class="acc"><div class="hd"><span>▸ ' + esc(sn(m.st)) + '</span><span class="sp"></span><span class="bg green">🔒 제출 완료</span></div></div>';
+        h += '<div class="acc"><div class="hd"><span>▸ ' + esc(sn(m.st)) + '</span><span class="sp"></span><span class="bg green">🔒 제출 완료 · 수정 불가</span></div></div>';
         return;
       }
       if(evClosed){
@@ -7382,8 +7383,8 @@ function submitInter(teamId, round, n){
     toast('제출했습니다. 이 평가는 더 이상 수정할 수 없습니다.'); render();
   };
   var msg = (c.same ? '전 항목에 같은 점수를 주셨습니다.\n\n' : '') +
-    '제출하면 수정할 수 없습니다.\n정말 이대로 제출할까요?';
-  APP.confirm(msg, doIt);
+    '제출 후에는 수정할 수 없습니다. 제출할까요?';
+  APP.confirm(msg, doIt, '제출');
 }
 function submitIntra(studentId, round){
   var c = collect(studentId,'intra',round); if(!c) return;
@@ -7398,8 +7399,8 @@ function submitIntra(studentId, round){
     toast('제출했습니다. 이 평가는 더 이상 수정할 수 없습니다.'); render();
   };
   var msg = (c.same ? '전 항목에 같은 점수를 주셨습니다.\n\n' : '') +
-    '제출하면 수정할 수 없습니다.\n정말 이대로 제출할까요?';
-  APP.confirm(msg, doIt);
+    '제출 후에는 수정할 수 없습니다. 제출할까요?';
+  APP.confirm(msg, doIt, '제출');
 }
 /* ⛔ 옛 saveFilm() — 옛 7주차(현 8주차) 영상 제출은 18차에 폐기했습니다.
    교수님 지시: "각 주차에 직접 학생이 파일을 제출하는 건 만들 필요 없어. 따로 받을 예정" */
