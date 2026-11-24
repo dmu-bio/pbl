@@ -6890,6 +6890,7 @@ function presNeed(n, cid){
   if(!presJoint(n)) return presPool(n, cid).length;
   /* 13주차가 이미 정해졌으면 14주차는 「나머지 전부」입니다(팀 수가 중간에 바뀌어도 어긋나지 않게) */
   if(n===14 && presList(13).length) return presTotal() - presList(13).length;
+  if(n===13 && presList(13).length) return presList(13).length;   /* 🔒 고정된 편성은 실제 줄 수가 기준(22팀 → 8+14) */
   return presHalf(n);
 }
 
@@ -6921,7 +6922,13 @@ function presMeta(n){
 var presSeenRev = {};      /* 화면을 그린 순간의 판 — 저장할 때 이것과 견줍니다 */
 var presPick    = {};      /* 화면에서 고르는 중인 값 {n: {teamId:순서}} */
 
+/* 🔒 O-0949 (2026-11-24) 13·14주차 발표 순서 고정 — 교수 누구도(슈퍼 포함) 고칠 수 없습니다.
+   서버도 같은 규칙으로 막습니다(assign 표 트리거 assign_lock_1314). 풀 때는 이 배열을 비우고 서버 잠금 해제 SQL을 함께 실행합니다. */
+var PRES_LOCKED_WEEKS = [13, 14];
+function presLocked(n){ return PRES_LOCKED_WEEKS.indexOf(n) >= 0; }
+var PRES_LOCK_MSG = '13·14주차 발표 순서는 고정되어 수정할 수 없습니다.';
 function presCanEdit(n){
+  if(presLocked(n)) return false;
   if(!isProf()) return false;
   if(presJoint(n)) return true;                 /* 🔴 13·14주차는 교수 3명 모두 */
   return canEdit(myClass());                    /* 4·8주차는 자기 강좌만 */
@@ -6930,6 +6937,7 @@ function presCanEdit(n){
 /* ---- 저장 -------------------------------------------------------------- */
 /* ids = 순서대로 늘어놓은 teamId 배열 */
 function presSave(n, ids, seenRev){
+  if(presLocked(n)) return {msg:PRES_LOCK_MSG};
   if(!presCanEdit(n)) return {msg:'이 주차의 발표 순서를 정할 권한이 없습니다.'};
   var need = presNeed(n);
   /* 🔴 4·8주차는 「내 강좌 순서」만 다룹니다 — 다른 강좌의 순서는 읽지도 지우지도 않습니다.
@@ -7027,13 +7035,17 @@ function presPanel(n){
   /* 🔴 마지막으로 고친 사람 — 세 분이 같은 표를 고치므로 늘 보여 드립니다 */
   if(meta.at) h += '<div class="muted" style="margin-bottom:6px">마지막 수정: <b>'+esc(meta.by)+' 교수</b> · '+esc(meta.at)+'</div>';
 
-  if(!ed){
+  if(presLocked(n)){
+    h += '<div class="note">🔒 <b>발표 순서 고정됨</b> — 교수님 누구도 이 순서를 고칠 수 없습니다(서버에서도 막혀 있습니다).</div>';
+  }else if(!ed){
     h += '<div class="note">'+(joint
       ? '🔒 학생은 배정을 볼 수 없습니다.'
       : '🔒 '+roLabel(myClass()))+'</div>';
   }
 
-  if(joint){
+  if(presLocked(n)){
+    /* 🔒 고정 — 안내 문장 없음 */
+  }else if(joint){
     h += '<div class="note">3개 강좌 <b>전체 '+presTotal()+'팀</b>에서 이 주에 발표할 <b>'+need+'팀</b>을 고르고 순서를 매깁니다. '+
       (n===13? '<b>저장하면 나머지 '+(presTotal()-need)+'팀이 14주차로 자동 배정</b>됩니다. <span class="muted">(팀 수가 홀수면 13주차가 1팀 더 많습니다)</span>'
              : '13주차에 배정되지 않은 '+need+'팀입니다. <b>순서만</b> 정하시면 됩니다.')+'</div>';
@@ -7045,7 +7057,8 @@ function presPanel(n){
 
   /* 목록 */
   var pool = presPool(n);
-  if(n===14 && presDone(14)) pool = presList(14).map(function(x){return x.team;});   /* 14주차는 배정된 팀만 */
+  if(presLocked(n) && presDone(n)) pool = presList(n).map(function(x){return x.team;});   /* 🔒 고정: 실제 배정된 팀만, 순서대로 */
+  else if(n===14 && presDone(14)) pool = presList(14).map(function(x){return x.team;});   /* 14주차는 배정된 팀만 */
 
   h += '<div class="scroll"><table><tr>'+
     (joint&&n===13? '<th class="c">발표</th>':'')+
@@ -7078,6 +7091,7 @@ function presPanel(n){
 }
 
 function presToggle(n, tid, on){
+  if(presLocked(n)) return;
   if(!presPick[n]) presPick[n] = {};
   if(on){
     if(!presPick[n][tid]){
@@ -7089,12 +7103,14 @@ function presToggle(n, tid, on){
   render();
 }
 function presNum(n, tid, v){
+  if(presLocked(n)) return;
   if(!presPick[n]) presPick[n] = {};
   var num = Number(v);
   if(!v || isNaN(num) || num<1) delete presPick[n][tid];
   else presPick[n][tid] = num;
 }
 function presDoSave(n){
+  if(presLocked(n)){ toast('⛔ '+PRES_LOCK_MSG); return; }
   var pick = presPick[n] || {};
   var ids = Object.keys(pick).filter(function(k){ return pick[k]; })
     .sort(function(a,b){ return pick[a]-pick[b]; });
@@ -10881,10 +10897,11 @@ function saveWM(n){
      같은 것을 두 벌 그리면 한쪽만 고쳐져 어긋납니다. */
 function admAssign(){
   if(!isProf()) return '<div class="card"><div class="note r">⛔ 학생은 볼 수 없는 화면입니다.</div></div>';
-  return '<div class="card"><h2>13·14주차 발표 배정 <span class="muted">'+presTotal()+'팀 → '+presHalf(13)+'팀 + '+presHalf(14)+'팀</span></h2>'+
-    '<p class="muted">3개 강좌가 한자리에 모여 발표합니다. <b>교수 3명 누구나</b> 정하고 고치실 수 있습니다.</p>'+
+  return '<div class="card"><h2>13·14주차 발표 배정 <span class="muted">'+presTotal()+'팀 → '+presNeed(13)+'팀 + '+presNeed(14)+'팀</span></h2>'+
+    '<p class="muted">3개 강좌가 한자리에 모여 발표합니다.'+(presLocked(13)? ' <b>발표 순서는 고정되어 있어 볼 수만 있습니다.</b>' : ' <b>교수 3명 누구나</b> 정하고 고치실 수 있습니다.')+'</p>'+
+    (presLocked(13)? '' :
     '<div class="note">🔴 세 분이 <b>같은 배정표 하나</b>를 고칩니다. 다른 분이 먼저 고치셨으면 '+
-    '<b>저장이 멈추고 알려 드립니다</b> — 모르고 갈아엎는 일이 없게 했습니다. 바꾸신 내용은 <b>변경 기록</b>에 남습니다.</div></div>'+
+    '<b>저장이 멈추고 알려 드립니다</b> — 모르고 갈아엎는 일이 없게 했습니다. 바꾸신 내용은 <b>변경 기록</b>에 남습니다.</div>')+'</div>'+
     presPanel(13) + presPanel(14);
 }
 
